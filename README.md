@@ -32,3 +32,5 @@ You *can* detect changes in a boolean using the `dx` operator. Note the differen
 
 Values in rules are always strings.
 
+## dx and ddx
+`dx` is true instantly when the specified value changes; `ddx` is true a fixed amount of time after the specified value changes. Using `ddx` in rules means you can avoid creating a bunch of timers to handle logic I guess.
