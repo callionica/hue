@@ -21,6 +21,7 @@ ANSWERS: The API doesn't appear to support incrementing a counter (a `state.stat
 
 ## Sensors
 
+You can create sensors using the API. You can think of CLIPGenericStatus and CLIPGenericFlag as representations of real sensors that communicate with the Hue hub over IP, or you can think of them as numbers and Booleans that you can use to simplify logic that runs on the hub.
 
 ## Rules
 This comment (https://github.com/dresden-elektronik/deconz-rest-plugin/issues/98#issuecomment-326681617) was incredibly useful in understanding how rules are triggered. The upshot is:
