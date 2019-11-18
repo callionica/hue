@@ -17,3 +17,14 @@ The Hue dimmer switch doesn't appear to be limited to a cycle of 10 items - each
 
 It's not yet clear to me whether `state` values can be incremented (brightness values can) or whether you would need to define 100 separate rules with fixed values to implement the above. Also not clear what the rule count limits are.
 
+ANSWERS: The API doesn't appear to support incrementing a counter (a state.status field in a CLIPGenericStatus sensor), as a result, it takes a bunch of rules to support incrementing/decrementing. This is worth doing for low numbers of items, but wouldn't work for a visual turnstile, since you need 2 rules (increment & decrement) for each number. (40 rules to count to 20).
+
+## Rules
+This comment (https://github.com/dresden-elektronik/deconz-rest-plugin/issues/98#issuecomment-326681617) was incredibly useful in understanding how rules are triggered. The upshot is:
+
+Rules are triggered when one of the conditions changes from false to true; the remaining conditions are evaluated and if all are true, the actions are scheduled for execution.
+
+You *can* detect changes in a boolean using the `dx` operator. Note the difference between using `dx` on `state.flag` vs `state.lastupdated`. The second will acts as a trigger even if `state.flag` remains unchanged.
+
+Values in rules are always strings.
+
