@@ -26,8 +26,8 @@ function uuid() {
 
 
 async function createUserCount(connection, resourceName, userNames) {
-    const hub = connection.hub || "10.0.1.185";
-    const app = connection.app || "3CY8HUdsDdkQ0wn1CzWTaSZU1DOUI3AuImIzJ-c9";
+    const hub = connection.hub;
+    const app = connection.app;
 
     const maximumUserCount = userNames.length;
 
