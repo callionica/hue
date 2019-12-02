@@ -44,3 +44,7 @@ As long as you don't run out of resources on the hub (which is limited in # of s
 2. LightLevel sensor that indicates dawn, daylight, dusk, night whose value can be fed by the hub daylight sensor and the light level sensor from a motion detector
 3. Travel: Arriving/Leaving/GuestsArriving/GuestsLeaving
 4. Mood: Work/Relaxation/Party
+
+Presence and LightLevel determine whether internal lights should be on or off.
+Travel and LightLevel determine whether external lights should be on or off.
+Mood and LightLevel determine what the brightness/color of light should be.
