@@ -50,3 +50,4 @@ Travel and LightLevel determine whether external lights should be on or off.
 Mood and LightLevel determine what the brightness/color of light should be.
 
 ## Can you update the conditions in a rule using a schedule?
+Someone said: "especially since the API does not allow to change single values, you always have to PUT the entire {conditions} element…:"
