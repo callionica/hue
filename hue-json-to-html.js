@@ -59,9 +59,13 @@ function hueJsonToHtml(value, stack, indent) {
     }
 
     let dent = "   ".repeat(indent);
+    let dent1 = dent;
+    if (indent > 0) {
+        dent1 = "   ".repeat(indent - 1);
+    }
 
     if (Array.isArray(value)) {
-        return `[\n${dent}` + value.map(v => hueJsonToHtml(v, stack, indent + 1)).join(`,\n${dent}`) + "]";
+        return `[\n${dent}` + value.map(v => hueJsonToHtml(v, stack, indent + 1)).join(`,\n${dent}`) + `\n${dent1}]`;
     }
 
     const order = ["name", "type", "lasttriggered"];
@@ -92,13 +96,11 @@ function hueJsonToHtml(value, stack, indent) {
             result.push(`</span>`);
         }
     }
-
-    result.push("}");
-
     
-    return result.join(`\n${dent}`);
+    return result.join(`\n${dent}`) + `\n${dent1}}`;
 }
 
 function convertPage() {
-    document.body.innerHTML = `<pre>${hueJsonToHtml(JSON.parse(document.body.innerText))}</pre>`;
+    globalThis.$data$ = JSON.parse(document.body.innerText);
+    document.body.innerHTML = `<pre>${hueJsonToHtml(globalThis.$data$)}</pre>`;
 }
