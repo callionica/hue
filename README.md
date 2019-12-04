@@ -48,3 +48,5 @@ As long as you don't run out of resources on the hub (which is limited in # of s
 Presence and LightLevel determine whether internal lights should be on or off.
 Travel and LightLevel determine whether external lights should be on or off.
 Mood and LightLevel determine what the brightness/color of light should be.
+
+## Can you update the conditions in a rule using a schedule?
