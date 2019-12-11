@@ -143,6 +143,14 @@ async function getRules(connection) {
     return getCategory_(connection, "rules");
 }
 
+async function getGroups(connection) {
+    return getCategory_(connection, "groups");
+}
+
+async function getScenes(connection) {
+    return getCategory_(connection, "scenes");
+}
+
 async function getResourceLinks(connection) {
     return getCategory_(connection, "resourcelinks");
 }
@@ -188,7 +196,7 @@ async function deleteAppRules(connection) {
 
     for (const rule of rules) {
         if (rule.owner === connection.app) {
-            await deleteRule(connection, ruleID);
+            await deleteRule(connection, rule.id);
         }
     }
 }
@@ -198,7 +206,7 @@ async function deleteManufacturerSensors(connection, manufacturer) {
 
     for (const sensor of sensors) {
         if (sensor.manufacturername === manufacturer) {
-            await deleteSensor(connection, sensorID);
+            await deleteSensor(connection, sensor.id);
         }
     }
 }
@@ -212,7 +220,7 @@ async function deleteAppLinks(connection) {
 
     for (const link of links) {
         if (link.owner === connection.app) {
-            await deleteResourceLink(connection, linkID);
+            await deleteResourceLink(connection, link.id);
         }
     }
 }
@@ -701,6 +709,79 @@ async function createPowerManagedZone(connection, zone) {
         return createRule(connection, body);
     }
 
+    async function createFullPowerRule(id, zoneID, sceneID) {
+        const body = `{
+            "name": "Turn zone to full power",
+            "conditions": [
+                {
+                    "address": "/sensors/${id}/state/status",
+                    "operator": "eq",
+                    "value": "2"
+                }
+            ],
+            "actions": [
+                {
+                    "address": "/groups/${zoneID}/action",
+                    "method": "PUT",
+                    "body": {
+                        "scene": "${sceneID}"
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function createLowPowerRule(id, zoneID, sceneID) {
+        const body = `{
+            "name": "Turn zone to low power",
+            "conditions": [
+                {
+                    "address": "/sensors/${id}/state/status",
+                    "operator": "eq",
+                    "value": "1"
+                }
+            ],
+            "actions": [
+                {
+                    "address": "/groups/${zoneID}/action",
+                    "method": "PUT",
+                    "body": {
+                        "scene": "${sceneID}"
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function createOffRule(id, zoneID) {
+        const body = `{
+            "name": "Turn zone off",
+            "conditions": [
+                {
+                    "address": "/sensors/${id}/state/lastupdated",
+                    "operator": "dx"
+                },
+                {
+                    "address": "/sensors/${id}/state/status",
+                    "operator": "eq",
+                    "value": "0"
+                }
+            ],
+            "actions": [
+                {
+                    "address": "/groups/${zoneID}/action",
+                    "method": "PUT",
+                    "body": {
+                        "on": false
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
     // Power management automatically moves a zone from full power (2) to low power (1) to off (0)
     const body = statusSensorBody(zone.name, "Power Managed Zone");
     const id = await createSensor(connection, body);
@@ -717,23 +798,38 @@ async function createPowerManagedZone(connection, zone) {
     // Reenable power management if off for too long
     const failsafe = await createFailsafeRule(controlID, zone.power.failsafe);
 
+    // Visualize power states
+    const scenes = await getScenes(connection);
+    const fullPowerScene = scenes.filter(scene => scene.group === zone.id && scene.name === zone.power.fullPowerScene)[0].id;
+
+    const lowPowerScene = scenes.filter(scene => scene.group === zone.id && scene.name === zone.power.lowPowerScene)[0].id;
+    
+    const fullPowerRule = await createFullPowerRule(id, zone.id, fullPowerScene);
+    const lowPowerRule = await createLowPowerRule(id, zone.id, lowPowerScene);
+    const offRule = await createOffRule(id, zone.id);
+
     const rl = await createLinks(connection, zone.name, "Power Managed Zone. Turns off after period of time.", [
         `/sensors/${id}`,
         `/sensors/${controlID}`,
+
         `/rules/${fullToLow}`,
         `/rules/${fullToLowEnabled}`,
         `/rules/${lowToOff}`,
         `/rules/${failsafe}`,
+        
+        `/rules/${fullPowerRule}`,
+        `/rules/${lowPowerRule}`,
+        `/rules/${offRule}`,
     ]);
 
-    return { sensors: [id, controlID], rules: [fullToLow, fullToLowEnabled, lowToOff, failsafe], resourceLinks: [rl] };
+    return { sensors: [id, controlID], rules: [fullToLow, fullToLowEnabled, lowToOff, failsafe, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
 }
 
 async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID) {
 
     async function onDown() {
         const body = `{
-            "name": "Zone Lights On Full Power",
+            "name": "Dimmer zone lights on full power",
             "conditions": [
                 {
                     "address": "/sensors/${dimmerID}/state/buttonevent",
@@ -760,7 +856,7 @@ async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneC
 
     async function onLongUp() {
         const body = `{
-            "name": "Zone Power Management Disabled",
+            "name": "Dimmer power management disabled",
             "conditions": [
                 {
                     "address": "/sensors/${dimmerID}/state/buttonevent",
@@ -787,7 +883,7 @@ async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneC
 
     async function offDownWhenOn() {
         const body = `{
-            "name": "Zone Lights Off",
+            "name": "Dimmer zone lights off",
             "conditions": [
                 {
                     "address": "/sensors/${dimmerID}/state/buttonevent",
@@ -826,7 +922,7 @@ async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneC
 
     async function offDownWhenOff() {
         const body = `{
-            "name": "Zone Lights on Low Power",
+            "name": "Dimmer zone lights on low power",
             "conditions": [
                 {
                     "address": "/sensors/${dimmerID}/state/buttonevent",
