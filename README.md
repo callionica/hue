@@ -51,3 +51,14 @@ Mood and LightLevel determine what the brightness/color of light should be.
 
 ## Can you update the conditions in a rule using a schedule?
 Someone said: "especially since the API does not allow to change single values, you always have to PUT the entire {conditions} element…:"
+
+## Time-based lights
+There's a Hue Labs formula that updates lighting at different times of the day. It seems to work like this:
+1. There's a status sensor called "daypart" that corresponds to the time segments
+2. There are scheduled changes that update daypart at the appropriate time
+3. There's a custom light group that contains all the lights that have been configured to change in the Hue app
+4. There's a rule for each time period that triggers when all the lights in the custom light group are on and sets the group to the appropriate scene for the daypart setting
+5. There's also a similar rule for each time period that triggers when the "Play and stop" sensor is updated to 1
+6. The scenes  are created by the formula during setup and there are different scenes for "Play and stop" rules (no explicit transitiontime) and the all_on rules (transitiontime: 600)
+
+The implication seems to be that you need multiple instances of this Hue labs formula for different logical groups of lights otherwise the all_on part of the rule will confound expectations. The UI allows you to select multiple rooms, but only one zone so this is a little confusing if you've picked multiple rooms.
