@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>My House</title>
+    <script type="module">
+        "use strict";
+        import {
+            connect,
+            deleteAppLinks, deleteAppRules, deleteAppSensors, deleteManufacturerSensors,
+            getGroups, getDimmers, getMotionSensors,
+            createPowerManagedZone,
+            createPowerManagedDimmerRules,
+            createPowerManagedMotionSensorRules,
+         } from "./hue-shared-resource.js";
+        
+        const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
+
+        async function main() {
+            const connection = await connect(hub, "Callionica");
+
+            await deleteAppLinks(connection);
+            await deleteAppRules(connection);
+            await deleteAppSensors(connection);
+            await deleteManufacturerSensors(connection, "Callionica");
+
+            const groups = await getGroups(connection);
+
+            const zone = { name: "Hall", power: { enabled: true, fullPower: "00:02:00", lowPower: "00:01:00", failsafe: "08:00:00", fullPowerScene: "Bright", lowPowerScene: "Dimmed" } };
+
+            const matching = groups.filter(group => group.name === zone.name);
+            zone.id = matching[0].id;
+
+            if (zone.id) {
+                const result = await createPowerManagedZone(connection, zone);
+                console.log(result);
+
+                const dimmers = (await getDimmers(connection)).filter(dimmer => dimmer.name === zone.name);
+                for (const dimmer of dimmers) {
+                    const rules = await createPowerManagedDimmerRules(connection, dimmer.id, result.sensors[0], result.sensors[1]);
+                    console.log(rules);
+                }
+
+                const motionSensors = (await getMotionSensors(connection)).filter(motionSensor => motionSensor.name === zone.name);
+                for (const motionSensor of motionSensors) {
+                    const rules = await createPowerManagedMotionSensorRules(connection, motionSensor.id, result.sensors[0], result.sensors[1]);
+                    console.log(rules);
+                }
+            }
+        }
+
+        main().then(x => console.log(x));
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
