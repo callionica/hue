@@ -1,6 +1,6 @@
 // Converts hue JSON to HTML using links to make it easier to navigate
 
-function hueToHtml(data) {
+export function hueToHtml(data) {
 
     function hueJsonToHtml(value, stack, indent) {
         stack = stack || [];
@@ -82,7 +82,7 @@ function hueToHtml(data) {
             return `[\n${dent}` + value.map(v => hueJsonToHtml(v, stack, indent + 1)).join(`,\n${dent}`) + `\n${dent1}]`;
         }
 
-        const order = ["name", "type", "lasttriggered"];
+        const order = ["name", "type", "uniqueid", "lasttriggered"];
 
         function getOrder(v) {
             const result = order.indexOf(v);
@@ -99,6 +99,10 @@ function hueToHtml(data) {
             return l - r;
         });
         for (const [name, value] of entries) {
+            const isCategory = (stack.length === 0);
+            if (isCategory) {
+                result.push(`<span id="${name}">`);
+            }
             const isResource = ((stack.length === 1) && (stack[stack.length - 1] !== "config")) || (stack[stack.length - 1] === "whitelist");
             if (isResource) {
                 result.push(`<span id="${stack[stack.length - 1]}/${name}">`);
@@ -106,7 +110,7 @@ function hueToHtml(data) {
             stack.push(name);
             result.push(JSON.stringify(name) + ": " + hueJsonToHtml(value, stack, indent + 1) + ",");
             stack.pop();
-            if (isResource) {
+            if (isResource || isCategory) {
                 result.push(`</span>`);
             }
         }
@@ -114,9 +118,4 @@ function hueToHtml(data) {
         return result.join(`\n${dent}`) + `\n${dent1}}`;
     }
     return hueJsonToHtml(data);
-}
-
-function convertPage() {
-    const data = JSON.parse(document.body.innerText);
-    document.body.innerHTML = `<pre>${hueToHtml(data)}</pre>`;
 }
