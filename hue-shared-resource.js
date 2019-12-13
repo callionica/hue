@@ -1,7 +1,7 @@
 "use strict";
 
 // Hope this works!
-function uuid() {
+export function uuid() {
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
@@ -55,7 +55,7 @@ function uuid() {
 // This gets rid of any confusion around motion detection and multiple users
 // The motion detector is just another user who can let the hallway know it's being used, but is not responsible for turning lights off
 
-async function create(method, address, body) {
+export async function create(method, address, body) {
     var json;
     try {
         const result = await fetch(address, { method, body });
@@ -75,47 +75,47 @@ async function create(method, address, body) {
     throw { body, json };
 }
 
-async function createSensor(connection, body) {
+export async function createSensor(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/sensors`;
     const method = "POST";
 
     return create(method, address, body);
 }
 
-async function createRule(connection, body) {
+export async function createRule(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/rules`;
     const method = "POST";
 
     return create(method, address, body);
 }
 
-async function createResourceLink(connection, body) {
+export async function createResourceLink(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/resourcelinks`;
     const method = "POST";
 
     return create(method, address, body);
 }
 
-async function deleteRule(connection, id) {
+export async function deleteRule(connection, id) {
     const address = `https://${connection.hub}/api/${connection.app}/rules/${id}`;
     const method = "DELETE";
     return fetch(address, { method });
 }
 
-async function deleteResourceLink(connection, id) {
+export async function deleteResourceLink(connection, id) {
     const address = `https://${connection.hub}/api/${connection.app}/resourcelinks/${id}`;
     const method = "DELETE";
     return fetch(address, { method });
 }
 
-async function deleteSensor(connection, id) {
+export async function deleteSensor(connection, id) {
     const address = `https://${connection.hub}/api/${connection.app}/sensors/${id}`;
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 
-async function getCategory(connection, category) {
+export async function getCategory(connection, category) {
     const address = `https://${connection.hub}/api/${connection.app}/${category}`;
 
     var json;
@@ -130,45 +130,50 @@ async function getCategory(connection, category) {
     return json;
 }
 
-async function getAllCategories(connection) {
+export async function getAllCategories(connection) {
     return getCategory(connection, "");
 }
 
 // More useful to have an array of objects
-async function getCategory_(connection, category) {
+export async function getCategory_(connection, category) {
     return Object.entries(await getCategory(connection, category)).map(([id, value]) => { return {id, ...value}; });
 }
 
-async function getRules(connection) {
+export async function getRules(connection) {
     return getCategory_(connection, "rules");
 }
 
-async function getGroups(connection) {
+export async function getGroups(connection) {
     return getCategory_(connection, "groups");
 }
 
-async function getScenes(connection) {
+export async function getScenes(connection) {
     return getCategory_(connection, "scenes");
 }
 
-async function getResourceLinks(connection) {
+export async function getResourceLinks(connection) {
     return getCategory_(connection, "resourcelinks");
 }
 
-async function getSensors(connection) {
+export async function getSensors(connection) {
     return getCategory_(connection, "sensors");
 }
 
-async function getLights(connection) {
+export async function getLights(connection) {
     return getCategory_(connection, "lights");
 }
 
-async function getDimmers(connection) {
+export async function getDimmers(connection) {
     const sensors = await getSensors(connection);
     return sensors.filter(sensor => sensor.productname === "Hue dimmer switch");
 }
 
-async function touchlink(connection) {
+export async function getMotionSensors(connection) {
+    const sensors = await getSensors(connection);
+    return sensors.filter(sensor => sensor.productname === "Hue motion sensor");
+}
+
+export async function touchlink(connection) {
     const address = `https://${connection.hub}/api/${connection.app}/config/`;
     const body = `{"touchlink": true}`;
     const method = "PUT";
@@ -191,7 +196,7 @@ async function touchlink(connection) {
     throw { body, json };
 }
 
-async function deleteAppRules(connection) {
+export async function deleteAppRules(connection) {
     const rules = await getRules(connection);
 
     for (const rule of rules) {
@@ -201,7 +206,7 @@ async function deleteAppRules(connection) {
     }
 }
 
-async function deleteManufacturerSensors(connection, manufacturer) {
+export async function deleteManufacturerSensors(connection, manufacturer) {
     const sensors = await getSensors(connection);
 
     for (const sensor of sensors) {
@@ -211,11 +216,11 @@ async function deleteManufacturerSensors(connection, manufacturer) {
     }
 }
 
-async function deleteAppSensors(connection) {
+export async function deleteAppSensors(connection) {
     return deleteManufacturerSensors(connection, connection.app);
 }
 
-async function deleteAppLinks(connection) {
+export async function deleteAppLinks(connection) {
     const links = await getResourceLinks(connection);
 
     for (const link of links) {
@@ -225,7 +230,7 @@ async function deleteAppLinks(connection) {
     }
 }
 
-async function registerApp(hub, appName, user) {
+export async function registerApp(hub, appName, user) {
     user = user || "";
     const address = `https://${hub}/api/`;
     const body = `{"devicetype": "${appName}#${user}"}`;
@@ -249,8 +254,8 @@ async function registerApp(hub, appName, user) {
     throw { body, json };
 }
 
-async function connect(hub, appName) {
-    const key = "hue-connection";
+export async function connect(hub, appName) {
+    const key = "hue-connection:" + hub;
     const json = localStorage.getItem(key);
     var connection;
     if (json) {
@@ -270,7 +275,7 @@ async function connect(hub, appName) {
 // =============================
 
 
-async function createUserCount(connection, resourceName, userNames) {
+export async function createUserCount(connection, resourceName, userNames) {
     const hub = connection.hub;
     const app = connection.app;
 
@@ -479,7 +484,7 @@ async function createUserCount(connection, resourceName, userNames) {
     return { id, name: resourceName, triggers: [increment, decrement], users, override };
 }
 
-async function deleteUserCount(connection, uc) {
+export async function deleteUserCount(connection, uc) {
 
     for (const rule of uc.override.rules) {
         await deleteRule(connection, rule);
@@ -506,7 +511,7 @@ async function deleteUserCount(connection, uc) {
     await deleteSensor(connection, uc.id);
 }
 
-function statusSensorBody(name, model) {
+export function statusSensorBody(name, model) {
     const body = `{
         "name": "${name}",
         "state": {
@@ -526,7 +531,7 @@ function statusSensorBody(name, model) {
     return body;
 }
 
-function flagSensorBody(name, model, value) {
+export function flagSensorBody(name, model, value) {
     const body = `{
         "name": "${name}",
         "state": {
@@ -546,7 +551,7 @@ function flagSensorBody(name, model, value) {
     return body;
 }
 
-async function createLinks(connection, name, description, links) {
+export async function createLinks(connection, name, description, links) {
     const body = `{
     "name": "${name}",
     "description": "${description}",
@@ -559,7 +564,7 @@ async function createLinks(connection, name, description, links) {
 }
 
 // zone: { name, power: { enabled, lowpower, off }}
-async function createPowerManagedZone(connection, zone) {
+export async function createPowerManagedZone(connection, zone) {
 
     // A power managed zone has three states: ON(2), LOWPOWER(1), and OFF(0)
     // It also has a separate setting for enabling/disabling standard power management.
@@ -825,7 +830,7 @@ async function createPowerManagedZone(connection, zone) {
     return { sensors: [id, controlID], rules: [fullToLow, fullToLowEnabled, lowToOff, failsafe, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
 }
 
-async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID) {
+export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID) {
 
     async function onDown() {
         const body = `{
@@ -957,5 +962,39 @@ async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneC
         await onLongUp(),
         await offDownWhenOn(),
         await offDownWhenOff()
+    ];
+}
+
+export async function createPowerManagedMotionSensorRules(connection, motionID, zoneID, zoneControlID) {
+    /* No complicated code for turning things off, the zone manages that */
+    async function onMotion() {
+        const body = `{
+            "name": "Motion zone lights on full power",
+            "conditions": [
+                {
+                    "address": "/sensors/${motionID}/state/presence",
+                    "operator": "eq",
+                    "value": "true"
+                 },
+                 {
+                    "address": "/sensors/${motionID}/state/lastupdated",
+                    "operator": "dx"
+                 }
+            ],
+            "actions": [
+                {
+                    "address": "/sensors/${zoneID}/state",
+                    "method": "PUT",
+                    "body": {
+                        "status": 2
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    return [
+        await onMotion()
     ];
 }
