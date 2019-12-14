@@ -79,6 +79,7 @@ There are a few tricky cases to deal with when using a motion detector and switc
 3. Presence is detected, user turns light off with switch, changes mind and tries to turn on with motion
 4. Presence is not detected, user turns light off with switch, changes mind and tries to turn on with motion
 
+Comments:
 1. Nothing to do. Next expected event would be presence == false so no change to lights
 2. Problem. User likely to trigger motion detector.
 3. Problem. Already in presence == true state so no event caused by motion.
