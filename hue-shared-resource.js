@@ -82,6 +82,13 @@ export async function createSensor(connection, body) {
     return create(method, address, body);
 }
 
+export async function createSchedule(connection, body) {
+    const address = `https://${connection.hub}/api/${connection.app}/schedules`;
+    const method = "POST";
+
+    return create(method, address, body);
+}
+
 export async function createRule(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/rules`;
     const method = "POST";
@@ -114,6 +121,11 @@ export async function deleteSensor(connection, id) {
     return fetch(address, { method });
 }
 
+export async function deleteSchedule(connection, id) {
+    const address = `https://${connection.hub}/api/${connection.app}/schedules/${id}`;
+    const method = "DELETE";
+    return fetch(address, { method });
+}
 
 export async function getCategory(connection, category) {
     const address = `https://${connection.hub}/api/${connection.app}/${category}`;
@@ -141,6 +153,10 @@ export async function getCategory_(connection, category) {
 
 export async function getRules(connection) {
     return getCategory_(connection, "rules");
+}
+
+export async function getSchedules(connection) {
+    return getCategory_(connection, "schedules");
 }
 
 export async function getGroups(connection) {
@@ -204,6 +220,20 @@ export async function deleteAppRules(connection) {
             await deleteRule(connection, rule.id);
         }
     }
+}
+
+export async function deleteDescriptionSchedules(connection, description) {
+    const schedules = await getSchedules(connection);
+
+    for (const schedule of schedules) {
+        if (schedule.description === description) {
+            await deleteSchedule(connection, schedule.id);
+        }
+    }
+}
+
+export async function deleteAppSchedules(connection) {
+    return deleteDescriptionSchedules(connection, connection.app);
 }
 
 export async function deleteManufacturerSensors(connection, manufacturer) {
@@ -966,10 +996,32 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 }
 
 export async function createPowerManagedMotionSensorRules(connection, motionID, zoneID, zoneControlID) {
-    /* No complicated code for turning things off, the zone manages that */
-    async function onMotion() {
+    /* The motion sensor doesn't update itself unless something changes so to get periodic events we need to add them on the hub. We only need periodic events when there is movement, so we schedule a check every X seconds. The period should be shorter than any timeouts and long enough to exit the room without retriggering the motion sensor. */
+
+    async function createTickSchedule(triggerID) {
+        // Don't forget to use full path including whitelisted app name for schedules
+        // "autodelete": false is not available for a repeating schedule
         const body = `{
-            "name": "Motion zone lights on full power",
+            "name": "Motion Sensor Tick",
+            "description": "${connection.app}",
+            "command": {
+                "address": "/api/${connection.app}/sensors/${triggerID}/state",
+                "method": "PUT",
+                "body": {
+                    "flag": true
+                }
+            },
+            "status": "disabled",
+            "recycle": false,
+            "localtime": "R/PT00:00:02"
+        }`;
+        
+        return createSchedule(connection, body);
+    }
+
+    async function onMotion(scheduleID) {
+        const body = `{
+            "name": "Motion: ON",
             "conditions": [
                 {
                     "address": "/sensors/${motionID}/state/presence",
@@ -988,13 +1040,146 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
                     "body": {
                         "status": 2
                     }
+                },
+                {
+                    "address": "/schedules/${scheduleID}",
+                    "method": "PUT",
+                    "body": {
+                        "status": "enabled"
+                    }
                 }
             ]
         }`;
         return createRule(connection, body);
     }
 
+    async function offMotion(scheduleID) {
+        const body = `{
+            "name": "Motion: OFF",
+            "conditions": [
+                {
+                    "address": "/sensors/${motionID}/state/presence",
+                    "operator": "eq",
+                    "value": "false"
+                 },
+                 {
+                    "address": "/sensors/${motionID}/state/lastupdated",
+                    "operator": "dx"
+                 }
+            ],
+            "actions": [
+                {
+                    "address": "/schedules/${scheduleID}",
+                    "method": "PUT",
+                    "body": {
+                        "status": "disabled"
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function manualOff() {
+        const body = `{
+            "name": "Motion: MANUAL OFF",
+            "conditions": [
+                 {
+                    "address": "/sensors/${zoneID}/state/status",
+                    "operator": "eq",
+                    "value": "0"
+                 }
+            ],
+            "actions": [
+                {
+                    "address": "/sensors/${motionID}/config",
+                    "method": "PUT",
+                    "body": {
+                        "on": false
+                    }
+                },
+                {
+                    "address": "/schedules/${scheduleID}",
+                    "method": "PUT",
+                    "body": {
+                        "status": "disabled"
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function manualOffDelayed() {
+        const body = `{
+            "name": "Motion: MANUAL OFF DDX",
+            "conditions": [
+                 {
+                    "address": "/sensors/${zoneID}/state/status",
+                    "operator": "eq",
+                    "value": "0"
+                 },
+                 {
+                    "address": "/sensors/${zoneID}/state/lastupdated",
+                    "operator": "ddx",
+                    "value": "PT00:00:06"
+                 }
+            ],
+            "actions": [
+                {
+                    "address": "/sensors/${motionID}/config",
+                    "method": "PUT",
+                    "body": {
+                        "on": true
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function onTick(triggerID) {
+        const body = `{
+            "name": "Motion: TICK",
+            "conditions": [
+                {
+                    "address": "/sensors/${motionID}/state/presence",
+                    "operator": "eq",
+                    "value": "true"
+                 },
+                 {
+                    "address": "/sensors/${triggerID}/state/lastupdated",
+                    "operator": "dx"
+                 },
+                 {
+                    "address": "/sensors/${zoneID}/state/status",
+                    "operator": "stable",
+                    "value": "PT00:00:30"
+                 }
+            ],
+            "actions": [
+                {
+                    "address": "/sensors/${zoneID}/state",
+                    "method": "PUT",
+                    "body": {
+                        "status": 2
+                    }
+                }
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+    
+    const body = flagSensorBody("Tick", "Motion sensor tick trigger", false);
+    const triggerID = await createSensor(connection, body);
+    const scheduleID = await createTickSchedule(triggerID);
+
+    // TODO - return all items, resourcelink
     return [
-        await onMotion()
+        await manualOff(),
+        await manualOffDelayed(),
+        await onMotion(scheduleID),
+        await onTick(triggerID),
+        await offMotion(scheduleID),
     ];
 }
