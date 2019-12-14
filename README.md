@@ -79,13 +79,13 @@ There are a few tricky cases to deal with when using a motion detector and switc
 3. Presence is detected, user turns light off with switch, changes mind and tries to turn on with motion
 4. Presence is not detected, user turns light off with switch, changes mind and tries to turn on with motion
 
-C1: Nothing to do. Next expected event would be presence == false so no change to lights
-C2: Problem. User likely to trigger motion detector.
-C3: Problem. Already in presence == true state so no event caused by motion.
-C4: Nothing to do. Motion causes a state change from presence == false to presence == true that we can react to.
+1. Nothing to do. Next expected event would be presence == false so no change to lights
+2. Problem. User likely to trigger motion detector.
+3. Problem. Already in presence == true state so no event caused by motion.
+4. Nothing to do. Motion causes a state change from presence == false to presence == true that we can react to.
 
 For C2, we could temporarily turn off the motion detector. The problem is that confounds C4. In addition, it *seems* like the sensor is sensing and using its internal logic even when disabled, so presence can move to true internally, the person can leave the room, the sensor is enabled and immediately reports presence as true because of the timeout (testing to confirm).
 
 For C3, we could manufacture a later event to check for presence. The problem there is that if we fire our event too early, we pick up the delayed reading from the sensor even after the person has left. If we fire the event too late, the user has been waving their arms for ages trying to get the lights to come on.
 
-What we need is for disabling the sensor to reset all its internal timeouts so that it only reports a presence after it comes back on if it actually sees motion after it comes back on. Initial testing suggests its not doing that though.
+What we need is for disabling the sensor to reset all its internal timeouts so that it only reports a presence after it comes back on if it actually sees motion after it comes back on. Initial testing suggests its not doing that though. Perhaps we can manually set the presence state of the motion sensor to false on the bridge from a rule? Haven't tried that. If that's allowed, it could work if we don't use presence == false as a trigger in any rules (which we don't).
