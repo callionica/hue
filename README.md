@@ -72,3 +72,20 @@ The Hue motion sensor is really stingy with its events. If you trigger motion, i
 The thing to accept is that the motion detector as exposed by Philips through the API is not a bursty, event-providing device that lets you know each time motion is detected; it's a low information package hiding Philips' own logic that tells you only whether there's a living presence there. It doesn't expose the delay periods used to smooth over its motion detecting foundation, so it's an exercise in frustration trying to treat it like a motion detector when Philips have decided it's a presence sensor.
 
 Because the number of motion detector events is low, for power managed zones, we have to stop thinking of using the motion detector to prolong the timeout to *prevent* a low power state; instead we use the transition into the low power state as the trigger for logic that checks the state of the motion detector and bumps up to full power again if it detects a presence. This is what users do manually with a switch: when they see the lights change in low power mode, they hit the switch to bump it to full power again. The key insight to having things work smoothly is that we delay the visual change triggered by entering the low power state by just 1 second so that any motion detector or other automation has a chance to bump up to full power before users notice the change. This bumping up from low power state to full power state can be handled by any number of switches and motion sensors without coordination between them, so no need for reference counting.
+
+There are a few tricky cases to deal with when using a motion detector and switch in the same room:
+1. Presence is detected, user turns light off with switch and leaves room
+2. Presence is not detected, user turns light off with switch and leaves room
+3. Presence is detected, user turns light off with switch, changes mind and tries to turn on with motion
+4. Presence is not detected, user turns light off with switch, changes mind and tries to turn on with motion
+
+C1: Nothing to do. Next expected event would be presence == false so no change to lights
+C2: Problem. User likely to trigger motion detector.
+C3: Problem. Already in presence == true state so no event caused by motion.
+C4: Nothing to do. Motion causes a state change from presence == false to presence == true that we can react to.
+
+For C2, we could temporarily turn off the motion detector. The problem is that confounds C4. In addition, it *seems* like the sensor is sensing and using its internal logic even when disabled, so presence can move to true internally, the person can leave the room, the sensor is enabled and immediately reports presence as true because of the timeout (testing to confirm).
+
+For C3, we could manufacture a later event to check for presence. The problem there is that if we fire our event too early, we pick up the delayed reading from the sensor even after the person has left. If we fire the event too late, the user has been waving their arms for ages trying to get the lights to come on.
+
+What we need is for disabling the sensor to reset all its internal timeouts so that it only reports a presence after it comes back on if it actually sees motion after it comes back on. Initial testing suggests its not doing that though.
