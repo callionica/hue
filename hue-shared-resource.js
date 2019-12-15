@@ -791,13 +791,7 @@ export async function createPowerManagedZone(connection, zone) {
                 ${isEqual(id, 2)}
             ],
             "actions": [
-                {
-                    "address": "/groups/${zoneID}/action",
-                    "method": "PUT",
-                    "body": {
-                        "scene": "${sceneID}"
-                    }
-                }
+                ${setScene(zoneID, sceneID)}
             ]
         }`;
         return createRule(connection, body);
@@ -814,13 +808,7 @@ export async function createPowerManagedZone(connection, zone) {
                 ${isEqualSince(id, 1, "00:00:01")}
             ],
             "actions": [
-                {
-                    "address": "/groups/${zoneID}/action",
-                    "method": "PUT",
-                    "body": {
-                        "scene": "${sceneID}"
-                    }
-                }
+                ${setScene(zoneID, sceneID)}
             ]
         }`;
         return createRule(connection, body);
