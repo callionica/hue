@@ -7,6 +7,22 @@ export function uuid() {
     );
 }
 
+// Dimmer constants
+const initial_press = 0;
+const repeat = 1;
+const short_release = 2;
+const long_release = 3;
+
+const BTN_ON = 1000;
+const BTN_STAR_UP = 2000;
+const BTN_STAR_DOWN = 3000;
+const BTN_OFF = 4000;
+
+// Power Managed Zone constants
+const PMZ_OFF = 0;
+const PMZ_LOW_POWER = 1;
+const PMZ_FULL_POWER = 2;
+
 // Sleeping 11PM-7AM, Waking 7AM-8AM, Working 8AM-4PM, Relaxing 4PM-11PM
 
 // A power managed zone is:
@@ -165,6 +181,12 @@ export async function getGroups(connection) {
 
 export async function getScenes(connection) {
     return getCategory_(connection, "scenes");
+}
+
+export async function getScene(connection, groupID, name) {
+    const scenes = await getScenes(connection);
+    const result = scenes.filter(scene => scene.group === groupID && scene.name === name)[0].id;
+    return result;
 }
 
 export async function getResourceLinks(connection) {
@@ -412,6 +434,16 @@ function setValue(id, value) {
         "method": "PUT",
         "body": {
             "${store}": ${value}
+        }
+    }`;
+}
+
+function setScene(groupID, sceneID) {
+    return `{
+        "address": "/groups/${groupID}/action",
+        "method": "PUT",
+        "body": {
+            "scene": "${sceneID}"
         }
     }`;
 }
