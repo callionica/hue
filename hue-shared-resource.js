@@ -23,6 +23,12 @@ const PMZ_OFF = 0;
 const PMZ_LOW_POWER = 1;
 const PMZ_FULL_POWER = 2;
 
+// Scene Cycle constants
+const SC_NEXT = 1;        // Move to the next scene without activating it
+const SC_FULL_POWER = 10; // Activate the full power version of the current scene
+const SC_LOW_POWER = 11;  // Activate the low power version of the current scene
+const SC_ACTIVATE = 12;   // Activate the appropriate version of the current scene for the zone's power state
+
 // Sleeping 11PM-7AM, Waking 7AM-8AM, Working 8AM-4PM, Relaxing 4PM-11PM
 
 // A power managed zone is:
@@ -610,46 +616,56 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
 
     const cycleID = await createStatusSensor(connection, "SceneCycle", "SceneCycle");
     const actionsID = await createStatusSensor(connection, "SceneCycle", "SceneCycle.Actions");
-
-    const SC_NEXT = 1; // Move the current position forward
-    // const SC_PREVIOUS = 2; // Move the current position backward
-    const SC_FULL_POWER = 10; // Activate the full power version of the current scene
-    const SC_LOW_POWER = 11; // Activate the low power version of the current scene
-    const SC_ACTIVATE = 12; // Activate the appropriate version of the current scene for the zone's power state
-
+    
     async function createNext(index) {
-        const last = index === cycle.length - 1;
+        const last = (index === cycle.length - 1);
         const body = `{
         "name": "SC: Next",
         "conditions": [
-            ${ isUpdatedAndEqual(actionsID, SC_NEXT)},
-            ${ isEqual(cycleID, index)}
+            ${isUpdatedAndEqual(actionsID, SC_NEXT)},
+            ${isEqual(cycleID, index)}
         ],
-            "actions": [
-                ${ setValue(cycleID, (last ? 0 : index + 1))}
+        "actions": [
+            ${setValue(cycleID, (last ? 0 : index + 1))}
         ]
         } `;
         return createRule(connection, body);
     }
 
     async function createFullPower(item, index) {
+        const sceneID = getScene(connection, groupID, item.fullPower);
         const body = `{
         "name": "SC: Full Power",
         "conditions": [
-            ${ isUpdatedAndEqual(actionsID, SC_FULL_POWER)},
-            ${ isEqual(cycleID, index)}
+            ${isUpdatedAndEqual(actionsID, SC_FULL_POWER)},
+            ${isEqual(cycleID, index)}
         ],
         "actions": [
-            ${ setValue(cycleID, (last ? 0 : index + 1))}
+            ${setScene(groupID, sceneID)}
         ]
         }`;
         return createRule(connection, body);
     }
 
-
+    async function createLowPower(item, index) {
+        const sceneID = getScene(connection, groupID, item.lowPower);
+        const body = `{
+        "name": "SC: Low Power",
+        "conditions": [
+            ${isUpdatedAndEqual(actionsID, SC_LOW_POWER)},
+            ${isEqual(cycleID, index)}
+        ],
+        "actions": [
+            ${setScene(groupID, sceneID)}
+        ]
+        }`;
+        return createRule(connection, body);
+    }
 
     cycle.forEach((item, index) => {
         await createNext(index);
+        await createFullPower(index);
+        await createLowPower(index);
     });
 
     async function createActivateFull() {
