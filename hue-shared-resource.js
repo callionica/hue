@@ -719,10 +719,10 @@ export async function createPowerManagedZone(connection, zone) {
                     "operator": "ddx",
                     "value": "PT${hms}"
                 },
-                ${isEqual(id, 2)}
+                ${isEqual(id, PMZ_FULL_POWER)}
             ],
             "actions": [
-                ${setValue(id, 1)}
+                ${setValue(id, PMZ_LOW_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -738,7 +738,7 @@ export async function createPowerManagedZone(connection, zone) {
                     "operator": "ddx",
                     "value": "PT${hms}"
                 },
-                ${isEqual(id, 2)},
+                ${isEqual(id, PMZ_FULL_POWER)},
                 {
                     "address": "/sensors/${id}/state/status",
                     "operator": "stable",
@@ -746,7 +746,7 @@ export async function createPowerManagedZone(connection, zone) {
                 }
             ],
             "actions": [
-                ${setValue(id, 1)}
+                ${setValue(id, PMZ_LOW_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -757,10 +757,10 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "PMZ: Low power to off",
             "conditions": [
-                ${isEqualSince(id, 1, hms)}
+                ${isEqualSince(id, PMZ_LOW_POWER, hms)}
             ],
             "actions": [
-                ${setValue(id, 0)}
+                ${setValue(id, PMZ_OFF)}
             ]
         }`;
         return createRule(connection, body);
@@ -788,7 +788,7 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "LGT: Zone on full power",
             "conditions": [
-                ${isEqual(id, 2)}
+                ${isEqual(id, PMZ_FULL_POWER)}
             ],
             "actions": [
                 ${setScene(zoneID, sceneID)}
@@ -805,7 +805,7 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "LGT: Zone on low power",
             "conditions": [
-                ${isEqualSince(id, 1, "00:00:01")}
+                ${isEqualSince(id, PMZ_LOW_POWER, "00:00:01")}
             ],
             "actions": [
                 ${setScene(zoneID, sceneID)}
@@ -818,7 +818,7 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "LGT: Zone off",
             "conditions": [
-                ${isUpdatedAndEqual(id, 0)}
+                ${isUpdatedAndEqual(id, PMZ_OFF)}
             ],
             "actions": [
                 {
@@ -883,7 +883,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
                 ${isButton(dimmerID, 1000)}
             ],
             "actions": [
-                ${setValue(zoneID, 2)}
+                ${setValue(zoneID, PMZ_FULL_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -915,7 +915,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
             ],
             "actions": [
                 ${setValue(zoneControlID, true)},
-                ${setValue(zoneID, 0)}
+                ${setValue(zoneID, PMZ_OFF)}
             ]
         }`;
         return createRule(connection, body);
@@ -929,7 +929,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
                 ${isEqual(zoneID, 0)}
             ],
             "actions": [
-                ${setValue(zoneID, 1)}
+                ${setValue(zoneID, PMZ_LOW_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -959,10 +959,10 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
             "name": "MTN: Zone on full power",
             "conditions": [
                 ${isPresent(motionID)},
-                ${isChangedTo(zoneID, 1)}
+                ${isChangedTo(zoneID, PMZ_LOW_POWER)}
             ],
             "actions": [
-                ${setValue(zoneID, 2)}
+                ${setValue(zoneID, PMZ_FULL_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -981,7 +981,7 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
                 ${isUpdated(motionID)}
             ],
             "actions": [
-                ${setValue(zoneID, 2)}
+                ${setValue(zoneID, PMZ_FULL_POWER)}
             ]
         }`;
         return createRule(connection, body);
