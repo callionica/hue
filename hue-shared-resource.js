@@ -148,7 +148,7 @@ export async function getAllCategories(connection) {
 
 // More useful to have an array of objects
 export async function getCategory_(connection, category) {
-    return Object.entries(await getCategory(connection, category)).map(([id, value]) => { return {id, ...value}; });
+    return Object.entries(await getCategory(connection, category)).map(([id, value]) => { return { id, ...value }; });
 }
 
 export async function getRules(connection) {
@@ -304,6 +304,119 @@ export async function connect(hub, appName) {
 
 // =============================
 
+export function statusSensorBody(name, model) {
+    const body = `{
+        "name": "${name}",
+        "state": {
+            "status": 0
+        },
+        "config": {
+            "on": true,
+            "reachable": true
+        },
+        "type": "CLIPGenericStatus",
+        "modelid": "${model}",
+        "manufacturername": "Callionica",
+        "swversion": "1.0",
+        "uniqueid": "${uuid()}",
+        "recycle": false
+    }`;
+    return body;
+}
+
+export function flagSensorBody(name, model, value) {
+    const body = `{
+        "name": "${name}",
+        "state": {
+            "flag": ${value}
+        },
+        "config": {
+            "on": true,
+            "reachable": true
+        },
+        "type": "CLIPGenericFlag",
+        "modelid": "${model}",
+        "manufacturername": "Callionica",
+        "swversion": "1.0",
+        "uniqueid": "${uuid()}",
+        "recycle": false
+    }`;
+    return body;
+}
+
+function isPresent(id) {
+    return `{
+        "address": "/sensors/${id}/state/presence",
+        "operator": "eq",
+        "value": "true"
+    }`;
+}
+
+function isEqual(id, value) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `{
+        "address": "/sensors/${id}/state/${store}",
+        "operator": "eq",
+        "value": "${value}"
+    }`;
+}
+
+function isEqualSince(id, value, hms) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `${isEqual(id, value)},
+    {
+        "address": "/sensors/${id}/state/${store}",
+        "operator": "ddx",
+        "value": "PT${hms}"
+    }`;
+}
+
+function isChanged(id, store) {
+    return `{
+        "address": "/sensors/${id}/state/${store}",
+        "operator": "dx"
+    }`;
+}
+
+function isUpdated(id) {
+    return `{
+        "address": "/sensors/${id}/state/lastupdated",
+        "operator": "dx"
+    }`;
+}
+
+function isButton(id, value) {
+    return `{
+        "address": "/sensors/${id}/state/buttonevent",
+        "operator": "eq",
+        "value": "${value}"
+    },
+    ${isUpdated(id)}`;
+}
+
+function isChangedTo(id, value) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `${isEqual(id, value)},
+    ${isChanged(id, store)}`;
+}
+
+function isUpdatedAndEqual(id, value) {
+    return `${isEqual(id, value)},
+    ${isUpdated(id)}`;
+}
+
+function setValue(id, value) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `{
+        "address": "/sensors/${id}/state",
+        "method": "PUT",
+        "body": {
+            "${store}": ${value}
+        }
+    }`;
+}
+
+// =============================
 
 export async function createUserCount(connection, resourceName, userNames) {
     const hub = connection.hub;
@@ -315,24 +428,11 @@ export async function createUserCount(connection, resourceName, userNames) {
         const body = `{
             "name": "(${resourceName}${oldValue > newValue ? "-" : "+"})",
             "conditions": [
-                {
-                    "address": "/sensors/${triggerID}/state/lastupdated",
-                    "operator": "dx"
-                },
-                {
-                    "address": "/sensors/${countID}/state/status",
-                    "operator": "eq",
-                    "value": "${oldValue}"
-                }
+                ${isUpdated(triggerID)},
+                ${isEqual(countID, oldValue)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${countID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": ${newValue}
-                    }
-                }
+                ${setValue(countID, newValue)}
             ]
         }`;
 
@@ -340,22 +440,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createTriggerSensor(countID, value) {
-        const body = `{
-            "name": "${resourceName}${value > 0 ? "+" : "-"}",
-            "state": {
-                "flag": false
-            },
-            "config": {
-                "on": true,
-                "reachable": true
-            },
-            "type": "CLIPGenericFlag",
-            "modelid": "(User Count Trigger)",
-            "manufacturername": "Callionica",
-            "swversion": "1.0",
-            "uniqueid": "${uuid()}",
-            "recycle": false
-        }`;
+        const body = flagSensorBody(`${resourceName}${value > 0 ? "+" : "-"}`, "(User Count Trigger)", false);
 
         const id = await createSensor(connection, body);
         const rules = [];
@@ -370,23 +455,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createUserCountSensor() {
-        const body = `{
-            "name": "${resourceName}",
-            "state": {
-                "status": 0
-            },
-            "config": {
-                "on": true,
-                "reachable": true
-            },
-            "type": "CLIPGenericStatus",
-            "modelid": "User Count",
-            "manufacturername": "Callionica",
-            "swversion": "1.0",
-            "uniqueid": "${uuid()}",
-            "recycle": false
-        }`;
-
+        const body = statusSensorBody(resourceName, "User Count");
         return createSensor(connection, body);
     }
 
@@ -394,20 +463,10 @@ export async function createUserCount(connection, resourceName, userNames) {
         const body = `{
             "name": "(${userName})",
             "conditions": [
-                {
-                    "address": "/sensors/${userID}/state/flag",
-                    "operator": "eq",
-                    "value": "${value}"
-                }
+                ${isEqual(userID, value)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${triggerID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "flag": true
-                    }
-                }
+                ${setValue(triggerID, true)}
             ]
         }`;
 
@@ -415,23 +474,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createUserSensor(userName, increment, decrement) {
-        const body = `{
-            "name": "${userName}",
-            "state": {
-                "flag": false
-            },
-            "config": {
-                "on": true,
-                "reachable": true
-            },
-            "type": "CLIPGenericFlag",
-            "modelid": "User Count User",
-            "manufacturername": "Callionica",
-            "swversion": "1.0",
-            "uniqueid": "${uuid()}",
-            "recycle": false
-        }`;
-
+        const body = flagSensorBody(userName, "User Count User", false);
         const id = await createSensor(connection, body);
 
         const inc = await createUserRule(id, userName, true, increment.id);
@@ -442,28 +485,12 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createOverrideRule(triggerID, users, value) {
-        const actions = users.map(user => {
-            return `{
-                "address": "/sensors/${user.id}/state",
-                "method": "PUT",
-                "body": {
-                    "flag": ${value}
-                }
-            }`;
-        }).join(",\n");
+        const actions = users.map(user => setValue(user.id, value)).join(",\n");
 
         const body = `{
             "name": "(${resourceName} Override)",
             "conditions": [
-                {
-                    "address": "/sensors/${triggerID}/state/lastupdated",
-                    "operator": "dx"
-                },
-                {
-                    "address": "/sensors/${triggerID}/state/flag",
-                    "operator": "eq",
-                    "value": "${value}"
-                }
+                ${isUpdatedAndEqual(triggerID, value)}
             ],
             "actions": [
                 ${actions}
@@ -474,23 +501,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createOverrideSensor(users) {
-        const body = `{
-            "name": "${resourceName} Override",
-            "state": {
-                "flag": false
-            },
-            "config": {
-                "on": true,
-                "reachable": true
-            },
-            "type": "CLIPGenericFlag",
-            "modelid": "User Count Override",
-            "manufacturername": "Callionica",
-            "swversion": "1.0",
-            "uniqueid": "${uuid()}",
-            "recycle": false
-        }`;
-
+        const body = flagSensorBody(`${resourceName} Override`, "User Count Override", false);
         const id = await createSensor(connection, body);
 
         const rules = [
@@ -541,44 +552,14 @@ export async function deleteUserCount(connection, uc) {
     await deleteSensor(connection, uc.id);
 }
 
-export function statusSensorBody(name, model) {
-    const body = `{
-        "name": "${name}",
-        "state": {
-            "status": 0
-        },
-        "config": {
-            "on": true,
-            "reachable": true
-        },
-        "type": "CLIPGenericStatus",
-        "modelid": "${model}",
-        "manufacturername": "Callionica",
-        "swversion": "1.0",
-        "uniqueid": "${uuid()}",
-        "recycle": false
-    }`;
-    return body;
+export async function createStatusSensor(connection, name, model) {
+    const body = statusSensorBody(name, model)
+    return createSensor(connection, body);
 }
 
-export function flagSensorBody(name, model, value) {
-    const body = `{
-        "name": "${name}",
-        "state": {
-            "flag": ${value}
-        },
-        "config": {
-            "on": true,
-            "reachable": true
-        },
-        "type": "CLIPGenericFlag",
-        "modelid": "${model}",
-        "manufacturername": "Callionica",
-        "swversion": "1.0",
-        "uniqueid": "${uuid()}",
-        "recycle": false
-    }`;
-    return body;
+export async function createFlagSensor(connection, name, model, value) {
+    const body = flagSensorBody(name, model, value)
+    return createSensor(connection, body);
 }
 
 export async function createLinks(connection, name, description, links) {
@@ -593,7 +574,24 @@ export async function createLinks(connection, name, description, links) {
     return createResourceLink(connection, body);
 }
 
-// zone: { name, power: { enabled, lowpower, off }}
+export async function createSceneCycle(connection, zoneID, cycle) {
+    cycle = cycle || [
+        { period: "T08:00:00/T23:00:00", fullPower: "Bright", lowPower: "Dimmed" },
+        { fullPower: "Reading", lowPower: "Dimmed" },
+        { period: "T23:00:00/T08:00:00", fullPower: "Nightlight", lowPower: "Nightlight" },
+    ];
+
+    const id = await createStatusSensor(connection, "SceneCycle", "SceneCycle");
+    const triggerNext = await createFlagSensor(connection, "SceneCycle.Next", "SceneCycle.Next");
+    const triggerFullPower = await createFlagSensor(connection, "SceneCycle.FullPower", "SceneCycle.FullPower");
+    const triggerLowPower = await createFlagSensor(connection, "SceneCycle.LowPower", "SceneCycle.LowPower");
+
+    for (const item of cycle) {
+
+    }
+}
+
+// zone: { name, power: { enabled, fullPower, lowPower, failsafe }}
 export async function createPowerManagedZone(connection, zone) {
 
     // A power managed zone has three states: ON(2), LOWPOWER(1), and OFF(0)
@@ -618,32 +616,18 @@ export async function createPowerManagedZone(connection, zone) {
     // 2. A rule: status == on(2) and lastupdate ddx A, change status to lowpower(1)
     async function fullPowerToLowPower(id, controlID, hms) {
         const body = `{
-            "name": "Full power to low power",
+            "name": "PMZ: Full power to low power",
             "conditions": [
-                {
-                    "address": "/sensors/${controlID}/state/flag",
-                    "operator": "eq",
-                    "value": "true"
-                },
+                ${isEqual(controlID, true)},
                 {
                     "address": "/sensors/${id}/state/lastupdated",
                     "operator": "ddx",
                     "value": "PT${hms}"
                 },
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "eq",
-                    "value": "2"
-                }
+                ${isEqual(id, 2)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${id}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 1
-                    }
-                }
+                ${setValue(id, 1)}
             ]
         }`;
         return createRule(connection, body);
@@ -651,23 +635,15 @@ export async function createPowerManagedZone(connection, zone) {
 
     async function fullPowerToLowPowerEnablement(id, controlID, hms) {
         const body = `{
-            "name": "Full power to low power",
+            "name": "PMZ: Full power to low power",
             "conditions": [
-                {
-                    "address": "/sensors/${controlID}/state/flag",
-                    "operator": "eq",
-                    "value": "true"
-                },
+                ${isEqual(controlID, true)},
                 {
                     "address": "/sensors/${controlID}/state/flag",
                     "operator": "ddx",
                     "value": "PT${hms}"
                 },
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "eq",
-                    "value": "2"
-                },
+                ${isEqual(id, 2)},
                 {
                     "address": "/sensors/${id}/state/status",
                     "operator": "stable",
@@ -675,13 +651,7 @@ export async function createPowerManagedZone(connection, zone) {
                 }
             ],
             "actions": [
-                {
-                    "address": "/sensors/${id}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 1
-                    }
-                }
+                ${setValue(id, 1)}
             ]
         }`;
         return createRule(connection, body);
@@ -690,27 +660,12 @@ export async function createPowerManagedZone(connection, zone) {
     // 3. A rule: status == lowpower(1) and status ddx B, change status to off(0)
     async function lowPowerToOff(id, controlID, hms) {
         const body = `{
-            "name": "Low power to off",
+            "name": "PMZ: Low power to off",
             "conditions": [
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "ddx",
-                    "value": "PT${hms}"
-                },
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "eq",
-                    "value": "1"
-                }
+                ${isEqualSince(id, 1, hms)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${id}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 0
-                    }
-                }
+                ${setValue(id, 0)}
             ]
         }`;
         return createRule(connection, body);
@@ -718,27 +673,17 @@ export async function createPowerManagedZone(connection, zone) {
 
     async function createFailsafeRule(controlID, hms) {
         const body = `{
-            "name": "Enable power management",
+            "name": "PMZ: Enable power management",
             "conditions": [
                 {
                     "address": "/sensors/${controlID}/state/lastupdated",
                     "operator": "ddx",
                     "value": "PT${hms}"
                 },
-                {
-                    "address": "/sensors/${controlID}/state/flag",
-                    "operator": "eq",
-                    "value": "false"
-                }
+                ${isEqual(controlID, false)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${controlID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "flag": true
-                    }
-                }
+                ${setValue(controlID, true)}
             ]
         }`;
         return createRule(connection, body);
@@ -746,13 +691,9 @@ export async function createPowerManagedZone(connection, zone) {
 
     async function createFullPowerRule(id, zoneID, sceneID) {
         const body = `{
-            "name": "Turn zone to full power",
+            "name": "LGT: Zone on full power",
             "conditions": [
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "eq",
-                    "value": "2"
-                }
+                ${isEqual(id, 2)}
             ],
             "actions": [
                 {
@@ -767,15 +708,15 @@ export async function createPowerManagedZone(connection, zone) {
         return createRule(connection, body);
     }
 
+    // A 1 second delay allows automations to kick in without the user noticing.
+    // For example, presence sensors can pull the zone back to full power
+    // using the transition to low power as the trigger for the rule,
+    // but if we didn't have a delay here, the lights could flicker.
     async function createLowPowerRule(id, zoneID, sceneID) {
         const body = `{
-            "name": "Turn zone to low power",
+            "name": "LGT: Zone on low power",
             "conditions": [
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "eq",
-                    "value": "1"
-                }
+                ${isEqualSince(id, 1, "00:00:01")}
             ],
             "actions": [
                 {
@@ -792,17 +733,9 @@ export async function createPowerManagedZone(connection, zone) {
 
     async function createOffRule(id, zoneID) {
         const body = `{
-            "name": "Turn zone off",
+            "name": "LGT: Zone off",
             "conditions": [
-                {
-                    "address": "/sensors/${id}/state/lastupdated",
-                    "operator": "dx"
-                },
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "eq",
-                    "value": "0"
-                }
+                ${isUpdatedAndEqual(id, 0)}
             ],
             "actions": [
                 {
@@ -818,12 +751,10 @@ export async function createPowerManagedZone(connection, zone) {
     }
 
     // Power management automatically moves a zone from full power (2) to low power (1) to off (0)
-    const body = statusSensorBody(zone.name, "Power Managed Zone");
-    const id = await createSensor(connection, body);
+    const id = await createStatusSensor(connection, zone.name, "Power Managed Zone");
 
     // Power management can be enabled/disabled for each zone
-    const controlBody = flagSensorBody(zone.name, "Power Management Enabled", zone.power.enabled)
-    const controlID = await createSensor(connection, controlBody);
+    const controlID = await createFlagSensor(connection, zone.name, "Power Management Enabled", zone.power.enabled);
 
     // The power switching rules
     const fullToLow = await fullPowerToLowPower(id, controlID, zone.power.fullPower);
@@ -838,7 +769,7 @@ export async function createPowerManagedZone(connection, zone) {
     const fullPowerScene = scenes.filter(scene => scene.group === zone.id && scene.name === zone.power.fullPowerScene)[0].id;
 
     const lowPowerScene = scenes.filter(scene => scene.group === zone.id && scene.name === zone.power.lowPowerScene)[0].id;
-    
+
     const fullPowerRule = await createFullPowerRule(id, zone.id, fullPowerScene);
     const lowPowerRule = await createLowPowerRule(id, zone.id, lowPowerScene);
     const offRule = await createOffRule(id, zone.id);
@@ -851,7 +782,7 @@ export async function createPowerManagedZone(connection, zone) {
         `/rules/${fullToLowEnabled}`,
         `/rules/${lowToOff}`,
         `/rules/${failsafe}`,
-        
+
         `/rules/${fullPowerRule}`,
         `/rules/${lowPowerRule}`,
         `/rules/${offRule}`,
@@ -864,26 +795,12 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
     async function onDown() {
         const body = `{
-            "name": "Dimmer zone lights on full power",
+            "name": "DMR: Zone on full power",
             "conditions": [
-                {
-                    "address": "/sensors/${dimmerID}/state/buttonevent",
-                    "operator": "eq",
-                    "value": "1000"
-                 },
-                 {
-                    "address": "/sensors/${dimmerID}/state/lastupdated",
-                    "operator": "dx"
-                 }
+                ${isButton(dimmerID, 1000)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${zoneID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 2
-                    }
-                }
+                ${setValue(zoneID, 2)}
             ]
         }`;
         return createRule(connection, body);
@@ -891,26 +808,12 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
     async function onLongUp() {
         const body = `{
-            "name": "Dimmer power management disabled",
+            "name": "DMR: Power management disabled",
             "conditions": [
-                {
-                    "address": "/sensors/${dimmerID}/state/buttonevent",
-                    "operator": "eq",
-                    "value": "1003"
-                 },
-                 {
-                    "address": "/sensors/${dimmerID}/state/lastupdated",
-                    "operator": "dx"
-                 }
+                ${isButton(dimmerID, 1003)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${zoneControlID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "flag": false
-                    }
-                }
+                ${setValue(zoneControlID, false)}
             ]
         }`;
         return createRule(connection, body);
@@ -918,38 +821,18 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
     async function offDownWhenOn() {
         const body = `{
-            "name": "Dimmer zone lights off",
+            "name": "DMR: Zone off; mngmnt enabled",
             "conditions": [
+                ${isButton(dimmerID, 4000)},
                 {
-                    "address": "/sensors/${dimmerID}/state/buttonevent",
-                    "operator": "eq",
-                    "value": "4000"
-                 },
-                 {
-                    "address": "/sensors/${dimmerID}/state/lastupdated",
-                    "operator": "dx"
-                 },
-                 {
                     "address": "/sensors/${zoneID}/state/status",
                     "operator": "gt",
                     "value": "0"
                 }
             ],
             "actions": [
-                {
-                    "address": "/sensors/${zoneControlID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "flag": true
-                    }
-                },
-                {
-                    "address": "/sensors/${zoneID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 0
-                    }
-                }
+                ${setValue(zoneControlID, true)},
+                ${setValue(zoneID, 0)}
             ]
         }`;
         return createRule(connection, body);
@@ -957,31 +840,13 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
     async function offDownWhenOff() {
         const body = `{
-            "name": "Dimmer zone lights on low power",
+            "name": "DMR: Zone on low power",
             "conditions": [
-                {
-                    "address": "/sensors/${dimmerID}/state/buttonevent",
-                    "operator": "eq",
-                    "value": "4000"
-                 },
-                 {
-                    "address": "/sensors/${dimmerID}/state/lastupdated",
-                    "operator": "dx"
-                 },
-                 {
-                    "address": "/sensors/${zoneID}/state/status",
-                    "operator": "eq",
-                    "value": "0"
-                }
+                ${isButton(dimmerID, 4000)},
+                ${isEqual(zoneID, 0)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${zoneID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 1
-                    }
-                }
+                ${setValue(zoneID, 1)}
             ]
         }`;
         return createRule(connection, body);
@@ -995,191 +860,53 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
     ];
 }
 
+
 export async function createPowerManagedMotionSensorRules(connection, motionID, zoneID, zoneControlID) {
-    /* The motion sensor doesn't update itself unless something changes so to get periodic events we need to add them on the hub. We only need periodic events when there is movement, so we schedule a check every X seconds. The period should be shorter than any timeouts and long enough to exit the room without retriggering the motion sensor. */
+    /*
+    The Philips motion sensor is a presence sensor that only updates itself when
+    state.presence changes. This is power efficient, but it does not give continuous indication of motion events, so best not to treat it like it does. Our approach is to detect the zone's power state, and just as a user would click the switch when the lights dim, bump the power state back to full power if presence is detected. 
+    */
 
-    async function createTickSchedule(triggerID) {
-        // Don't forget to use full path including whitelisted app name for schedules
-        // "autodelete": false is not available for a repeating schedule
+    /*
+    When zone transitions to low power, bump to full power if there's someone present.
+    Note that we don't bump a zone to full power when its power state has transitioned to OFF(0).
+    */
+    async function onLowPower() {
         const body = `{
-            "name": "Motion Sensor Tick",
-            "description": "${connection.app}",
-            "command": {
-                "address": "/api/${connection.app}/sensors/${triggerID}/state",
-                "method": "PUT",
-                "body": {
-                    "flag": true
-                }
-            },
-            "status": "disabled",
-            "recycle": false,
-            "localtime": "R/PT00:00:02"
-        }`;
-        
-        return createSchedule(connection, body);
-    }
-
-    async function onMotion(scheduleID) {
-        const body = `{
-            "name": "Motion: ON",
+            "name": "MTN: Zone on full power",
             "conditions": [
-                {
-                    "address": "/sensors/${motionID}/state/presence",
-                    "operator": "eq",
-                    "value": "true"
-                 },
-                 {
-                    "address": "/sensors/${motionID}/state/lastupdated",
-                    "operator": "dx"
-                 }
+                ${isPresent(motionID)},
+                ${isChangedTo(zoneID, 1)}
             ],
             "actions": [
-                {
-                    "address": "/sensors/${zoneID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 2
-                    }
-                },
-                {
-                    "address": "/schedules/${scheduleID}",
-                    "method": "PUT",
-                    "body": {
-                        "status": "enabled"
-                    }
-                }
+                ${setValue(zoneID, 2)}
             ]
         }`;
         return createRule(connection, body);
     }
 
-    async function offMotion(scheduleID) {
+    /*
+    When presence is detected, bump to full power or preserve at full power.
+    Note that we bump any zone power state when presence arrives including turning on the lights.
+    It might be a useful option for the motion detector to keep the lights on, but not turn them on (in that case, add a condition for zone state.status gt 0).
+    */
+    async function onPresence() {
         const body = `{
-            "name": "Motion: OFF",
+            "name": "MTN: Zone on full power",
             "conditions": [
-                {
-                    "address": "/sensors/${motionID}/state/presence",
-                    "operator": "eq",
-                    "value": "false"
-                 },
-                 {
-                    "address": "/sensors/${motionID}/state/lastupdated",
-                    "operator": "dx"
-                 }
+                ${isPresent(motionID)},
+                ${isUpdated(motionID)}
             ],
             "actions": [
-                {
-                    "address": "/schedules/${scheduleID}",
-                    "method": "PUT",
-                    "body": {
-                        "status": "disabled"
-                    }
-                }
+                ${setValue(zoneID, 2)}
             ]
         }`;
         return createRule(connection, body);
     }
-
-    async function manualOff() {
-        const body = `{
-            "name": "Motion: MANUAL OFF",
-            "conditions": [
-                 {
-                    "address": "/sensors/${zoneID}/state/status",
-                    "operator": "eq",
-                    "value": "0"
-                 }
-            ],
-            "actions": [
-                {
-                    "address": "/sensors/${motionID}/config",
-                    "method": "PUT",
-                    "body": {
-                        "on": false
-                    }
-                },
-                {
-                    "address": "/schedules/${scheduleID}",
-                    "method": "PUT",
-                    "body": {
-                        "status": "disabled"
-                    }
-                }
-            ]
-        }`;
-        return createRule(connection, body);
-    }
-
-    async function manualOffDelayed() {
-        const body = `{
-            "name": "Motion: MANUAL OFF DDX",
-            "conditions": [
-                 {
-                    "address": "/sensors/${zoneID}/state/status",
-                    "operator": "eq",
-                    "value": "0"
-                 },
-                 {
-                    "address": "/sensors/${zoneID}/state/lastupdated",
-                    "operator": "ddx",
-                    "value": "PT00:00:06"
-                 }
-            ],
-            "actions": [
-                {
-                    "address": "/sensors/${motionID}/config",
-                    "method": "PUT",
-                    "body": {
-                        "on": true
-                    }
-                }
-            ]
-        }`;
-        return createRule(connection, body);
-    }
-
-    async function onTick(triggerID) {
-        const body = `{
-            "name": "Motion: TICK",
-            "conditions": [
-                {
-                    "address": "/sensors/${motionID}/state/presence",
-                    "operator": "eq",
-                    "value": "true"
-                 },
-                 {
-                    "address": "/sensors/${triggerID}/state/lastupdated",
-                    "operator": "dx"
-                 },
-                 {
-                    "address": "/sensors/${zoneID}/state/status",
-                    "operator": "stable",
-                    "value": "PT00:00:30"
-                 }
-            ],
-            "actions": [
-                {
-                    "address": "/sensors/${zoneID}/state",
-                    "method": "PUT",
-                    "body": {
-                        "status": 2
-                    }
-                }
-            ]
-        }`;
-        return createRule(connection, body);
-    }
-    
-    const body = flagSensorBody("Tick", "Motion sensor tick trigger", false);
-    const triggerID = await createSensor(connection, body);
-    const scheduleID = await createTickSchedule(triggerID);
 
     // TODO - return all items, resourcelink
     return [
-        await manualOff(),
-        await manualOffDelayed(),
-        await onMotion(scheduleID),
-        await onTick(triggerID),
-        await offMotion(scheduleID),
+        await onLowPower(),
+        await onPresence(),
     ];
 }
