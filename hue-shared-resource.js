@@ -304,7 +304,7 @@ export async function connect(hub, appName) {
 
 // =============================
 
-export function statusSensorBody(name, model) {
+function statusSensorBody(name, model) {
     const body = `{
         "name": "${name}",
         "state": {
@@ -324,7 +324,7 @@ export function statusSensorBody(name, model) {
     return body;
 }
 
-export function flagSensorBody(name, model, value) {
+function flagSensorBody(name, model, value) {
     const body = `{
         "name": "${name}",
         "state": {
@@ -440,9 +440,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createTriggerSensor(countID, value) {
-        const body = flagSensorBody(`${resourceName}${value > 0 ? "+" : "-"}`, "(User Count Trigger)", false);
-
-        const id = await createSensor(connection, body);
+        const id = await createFlagSensor(connection, `${resourceName}${value > 0 ? "+" : "-"}`, "(User Count Trigger)", false);
         const rules = [];
         for (var i = 0; i < maximumUserCount; ++i) {
             const oldValue = (value > 0) ? i : i - value;
@@ -455,8 +453,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createUserCountSensor() {
-        const body = statusSensorBody(resourceName, "User Count");
-        return createSensor(connection, body);
+        return createStatusSensor(connection, resourceName, "User Count");
     }
 
     async function createUserRule(userID, userName, value, triggerID) {
@@ -474,8 +471,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createUserSensor(userName, increment, decrement) {
-        const body = flagSensorBody(userName, "User Count User", false);
-        const id = await createSensor(connection, body);
+        const id = await createFlagSensor(connection, userName, "User Count User", false);
 
         const inc = await createUserRule(id, userName, true, increment.id);
         const dec = await createUserRule(id, userName, false, decrement.id);
@@ -501,8 +497,7 @@ export async function createUserCount(connection, resourceName, userNames) {
     }
 
     async function createOverrideSensor(users) {
-        const body = flagSensorBody(`${resourceName} Override`, "User Count Override", false);
-        const id = await createSensor(connection, body);
+        const id = await createFlagSensor(connection, `${resourceName} Override`, "User Count Override", false);
 
         const rules = [
             await createOverrideRule(id, users, false),
@@ -864,7 +859,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 export async function createPowerManagedMotionSensorRules(connection, motionID, zoneID, zoneControlID) {
     /*
     The Philips motion sensor is a presence sensor that only updates itself when
-    state.presence changes. This is power efficient, but it does not give continuous indication of motion events, so best not to treat it like it does. Our approach is to detect the zone's power state, and just as a user would click the switch when the lights dim, bump the power state back to full power if presence is detected. 
+    state.presence changes. This is power efficient, but it does not give continuous indication of motion events, so best not to treat it like it does. Our approach is to detect the zone's power state and, just as a user would click the switch when the lights dim, bump the power state back to full power if presence is true. 
     */
 
     /*
