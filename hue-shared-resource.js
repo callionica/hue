@@ -190,6 +190,7 @@ export async function getScenes(connection) {
 }
 
 export async function getScene(connection, groupID, name) {
+    console.log(name);
     const scenes = await getScenes(connection);
     const result = scenes.filter(scene => scene.group === groupID && scene.name === name)[0].id;
     return result;
@@ -610,13 +611,13 @@ export async function createLinks(connection, name, description, links) {
 export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     cycle = cycle || [
         { fullPower: "Bright", lowPower: "Dimmed", period: "T08:00:00/T23:00:00" },
-        { fullPower: "Reading", lowPower: "Dimmed" },
+        { fullPower: "Read", lowPower: "Dimmed" },
         { fullPower: "Nightlight", lowPower: "Nightlight", period: "T23:00:00/T08:00:00" },
     ];
 
-    const cycleID = await createStatusSensor(connection, "SceneCycle", "SceneCycle");
-    const actionsID = await createStatusSensor(connection, "SceneCycle", "SceneCycle.Actions");
-    
+    const cycleID = await createStatusSensor(connection, "Scene Cycle", "SceneCycle");
+    const actionsID = await createStatusSensor(connection, "Scene Cycle Actions", "SceneCycle.Actions");
+
     async function createNext(index) {
         const last = (index === cycle.length - 1);
         const body = `{
@@ -662,11 +663,11 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createRule(connection, body);
     }
 
-    cycle.forEach((item, index) => {
+    for (const [index, item] of cycle.entries()) {
         await createNext(index);
-        await createFullPower(index);
-        await createLowPower(index);
-    });
+        await createFullPower(item, index);
+        await createLowPower(item, index);
+    }
 
     async function createActivateFull() {
         const body = `{
@@ -699,7 +700,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     await createActivateFull();
     await createActivateLow();
 
-    return { sensors: [cycleID, actionsID] };
+    return { cycle: cycleID, actions: actionsID };
 }
 
 // zone: { name, power: { enabled, fullPower, lowPower, failsafe }}
@@ -800,14 +801,14 @@ export async function createPowerManagedZone(connection, zone) {
         return createRule(connection, body);
     }
 
-    async function createFullPowerRule(id, zoneID, sceneID) {
+    async function createFullPowerRule(id, sceneCycle) {
         const body = `{
             "name": "LGT: Zone on full power",
             "conditions": [
                 ${isEqual(id, PMZ_FULL_POWER)}
             ],
             "actions": [
-                ${setScene(zoneID, sceneID)}
+                ${setValue(sceneCycle.actions, SC_FULL_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -817,14 +818,14 @@ export async function createPowerManagedZone(connection, zone) {
     // For example, presence sensors can pull the zone back to full power
     // using the transition to low power as the trigger for the rule,
     // but if we didn't have a delay here, the lights could flicker.
-    async function createLowPowerRule(id, zoneID, sceneID) {
+    async function createLowPowerRule(id, sceneCycle) {
         const body = `{
             "name": "LGT: Zone on low power",
             "conditions": [
                 ${isEqualSince(id, PMZ_LOW_POWER, "00:00:01")}
             ],
             "actions": [
-                ${setScene(zoneID, sceneID)}
+                ${setValue(sceneCycle.actions, SC_LOW_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -863,14 +864,12 @@ export async function createPowerManagedZone(connection, zone) {
     // Reenable power management if off for too long
     const failsafe = await createFailsafeRule(controlID, zone.power.failsafe);
 
+    // Create a scene cycle
+    const sceneCycle = await createSceneCycle(connection, zone.id, id); // TODO
+
     // Visualize power states
-    const scenes = await getScenes(connection);
-    const fullPowerScene = scenes.filter(scene => scene.group === zone.id && scene.name === zone.power.fullPowerScene)[0].id;
-
-    const lowPowerScene = scenes.filter(scene => scene.group === zone.id && scene.name === zone.power.lowPowerScene)[0].id;
-
-    const fullPowerRule = await createFullPowerRule(id, zone.id, fullPowerScene);
-    const lowPowerRule = await createLowPowerRule(id, zone.id, lowPowerScene);
+    const fullPowerRule = await createFullPowerRule(id, sceneCycle);
+    const lowPowerRule = await createLowPowerRule(id, sceneCycle);
     const offRule = await createOffRule(id, zone.id);
 
     const rl = await createLinks(connection, zone.name, "Power Managed Zone. Turns off after period of time.", [
