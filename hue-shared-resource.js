@@ -634,7 +634,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     }
 
     async function createFullPower(item, index) {
-        const sceneID = getScene(connection, groupID, item.fullPower);
+        const sceneID = await getScene(connection, groupID, item.fullPower);
         const body = `{
         "name": "SC: Full Power",
         "conditions": [
@@ -649,7 +649,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     }
 
     async function createLowPower(item, index) {
-        const sceneID = getScene(connection, groupID, item.lowPower);
+        const sceneID = await getScene(connection, groupID, item.lowPower);
         const body = `{
         "name": "SC: Low Power",
         "conditions": [
