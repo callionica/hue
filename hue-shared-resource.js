@@ -611,7 +611,7 @@ export async function createLinks(connection, name, description, links) {
 export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     cycle = cycle || [
         { fullPower: "Bright", lowPower: "Dimmed", period: "T08:00:00/T23:00:00" },
-        { fullPower: "Read", lowPower: "Dimmed" },
+        { fullPower: "Relax", lowPower: "Dimmed" },
         { fullPower: "Nightlight", lowPower: "Nightlight", period: "T23:00:00/T08:00:00" },
     ];
 
@@ -627,7 +627,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
             ${isEqual(cycleID, index)}
         ],
         "actions": [
-            ${setValue(cycleID, (last ? 0 : index + 1))}
+            ${setValue(cycleID, (last ? 0 : index + 1))},
+            ${setValue(actionsID, SC_ACTIVATE)}
         ]
         } `;
         return createRule(connection, body);
@@ -673,11 +674,11 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Activate",
         "conditions": [
-            ${ isUpdatedAndEqual(actionsID, SC_ACTIVATE)},
-            ${ isEqual(zoneID, PMZ_FULL_POWER)}
+            ${isUpdatedAndEqual(actionsID, SC_ACTIVATE)},
+            ${isEqual(zoneID, PMZ_FULL_POWER)}
         ],
         "actions": [
-            ${ setValue(actionsID, SC_FULL_POWER)}
+            ${setValue(actionsID, SC_FULL_POWER)}
         ]
         } `;
         return createRule(connection, body);
@@ -691,7 +692,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
             ${ isEqual(zoneID, PMZ_LOW_POWER)}
         ],
         "actions": [
-            ${ setValue(actionsID, SC_LOW_POWER)}
+            ${setValue(actionsID, SC_LOW_POWER)}
         ]
         } `;
         return createRule(connection, body);
@@ -886,16 +887,16 @@ export async function createPowerManagedZone(connection, zone) {
         `/rules/${offRule}`,
     ]);
 
-    return { sensors: [id, controlID], rules: [fullToLow, fullToLowEnabled, lowToOff, failsafe, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
+    return { sceneCycle, sensors: [id, controlID], rules: [fullToLow, fullToLowEnabled, lowToOff, failsafe, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
 }
 
-export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID) {
+export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID, sceneCycle) {
 
     async function onDown() {
         const body = `{
             "name": "DMR: Zone on full power",
             "conditions": [
-                ${isButton(dimmerID, 1000)}
+                ${isButton(dimmerID, BTN_ON + initial_press)}
             ],
             "actions": [
                 ${setValue(zoneID, PMZ_FULL_POWER)}
@@ -908,10 +909,23 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         const body = `{
             "name": "DMR: Power management disabled",
             "conditions": [
-                ${isButton(dimmerID, 1003)}
+                ${isButton(dimmerID, BTN_ON + long_release)}
             ],
             "actions": [
                 ${setValue(zoneControlID, false)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function starUpShortUp() {
+        const body = `{
+            "name": "DMR: Next scene",
+            "conditions": [
+                ${isButton(dimmerID, BTN_STAR_UP + short_release)}
+            ],
+            "actions": [
+                ${setValue(sceneCycle.actions, SC_NEXT)}
             ]
         }`;
         return createRule(connection, body);
@@ -921,7 +935,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         const body = `{
             "name": "DMR: Zone off; mngmnt enabled",
             "conditions": [
-                ${isButton(dimmerID, 4000)},
+                ${isButton(dimmerID, BTN_OFF + initial_press)},
                 {
                     "address": "/sensors/${zoneID}/state/status",
                     "operator": "gt",
@@ -940,7 +954,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         const body = `{
             "name": "DMR: Zone on low power",
             "conditions": [
-                ${isButton(dimmerID, 4000)},
+                ${isButton(dimmerID, BTN_OFF + initial_press)},
                 ${isEqual(zoneID, 0)}
             ],
             "actions": [
@@ -954,7 +968,8 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         await onDown(),
         await onLongUp(),
         await offDownWhenOn(),
-        await offDownWhenOff()
+        await offDownWhenOff(),
+        await starUpShortUp(),
     ];
 }
 
