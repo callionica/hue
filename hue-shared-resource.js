@@ -24,7 +24,7 @@ const PMZ_LOW_POWER = 1;
 const PMZ_FULL_POWER = 2;
 
 // Scene Cycle constants
-const SC_NEXT = 1001;        // Move to the next scene without activating it
+const SC_NEXT = 1001;        // Move to the next scene and activate it
 const SC_OFF = 2000 + PMZ_OFF;              // Turn off the lights
 const SC_LOW_POWER = 2000 + PMZ_LOW_POWER;  // Activate the low power version of the current scene
 const SC_FULL_POWER = 2000 + PMZ_FULL_POWER;// Activate the full power version of the current scene
@@ -611,9 +611,9 @@ export async function createLinks(connection, name, description, links) {
 
 export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     cycle = cycle || [
-        { fullPower: "Bright", lowPower: "Dimmed", period: "T08:00:00/T23:00:00" },
+        { fullPower: "Bright", lowPower: "Dimmed", auto: "08:00:00" },
         { fullPower: "Relax", lowPower: "Dimmed" },
-        { fullPower: "Nightlight", lowPower: "Nightlight", period: "T23:00:00/T08:00:00" },
+        { fullPower: "Nightlight", lowPower: "Nightlight", auto: "23:00:00" },
     ];
 
     const cycleID = await createStatusSensor(connection, "Scene Cycle", "SceneCycle");
@@ -628,8 +628,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
             ${isEqual(cycleID, index)}
         ],
         "actions": [
-            ${setValue(cycleID, (last ? 0 : index + 1))},
-            ${setValue(actionsID, SC_ACTIVATE)}
+            ${setValue(cycleID, (last ? 0 : index + 1))}
         ]
         } `;
         return createRule(connection, body);
@@ -665,10 +664,27 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createRule(connection, body);
     }
 
+    /*async function createAuto(index, auto) {
+        const body = `{
+        "name": "SC: Time-based",
+        "description": "${connection.app}",
+        "recycle": false,
+        "localtime": "W127/T${auto}",
+        "command": [
+            ${setValue(cycleID, index)},
+            ${setValue(actionsID, SC_ACTIVATE)}
+        ]
+        }`;
+        return createSchedule(connection, body);
+    }*/
+
     for (const [index, item] of cycle.entries()) {
         await createNext(index);
         await createFullPower(item, index);
         await createLowPower(item, index);
+      /*  if (item.auto) {
+            await createAuto(index, item.auto);
+        }*/
     }
 
     async function createActivateFull() {
@@ -718,9 +734,23 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createRule(connection, body);
     }
 
+    async function createUpdate(index) {
+        const body = `{
+        "name": "SC: Update",
+        "conditions": [
+            ${isUpdated(cycleID)}
+        ],
+        "actions": [
+            ${setValue(actionsID, SC_ACTIVATE)}
+        ]
+        } `;
+        return createRule(connection, body);
+    }
+
     await createActivateFull();
     await createActivateLow();
     await createOff();
+    await createUpdate();
 
     return { cycle: cycleID, actions: actionsID };
 }
