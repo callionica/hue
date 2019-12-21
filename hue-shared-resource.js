@@ -1007,14 +1007,34 @@ export async function createPowerManagedZone(connection, zone, cycle) {
 
 export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID, sceneCycle) {
 
-    async function onDown() {
+    async function onDownWhenOff() {
         const body = `{
             "name": "DMR: Zone on full power",
             "conditions": [
-                ${isButton(dimmerID, BTN_ON + BTN_initial_press)}
+                ${isButton(dimmerID, BTN_ON + BTN_initial_press)},
+                {
+                    "address": "/sensors/${zoneID}/state/status",
+                    "operator": "lt",
+                    "value": "2"
+                }
             ],
             "actions": [
                 ${setValue(zoneID, PMZ_FULL_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function onDownWhenOn() {
+        const body = `{
+            "name": "DMR: Next scene",
+            "conditions": [
+                ${isButton(dimmerID, BTN_ON + BTN_initial_press)},
+                ${isEqual(zoneID, 2)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.actions, SC_NEXT)}
             ]
         }`;
         return createRule(connection, body);
@@ -1033,7 +1053,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         return createRule(connection, body);
     }
 
-    /*async function onShortUp() {
+    async function onShortUp() {
         const body = `{
             "name": "DMR: Next scene",
             "conditions": [
@@ -1045,7 +1065,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
             ]
         }`;
         return createRule(connection, body);
-    }*/
+    }
 
     async function bigStarShortUp() {
         const body = `{
@@ -1061,6 +1081,20 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         return createRule(connection, body);
     }
 
+    async function bigStarDown() {
+        const body = `{
+            "name": "DMR: Brighter",
+            "conditions": [
+                ${isButton(dimmerID, BTN_STAR_UP + BTN_initial_press)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.actions, SC_BRIGHTER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
     async function bigStarRepeat() {
         const body = `{
             "name": "DMR: Brighter",
@@ -1070,6 +1104,20 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
             "actions": [
                 ${setValue(zoneID, PMZ_FULL_POWER)},
                 ${setValue(sceneCycle.actions, SC_BRIGHTER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function littleStarDown() {
+        const body = `{
+            "name": "DMR: Dimmer",
+            "conditions": [
+                ${isButton(dimmerID, BTN_STAR_DOWN + BTN_initial_press)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.actions, SC_DIMMER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1110,27 +1158,31 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
     async function offDownWhenOff() {
         const body = `{
-            "name": "DMR: Zone on low power",
+            "name": "DMR: Power management disabled",
             "conditions": [
                 ${isButton(dimmerID, BTN_OFF + BTN_initial_press)},
                 ${isEqual(zoneID, 0)}
             ],
             "actions": [
-                ${setValue(zoneID, PMZ_LOW_POWER)}
+                ${setValue(zoneControlID, false)},
+                ${setValue(zoneID, PMZ_FULL_POWER)}
             ]
         }`;
         return createRule(connection, body);
     }
 
     return [
-        await onDown(),
+        await onDownWhenOff(), // Zone full power
+        await onDownWhenOn(),  // Next scene
+        await offDownWhenOn(), // Zone off and management on
+        await offDownWhenOff(),// Zone on and management off
+        await bigStarDown(),      // Brighter
+        await bigStarRepeat(),    // Brighter
+        await littleStarDown(),   // Dimmer
+        await littleStarRepeat(), // Dimmer
         //await onShortUp(),
-        await onLongUp(),
-        await offDownWhenOn(),
-        await offDownWhenOff(),
-        await bigStarRepeat(),
-        await littleStarRepeat(),
-        await bigStarShortUp(),
+        //await onLongUp(),
+        //await bigStarShortUp(),
     ];
 }
 
