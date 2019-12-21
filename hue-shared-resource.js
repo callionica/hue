@@ -25,6 +25,8 @@ const PMZ_FULL_POWER = 2;
 
 // Scene Cycle constants
 const SC_NEXT = 1001;        // Move to the next scene and activate it
+const SC_BRIGHTER = 1011;    // Make the scene brighter
+const SC_DIMMER = 1021;      // Make the scene dimmer
 const SC_OFF = 2000 + PMZ_OFF;              // Turn off the lights
 const SC_LOW_POWER = 2000 + PMZ_LOW_POWER;  // Activate the low power version of the current scene
 const SC_FULL_POWER = 2000 + PMZ_FULL_POWER;// Activate the full power version of the current scene
@@ -623,6 +625,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         { fullPower: "Relax"     , lowPower: "Dimmed"                       },
         { fullPower: "Nightlight", lowPower: "Nightlight", auto: "23:00:00" },
     ];
+    
+    const bri_inc = 56;
 
     const cycleID = await createStatusSensor(connection, "Scene Cycle", "SceneCycle");
     const actionsID = await createStatusSensor(connection, "Scene Cycle Actions", "SceneCycle.Actions");
@@ -637,6 +641,58 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         ],
         "actions": [
             ${setValue(cycleID, (last ? 0 : index + 1))}
+        ]
+        } `;
+        return createRule(connection, body);
+    }
+
+    async function createBrighter() {
+        const body = `{
+        "name": "SC: Brighter",
+        "conditions": [
+            ${isUpdatedAndEqual(actionsID, SC_BRIGHTER)}
+        ],
+        "actions": [
+            {
+                "address": "/groups/${groupID}/action",
+                "method": "PUT",
+                "body": {
+                   "transitiontime": 9
+                }
+            },
+            {
+                "address": "/groups/${groupID}/action",
+                "method": "PUT",
+                "body": {
+                   "bri_inc": ${bri_inc}
+                }
+            }
+        ]
+        } `;
+        return createRule(connection, body);
+    }
+
+    async function createDimmer() {
+        const body = `{
+        "name": "SC: Dimmer",
+        "conditions": [
+            ${isUpdatedAndEqual(actionsID, SC_DIMMER)}
+        ],
+        "actions": [
+            {
+                "address": "/groups/${groupID}/action",
+                "method": "PUT",
+                "body": {
+                   "transitiontime": 9
+                }
+            },
+            {
+                "address": "/groups/${groupID}/action",
+                "method": "PUT",
+                "body": {
+                   "bri_inc": -${bri_inc}
+                }
+             }
         ]
         } `;
         return createRule(connection, body);
@@ -762,6 +818,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     await createActivateLow();
     await createOff();
     await createUpdate();
+    await createBrighter();
+    await createDimmer();
 
     return { cycle: cycleID, actions: actionsID };
 }
@@ -975,14 +1033,57 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         return createRule(connection, body);
     }
 
-    async function starUpShortUp() {
+    /*async function onShortUp() {
+        const body = `{
+            "name": "DMR: Next scene",
+            "conditions": [
+                ${isButton(dimmerID, BTN_ON + BTN_short_release)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.actions, SC_NEXT)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }*/
+
+    async function bigStarShortUp() {
         const body = `{
             "name": "DMR: Next scene",
             "conditions": [
                 ${isButton(dimmerID, BTN_STAR_UP + BTN_short_release)}
             ],
             "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
                 ${setValue(sceneCycle.actions, SC_NEXT)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function bigStarRepeat() {
+        const body = `{
+            "name": "DMR: Brighter",
+            "conditions": [
+                ${isButton(dimmerID, BTN_STAR_UP + BTN_repeat)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.actions, SC_BRIGHTER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function littleStarRepeat() {
+        const body = `{
+            "name": "DMR: Dimmer",
+            "conditions": [
+                ${isButton(dimmerID, BTN_STAR_DOWN + BTN_repeat)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.actions, SC_DIMMER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1023,10 +1124,13 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
     return [
         await onDown(),
+        //await onShortUp(),
         await onLongUp(),
         await offDownWhenOn(),
         await offDownWhenOff(),
-        await starUpShortUp(),
+        await bigStarRepeat(),
+        await littleStarRepeat(),
+        await bigStarShortUp(),
     ];
 }
 
