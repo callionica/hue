@@ -182,6 +182,10 @@ export async function getSchedules(connection) {
     return getCategory_(connection, "schedules");
 }
 
+export async function getAppSchedules(connection) {
+    return (await getSchedules(connection)).filter(schedule => schedule.command.address.startsWith(`/api/${connection.app}/`));
+}
+
 export async function getGroups(connection) {
     return getCategory_(connection, "groups");
 }
@@ -263,7 +267,11 @@ export async function deleteDescriptionSchedules(connection, description) {
 }
 
 export async function deleteAppSchedules(connection) {
-    return deleteDescriptionSchedules(connection, connection.app);
+    const schedules = await getAppSchedules(connection);
+
+    for (const schedule of schedules) {
+        await deleteSchedule(connection, schedule.id);
+    }
 }
 
 export async function deleteManufacturerSensors(connection, manufacturer) {
@@ -664,27 +672,30 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createRule(connection, body);
     }
 
-    /*async function createAuto(index, auto) {
+    async function createAuto(index, auto) {
         const body = `{
         "name": "SC: Time-based",
-        "description": "${connection.app}",
+        "description": "Time-based scene selection",
         "recycle": false,
         "localtime": "W127/T${auto}",
-        "command": [
-            ${setValue(cycleID, index)},
-            ${setValue(actionsID, SC_ACTIVATE)}
-        ]
+        "command": {
+            "address": "/api/${connection.app}/sensors/${cycleID}/state",
+            "body": {
+                "status": ${index}
+            },
+            "method": "PUT"
+        }
         }`;
         return createSchedule(connection, body);
-    }*/
+    }
 
     for (const [index, item] of cycle.entries()) {
         await createNext(index);
         await createFullPower(item, index);
         await createLowPower(item, index);
-      /*  if (item.auto) {
+        if (item.auto) {
             await createAuto(index, item.auto);
-        }*/
+        }
     }
 
     async function createActivateFull() {
