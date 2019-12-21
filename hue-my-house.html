@@ -9,7 +9,7 @@
         "use strict";
         import {
             connect,
-            deleteAppLinks, deleteAppRules, deleteAppSensors, deleteManufacturerSensors,
+            deleteAppSchedules, deleteAppLinks, deleteAppRules, deleteAppSensors, deleteManufacturerSensors,
             getGroups, getDimmers, getMotionSensors,
             createPowerManagedZone,
             createPowerManagedDimmerRules,
@@ -21,6 +21,7 @@
         async function main() {
             const connection = await connect(hub, "Callionica");
 
+            await deleteAppSchedules(connection);
             await deleteAppLinks(connection);
             await deleteAppRules(connection);
             await deleteAppSensors(connection);
@@ -28,18 +29,28 @@
 
             const groups = await getGroups(connection);
 
-            const zone = { name: "Hall", power: { enabled: true, fullPower: "00:02:00", lowPower: "00:01:00", failsafe: "08:00:00", fullPowerScene: "Bright", lowPowerScene: "Dimmed" } };
+            const zone = {
+                name: "Hall",
+                power: { enabled: true, fullPower: "00:01:00", lowPower: "00:00:30", failsafe: "08:00:00" }
+            };
+
+            const cycle = [
+                { fullPower: "Bright", lowPower: "Dimmed", auto: "08:00:00" },
+                { fullPower: "Relax", lowPower: "Dimmed" },
+                { fullPower: "Energize", lowPower: "Dimmed" },
+                { fullPower: "Nightlight", lowPower: "Nightlight", auto: "23:00:00" },
+            ];
 
             const matching = groups.filter(group => group.name === zone.name);
             zone.id = matching[0].id;
 
             if (zone.id) {
-                const result = await createPowerManagedZone(connection, zone);
+                const result = await createPowerManagedZone(connection, zone, cycle);
                 console.log(result);
 
                 const dimmers = (await getDimmers(connection)).filter(dimmer => dimmer.name === zone.name);
                 for (const dimmer of dimmers) {
-                    const rules = await createPowerManagedDimmerRules(connection, dimmer.id, result.sensors[0], result.sensors[1]);
+                    const rules = await createPowerManagedDimmerRules(connection, dimmer.id, result.sensors[0], result.sensors[1], result.sceneCycle);
                     console.log(rules);
                 }
 
