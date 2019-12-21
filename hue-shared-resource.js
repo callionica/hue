@@ -619,8 +619,8 @@ export async function createLinks(connection, name, description, links) {
 
 export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     cycle = cycle || [
-        { fullPower: "Bright", lowPower: "Dimmed", auto: "08:00:00" },
-        { fullPower: "Relax", lowPower: "Dimmed" },
+        { fullPower: "Bright"    , lowPower: "Dimmed"    , auto: "08:00:00" },
+        { fullPower: "Relax"     , lowPower: "Dimmed"                       },
         { fullPower: "Nightlight", lowPower: "Nightlight", auto: "23:00:00" },
     ];
 
@@ -767,7 +767,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
 }
 
 // zone: { name, power: { enabled, fullPower, lowPower, failsafe }}
-export async function createPowerManagedZone(connection, zone) {
+// cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", auto: "hh:mm:ss" }]
+export async function createPowerManagedZone(connection, zone, cycle) {
 
     // A power managed zone has three states: ON(2), LOWPOWER(1), and OFF(0)
     // It also has a separate setting for enabling/disabling standard power management.
@@ -894,7 +895,7 @@ export async function createPowerManagedZone(connection, zone) {
         return createRule(connection, body);
     }
 
-    async function createOffRule(id, zoneID) {
+    async function createOffRule(id, sceneCycle) {
         const body = `{
             "name": "LGT: Zone off",
             "conditions": [
@@ -922,12 +923,12 @@ export async function createPowerManagedZone(connection, zone) {
     const failsafe = await createFailsafeRule(controlID, zone.power.failsafe);
 
     // Create a scene cycle
-    const sceneCycle = await createSceneCycle(connection, zone.id, id); // TODO
+    const sceneCycle = await createSceneCycle(connection, zone.id, id, cycle);
 
     // Visualize power states
     const fullPowerRule = await createFullPowerRule(id, sceneCycle);
     const lowPowerRule = await createLowPowerRule(id, sceneCycle);
-    const offRule = await createOffRule(id, zone.id);
+    const offRule = await createOffRule(id, sceneCycle);
 
     const rl = await createLinks(connection, zone.name, "Power Managed Zone. Turns off after period of time.", [
         `/sensors/${id}`,
