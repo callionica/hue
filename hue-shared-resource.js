@@ -32,6 +32,13 @@ const SC_LOW_POWER = 2000 + PMZ_LOW_POWER;  // Activate the low power version of
 const SC_FULL_POWER = 2000 + PMZ_FULL_POWER;// Activate the full power version of the current scene
 const SC_ACTIVATE = 2000 + 100;             // Activate the appropriate version of the current scene for the zone's power state
 
+// Motion sensor constants
+const PMM_DO_NOTHING = 0;
+const PMM_KEEP_ON = 1;
+const PMM_TURN_ON = 2;
+
+const PMM_ACTIVATE = 2000 + 100; // Activate according to the motion sensor activation setting
+
 // Sleeping 11PM-7AM, Waking 7AM-8AM, Working 8AM-4PM, Relaxing 4PM-11PM
 
 // A power managed zone is:
@@ -344,11 +351,12 @@ export async function connect(hub, appName) {
 
 // =============================
 
-function statusSensorBody(name, model) {
+function statusSensorBody(name, model, value) {
+    value = value || 0;
     const body = `{
         "name": "${name}",
         "state": {
-            "status": 0
+            "status": ${value}
         },
         "config": {
             "on": true,
@@ -597,8 +605,8 @@ export async function deleteUserCount(connection, uc) {
     await deleteSensor(connection, uc.id);
 }
 
-export async function createStatusSensor(connection, name, model) {
-    const body = statusSensorBody(name, model)
+export async function createStatusSensor(connection, name, model, value) {
+    const body = statusSensorBody(name, model, value)
     return createSensor(connection, body);
 }
 
@@ -628,8 +636,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     
     const bri_inc = 56;
 
-    const cycleID = await createStatusSensor(connection, "Scene Cycle", "SceneCycle");
-    const actionsID = await createStatusSensor(connection, "Scene Cycle Actions", "SceneCycle.Actions");
+    const cycleID = await createStatusSensor(connection, "Scene Cycle", "SceneCycle", 0);
+    const actionsID = await createStatusSensor(connection, "Scene Cycle Actions", "SceneCycle.Actions", 0);
 
     async function createNext(index) {
         const last = (index === cycle.length - 1);
@@ -967,7 +975,7 @@ export async function createPowerManagedZone(connection, zone, cycle) {
     }
 
     // Power management automatically moves a zone from full power (2) to low power (1) to off (0)
-    const id = await createStatusSensor(connection, zone.name, "Power Managed Zone");
+    const id = await createStatusSensor(connection, zone.name, "Power Managed Zone", PMZ_OFF);
 
     // Power management can be enabled/disabled for each zone
     const controlID = await createFlagSensor(connection, zone.name, "Power Management Enabled", zone.power.enabled);
@@ -1188,6 +1196,43 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 
 
 export async function createPowerManagedMotionSensorRules(connection, motionID, zoneID, zoneControlID) {
+    
+    const activation = await createStatusSensor(connection, "Motion Activation", "Motion.Activation", PMM_TURN_ON);
+    const actionsID = await createStatusSensor(connection, "Motion Actions", "Motion.Actions", 0);
+
+    async function onActivate1() {
+        const body = `{
+            "name": "MTN: Activate",
+            "conditions": [
+                ${isUpdatedAndEqual(actionsID, PMM_ACTIVATE)},
+                ${isEqual(activation, PMM_KEEP_ON)},
+                {
+                    "address": "/sensors/${zoneID}/state/status",
+                    "operator": "gt",
+                    "value": "0"
+                }
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function onActivate2() {
+        const body = `{
+            "name": "MTN: Activate",
+            "conditions": [
+                ${isUpdatedAndEqual(actionsID, PMM_ACTIVATE)},
+                ${isEqual(activation, PMM_TURN_ON)}
+            ],
+            "actions": [
+                ${setValue(zoneID, PMZ_FULL_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
     /*
     The Philips motion sensor is a presence sensor that only updates itself when
     state.presence changes. This is power efficient, but it does not give continuous indication of motion events, so best not to treat it like it does. Our approach is to detect the zone's power state and, just as a user would click the switch when the lights dim, bump the power state back to full power if presence is true. 
@@ -1205,7 +1250,7 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
                 ${isChangedTo(zoneID, PMZ_LOW_POWER)}
             ],
             "actions": [
-                ${setValue(zoneID, PMZ_FULL_POWER)}
+                ${setValue(actionsID, PMM_ACTIVATE)}
             ]
         }`;
         return createRule(connection, body);
@@ -1213,8 +1258,6 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
 
     /*
     When presence is detected, bump to full power or preserve at full power.
-    Note that we bump any zone power state when presence arrives including turning on the lights.
-    It might be a useful option for the motion detector to keep the lights on, but not turn them on (in that case, add a condition for zone state.status gt 0).
     */
     async function onPresence() {
         const body = `{
@@ -1224,7 +1267,7 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
                 ${isUpdated(motionID)}
             ],
             "actions": [
-                ${setValue(zoneID, PMZ_FULL_POWER)}
+                ${setValue(actionsID, PMM_ACTIVATE)}
             ]
         }`;
         return createRule(connection, body);
@@ -1232,6 +1275,8 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
 
     // TODO - return all items, resourcelink
     return [
+        await onActivate1(),
+        await onActivate2(),
         await onLowPower(),
         await onPresence(),
     ];
