@@ -90,3 +90,7 @@ For C2, we could temporarily turn off the motion detector. The problem is that c
 For C3, we could manufacture a later event to check for presence. The problem there is that if we fire our event too early, we pick up the delayed reading from the sensor even after the person has left. If we fire the event too late, the user has been waving their arms for ages trying to get the lights to come on.
 
 What we need is for disabling the sensor to reset all its internal timeouts so that it only reports a presence after it comes back on if it actually sees motion after it comes back on. Initial testing suggests its not doing that though. Perhaps we can manually set the presence state of the motion sensor to false on the bridge from a rule? Haven't tried that. If that's allowed, it could work if we don't use presence == false as a trigger in any rules (which we don't).
+
+## Patterns
+It's useful to be able to provide actions to enhance hardware sensors or to support software sensors. All actions for a component can be provided by a single status sensor and accompanying rules. It's unnecessary to provide a different status sensor for each action. Actions are useful for customizability, readability, etc. They can be useful when using schedules which can trigger only a single command: if you would otherwise trigger multiple commands, instead create an action that triggers those commands and have the schedule trigger the action.
+
