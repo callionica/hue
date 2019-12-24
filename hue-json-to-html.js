@@ -98,7 +98,9 @@ export function hueToHtml(data) {
             const r = getOrder(rhs[0]);
             return l - r;
         });
-        for (const [name, value] of entries) {
+        for (const [indexString, [name, value]] of Object.entries(entries)) {
+            const index = parseInt(indexString, 10);
+            const isLast = (index === entries.length - 1);
             const isCategory = (stack.length === 0);
             if (isCategory) {
                 result.push(`<span id="${name}">`);
@@ -108,7 +110,7 @@ export function hueToHtml(data) {
                 result.push(`<span id="${stack[stack.length - 1]}/${name}">`);
             }
             stack.push(name);
-            result.push(JSON.stringify(name) + ": " + hueJsonToHtml(value, stack, indent + 1) + ",");
+            result.push(JSON.stringify(name) + ": " + hueJsonToHtml(value, stack, indent + 1) + (isLast ? "" : ","));
             stack.pop();
             if (isResource || isCategory) {
                 result.push(`</span>`);
