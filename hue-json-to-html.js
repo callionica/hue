@@ -58,10 +58,12 @@ export function hueToHtml(data) {
                     }
 
                     const o = pieces.reduce((p, c) => p[c], data);
+                    const m = (o && o.modelid) || "";
                     const n = (o && o.name) || "";
+                    const n1 = m ? (n + ": " + m) : n;
 
                     const destination = pieces.join("/");
-                    prefix = `<a href="#${destination}" title="${n}">`;
+                    prefix = `<a href="#${destination}" title="${n1}">`;
                     suffix = `</a>`;
                 }
                 return `${prefix}${JSON.stringify(value)}${suffix}`;
