@@ -688,8 +688,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     
     const bri_inc = 56;
 
-    const cycleID = await createStatusSensor(connection, "Scene Cycle", "PM.SceneCycle.CurrentScene", 0);
-    const actionID = await createStatusSensor(connection, "Scene Cycle Action", "PM.SceneCycle.Action", 0);
+    const cycleID = await createStatusSensor(connection, "Scene Cycle Current", "PM.Zone.Scenes.Current", 0);
+    const actionID = await createStatusSensor(connection, "Scene Cycle Action", "PM.Zone.Scenes.Action", 0);
 
     async function createNext(index) {
         const last = (index === cycle.length - 1);
@@ -805,12 +805,14 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createSchedule(connection, body);
     }
 
+    var schedules = [];
+    var rules = [];
     for (const [index, item] of cycle.entries()) {
-        await createNext(index);
-        await createFullPower(item, index);
-        await createLowPower(item, index);
+        rules.push(await createNext(index));
+        rules.push(await createFullPower(item, index));
+        rules.push(await createLowPower(item, index));
         if (item.auto) {
-            await createAuto(index, item.auto);
+            schedules.push(await createAuto(index, item.auto));
         }
     }
 
@@ -874,14 +876,16 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createRule(connection, body);
     }
 
-    await createActivateFull();
-    await createActivateLow();
-    await createOff();
-    await createUpdate();
-    await createBrighter();
-    await createDimmer();
+    rules = rules.concat([
+        await createActivateFull(),
+        await createActivateLow(),
+        await createOff(),
+        await createUpdate(),
+        await createBrighter(),
+        await createDimmer(),
+    ]);
 
-    return { cycle: cycleID, action: actionID };
+    return { cycle: cycleID, action: actionID, sensors: [cycleID, actionID], rules, schedules };
 }
 
 // zone: { name, power: { enabled, fullPower, lowPower, failsafe }}
@@ -965,7 +969,7 @@ export async function createPowerManagedZone(connection, zone, cycle) {
         return createRule(connection, body);
     }
 
-    async function createFailsafeRule(controlID, hms) {
+    async function createReenableRule(controlID, hms) {
         const body = `{
             "name": "PMZ: Enable power management",
             "conditions": [
@@ -1027,42 +1031,47 @@ export async function createPowerManagedZone(connection, zone, cycle) {
     }
 
     // Power management automatically moves a zone from full power (2) to low power (1) to off (0)
-    const id = await createStatusSensor(connection, zone.name, "PM.Zone.PowerLevel", PMZ_OFF);
+    const powerLevelID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerLevel", PMZ_OFF);
 
     // Power management can be enabled/disabled for each zone
-    const controlID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerManagement", (zone.power.enabled ? PMZ_ENABLED : PMZ_DISABLED));
+    const powerManagementID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerManagement", (zone.power.enabled ? PMZ_ENABLED : PMZ_DISABLED));
 
     // The power switching rules
-    const fullToLow = await fullPowerToLowPower(id, controlID, zone.power.fullPower);
-    const fullToLowEnabled = await fullPowerToLowPowerEnablement(id, controlID, zone.power.fullPower);
-    const lowToOff = await lowPowerToOff(id, controlID, zone.power.lowPower);
+    const fullToLow = await fullPowerToLowPower(powerLevelID, powerManagementID, zone.power.fullPower);
+    const fullToLowEnabled = await fullPowerToLowPowerEnablement(powerLevelID, powerManagementID, zone.power.fullPower);
+    const lowToOff = await lowPowerToOff(powerLevelID, powerManagementID, zone.power.lowPower);
 
     // Reenable power management if off for too long
-    const failsafe = await createFailsafeRule(controlID, zone.power.failsafe);
+    const reenable = await createReenableRule(powerManagementID, zone.power.failsafe);
 
     // Create a scene cycle
-    const sceneCycle = await createSceneCycle(connection, zone.id, id, cycle);
+    const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, cycle);
 
     // Visualize power states
-    const fullPowerRule = await createFullPowerRule(id, sceneCycle);
-    const lowPowerRule = await createLowPowerRule(id, sceneCycle);
-    const offRule = await createOffRule(id, sceneCycle);
+    const fullPowerRule = await createFullPowerRule(powerLevelID, sceneCycle);
+    const lowPowerRule = await createLowPowerRule(powerLevelID, sceneCycle);
+    const offRule = await createOffRule(powerLevelID, sceneCycle);
 
-    const rl = await createLinks(connection, zone.name, "Power Managed Zone. Turns off after period of time.", [
-        `/sensors/${id}`,
-        `/sensors/${controlID}`,
+    const rl = await createLinks(connection, zone.name, "Power Managed Zone", [
+        `/groups/${zone.id}`,
+        `/sensors/${powerLevelID}`,
+        `/sensors/${powerManagementID}`,
 
         `/rules/${fullToLow}`,
         `/rules/${fullToLowEnabled}`,
         `/rules/${lowToOff}`,
-        `/rules/${failsafe}`,
+        `/rules/${reenable}`,
 
         `/rules/${fullPowerRule}`,
         `/rules/${lowPowerRule}`,
         `/rules/${offRule}`,
+
+        ...sceneCycle.sensors.map(r => `/sensors/${r}`),
+        ...sceneCycle.rules.map(r => `/rules/${r}`),
+        ...sceneCycle.schedules.map(r => `/schedules/${r}`),
     ]);
 
-    return { sceneCycle, sensors: [id, controlID], rules: [fullToLow, fullToLowEnabled, lowToOff, failsafe, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
+    return { sceneCycle, sensors: [powerLevelID, powerManagementID], rules: [fullToLow, fullToLowEnabled, lowToOff, reenable, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
 }
 
 export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID, sceneCycle) {
@@ -1357,16 +1366,16 @@ const sensors = [
         ]
     },
     {
-        modelid: "PM.SceneCycle.CurrentScene",
+        modelid: "PM.Zone.Scenes.Current",
         manufacturername: "Callionica",
-        entity: "Power Managed Scene Cycle",
-        property: "Current Scene"
+        entity: "Power Managed Zone",
+        property: "Scenes > Current Scene"
     },
     {
-        modelid: "PM.SceneCycle.Action",
+        modelid: "PM.Zone.Scenes.Action",
         manufacturername: "Callionica",
-        entity: "Power Managed Scene Cycle",
-        property: "Action",
+        entity: "Power Managed Zone",
+        property: "Scenes > Action",
         status: [
             { value: SC_ACTIVATE, name: "Activate", description: "Activate the appropriate version of the current scene for the zone's power state" },
             { value: SC_NEXT, name: "Next", description: "Move to the next scene and activate it" },
@@ -1379,6 +1388,7 @@ const sensors = [
     },
     {
         modelid: "PM.Motion.Activation",
+        manufacturername: "Callionica",
         entity: "Power Managed Motion Sensor",
         property: "Activation",
         status: [
@@ -1389,6 +1399,7 @@ const sensors = [
     },
     {
         modelid: "PM.Motion.Action",
+        manufacturername: "Callionica",
         entity: "Power Managed Motion Sensor",
         property: "Action",
         status: [
@@ -1399,21 +1410,31 @@ const sensors = [
 
 const components = [
     {
+        manufacturer: "Callionica",
         name: "Power Managed Zone",
         comment: "A room or zone that turns itself off after a period of time",
         description: "A room or zone that turns itself off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. The Low Power level gives you a warning that the lights will be turning off, allowing you to take an action to keep the lights on if necessary. Power Managed Zones have custom integrations with dimmers and motion sensors to ensure that all devices work well together in a standard way. Power management can be disabled (temporarily). The timings are all configurable, but examples might be 10 minutes before the zone switches from Full Power to Low Power, 1 minute before the zone switches from Low Power to Off, and 8 hours before the zone re-enables power management automatically.",
         url: "https://github.com/callionica/hue/power-managed-zone.md",
     },
     {
+        manufacturer: "Callionica",
         name: "Power Managed Dimmer",
         comment: "A dimmer that has been configured to work with a Power Managed Zone",
         description: "A dimmer that has been configured to work with a Power Managed Zone. All actions using the dimmer (except the Off button) will turn on the Power Managed Zone or increase it to Full Power extending the timeout before the zone turns itself off. The On button will (A) Turn on the zone at Full Power if it's off (B) Increase the zone to Full Power if it's at Low Power (C) Switch the lights to the next scene in the scene list managed by the zone if the zone is at Full Power. Note that there is one scene list per zone (and one current scene in the list), not a separate scene list and current scene for each dimmer. Power management can be disabled (temporarily) by using the Off button when the lights are off: this will turn the lights on and keep them on until the zone automatically enables power management again after an extended period of time (configured by the zone). Using the Off button to turn off the lights also immediately re-enables power management.",
         url: "https://github.com/callionica/hue/power-managed-dimmer.md",
     },
     {
+        manufacturer: "Callionica",
         name: "Power Managed Motion Sensor",
         comment: "A motion sensor that has been configured to work with a Power Managed Zone",
         description: "A motion sensor that has been configured to work with a Power Managed Zone. Power Managed Motion Sensors are designed to work well together with other Power Managed Motion Sensors and with Power Managed Dimmers controlling the same zone. Power Managed Motion Sensors do not turn off the lights, Power Managed Zones do that themselves. Power Managed Motion Sensors can either turn on the lights, keep the lights on, or do nothing. The option to keep the lights on, but not turn them on, can be useful where the motion sensor can not be positioned to avoid unwanted motion (such as pets). It can also be helpful where people are used to turning lights on and off manually.",
         url: "https://github.com/callionica/hue/power-managed-motion-sensor.md",
     }
 ];
+
+// A component instance can be identified by:
+// 1. A resourcelink
+// 2. with classid === 9090
+// 3. and description matching one of the known component names
+// The resourcelink bundles all the pieces of the component together
+// not all of which are created by the component (e.g. PMZ stores the group in its resourcelink)
