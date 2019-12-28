@@ -1003,7 +1003,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
             "name": "PMZ: Enable power management",
             "conditions": [
                 ${isEqual(configurationID, index)},
-                ${wasUpdatedTo(powerManagementID, PMZ_DISABLED, configuration.reenable)}
+                ${wasChangedTo(powerManagementID, PMZ_DISABLED, configuration.reenable)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_ENABLED)}
