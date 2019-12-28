@@ -461,16 +461,6 @@ function isEqual(id, value) {
     }`;
 }
 
-function isEqualSince(id, value, hms) {
-    const store = (typeof value === "boolean") ? "flag" : "status";
-    return `${isEqual(id, value)},
-    {
-        "address": "/sensors/${id}/state/${store}",
-        "operator": "ddx",
-        "value": "PT${hms}"
-    }`;
-}
-
 function isChanged(id, store) {
     return `{
         "address": "/sensors/${id}/state/${store}",
@@ -485,23 +475,63 @@ function isUpdated(id) {
     }`;
 }
 
-function isButton(id, value) {
-    return `{
-        "address": "/sensors/${id}/state/buttonevent",
-        "operator": "eq",
-        "value": "${value}"
-    },
-    ${isUpdated(id)}`;
-}
-
 function isChangedTo(id, value) {
     const store = (typeof value === "boolean") ? "flag" : "status";
     return `${isEqual(id, value)},
     ${isChanged(id, store)}`;
 }
 
-function isUpdatedAndEqual(id, value) {
+function isUpdatedTo(id, value) {
     return `${isEqual(id, value)},
+    ${isUpdated(id)}`;
+}
+
+function wasChangedTo(id, value, hms) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `${isEqual(id, value)},
+    {
+        "address": "/sensors/${id}/state/${store}",
+        "operator": "ddx",
+        "value": "PT${hms}"
+    }`;
+}
+
+function wasUpdatedTo(id, value, hms) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `${isEqual(id, value)},
+    {
+        "address": "/sensors/${id}/state/lastupdated",
+        "operator": "ddx",
+        "value": "PT${hms}"
+    }`;
+}
+
+function notUpdatedSince(id, value, hms) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `${isEqual(id, value)},
+    {
+        "address": "/sensors/${id}/state/lastupdated",
+        "operator": "stable",
+        "value": "PT${hms}"
+    }`;
+}
+
+function notChangedSince(id, value, hms) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    return `${isEqual(id, value)},
+    {
+        "address": "/sensors/${id}/state/${store}",
+        "operator": "stable",
+        "value": "PT${hms}"
+    }`;
+}
+
+function isButton(id, value) {
+    return `{
+        "address": "/sensors/${id}/state/buttonevent",
+        "operator": "eq",
+        "value": "${value}"
+    },
     ${isUpdated(id)}`;
 }
 
@@ -596,7 +626,7 @@ export async function createUserCount(connection, resourceName, userNames) {
         const body = `{
             "name": "(${resourceName} Override)",
             "conditions": [
-                ${isUpdatedAndEqual(triggerID, value)}
+                ${isUpdatedTo(triggerID, value)}
             ],
             "actions": [
                 ${actions}
@@ -696,7 +726,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Next",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_NEXT)},
+            ${isUpdatedTo(actionID, SC_NEXT)},
             ${isEqual(cycleID, index)}
         ],
         "actions": [
@@ -710,7 +740,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Brighter",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_BRIGHTER)}
+            ${isUpdatedTo(actionID, SC_BRIGHTER)}
         ],
         "actions": [
             {
@@ -736,7 +766,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Dimmer",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_DIMMER)}
+            ${isUpdatedTo(actionID, SC_DIMMER)}
         ],
         "actions": [
             {
@@ -763,7 +793,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Full Power",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_FULL_POWER)},
+            ${isUpdatedTo(actionID, SC_FULL_POWER)},
             ${isEqual(cycleID, index)}
         ],
         "actions": [
@@ -778,7 +808,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Low Power",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_LOW_POWER)},
+            ${isUpdatedTo(actionID, SC_LOW_POWER)},
             ${isEqual(cycleID, index)}
         ],
         "actions": [
@@ -820,7 +850,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Activate",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_ACTIVATE)},
+            ${isUpdatedTo(actionID, SC_ACTIVATE)},
             ${isEqual(zoneID, PMZ_FULL_POWER)}
         ],
         "actions": [
@@ -834,7 +864,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Activate",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_ACTIVATE)},
+            ${isUpdatedTo(actionID, SC_ACTIVATE)},
             ${isEqual(zoneID, PMZ_LOW_POWER)}
         ],
         "actions": [
@@ -848,7 +878,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         const body = `{
         "name": "SC: Off",
         "conditions": [
-            ${isUpdatedAndEqual(actionID, SC_OFF)}
+            ${isUpdatedTo(actionID, SC_OFF)}
         ],
         "actions": [
             {
@@ -897,12 +927,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
             "conditions": [
                 ${isEqual(powerManagementID, PMZ_ENABLED)},
                 ${isEqual(configurationID, index)},
-                {
-                    "address": "/sensors/${powerLevelID}/state/lastupdated",
-                    "operator": "ddx",
-                    "value": "PT${configuration.fullPower}"
-                },
-                ${isEqual(powerLevelID, PMZ_FULL_POWER)}
+                ${wasUpdatedTo(powerLevelID, PMZ_FULL_POWER, configuration.fullPower)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_LOW_POWER)}
@@ -916,19 +941,25 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
         const body = `{
             "name": "PMZ: Full power to low power",
             "conditions": [
-                ${isEqual(powerManagementID, PMZ_ENABLED)},
+                ${wasUpdatedTo(powerManagementID, PMZ_ENABLED, configuration.fullPower)},
                 ${isEqual(configurationID, index)},
-                {
-                    "address": "/sensors/${powerManagementID}/state/status",
-                    "operator": "ddx",
-                    "value": "PT${configuration.fullPower}"
-                },
-                ${isEqual(powerLevelID, PMZ_FULL_POWER)},
-                {
-                    "address": "/sensors/${powerLevelID}/state/status",
-                    "operator": "stable",
-                    "value": "PT${configuration.fullPower}"
-                }
+                ${notUpdatedSince(powerLevelID, PMZ_FULL_POWER, configuration.fullPower)}
+            ],
+            "actions": [
+                ${setValue(powerLevelID, PMZ_LOW_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    // When config changes, check timings
+    async function fullPowerToLowPowerConfigChange() {
+        const body = `{
+            "name": "PMZ: Full power to low power",
+            "conditions": [
+                ${isChangedTo(configurationID, index)},
+                ${isEqual(powerManagementID, PMZ_ENABLED)},
+                ${notUpdatedSince(powerLevelID, PMZ_FULL_POWER, configuration.fullPower)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_LOW_POWER)}
@@ -943,7 +974,21 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
             "name": "PMZ: Low power to off",
             "conditions": [
                 ${isEqual(configurationID, index)},
-                ${isEqualSince(powerLevelID, PMZ_LOW_POWER, configuration.lowPower)}
+                ${wasChangedTo(powerLevelID, PMZ_LOW_POWER, configuration.lowPower)}
+            ],
+            "actions": [
+                ${setValue(powerLevelID, PMZ_OFF)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function lowPowerToOffConfigChange() {
+        const body = `{
+            "name": "PMZ: Low power to off",
+            "conditions": [
+                ${isChangedTo(configurationID, index)},
+                ${notChangedSince(powerLevelID, PMZ_LOW_POWER, configuration.lowPower)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_OFF)}
@@ -958,12 +1003,21 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
             "name": "PMZ: Enable power management",
             "conditions": [
                 ${isEqual(configurationID, index)},
-                {
-                    "address": "/sensors/${powerManagementID}/state/lastupdated",
-                    "operator": "ddx",
-                    "value": "PT${configuration.reenable}"
-                },
-                ${isEqual(powerManagementID, PMZ_DISABLED)}
+                ${wasUpdatedTo(powerManagementID, PMZ_DISABLED, configuration.reenable)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function createReenableRuleConfigChange() {
+        const body = `{
+            "name": "PMZ: Enable power management",
+            "conditions": [
+                ${isChangedTo(configurationID, index)},
+                ${notChangedSince(powerManagementID, PMZ_DISABLED, configuration.reenable)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_ENABLED)}
@@ -995,8 +1049,11 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
         rules: [
             await fullPowerToLowPower(),
             await fullPowerToLowPowerEnablement(),
+            await fullPowerToLowPowerConfigChange(),
             await lowPowerToOff(),
+            await lowPowerToOffConfigChange(),
             await createReenableRule(),
+            await createReenableRuleConfigChange(),
         ],
         schedules: []
     };
@@ -1054,7 +1111,7 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "LGT: Zone on low power",
             "conditions": [
-                ${isEqualSince(id, PMZ_LOW_POWER, "00:00:01")}
+                ${wasChangedTo(id, PMZ_LOW_POWER, "00:00:01")}
             ],
             "actions": [
                 ${setValue(sceneCycle.action, SC_LOW_POWER)}
@@ -1067,7 +1124,7 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "LGT: Zone off",
             "conditions": [
-                ${isUpdatedAndEqual(id, PMZ_OFF)}
+                ${isUpdatedTo(id, PMZ_OFF)}
             ],
             "actions": [
                 ${setValue(sceneCycle.action, SC_OFF)}
@@ -1311,7 +1368,7 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
         const body = `{
             "name": "MTN: Activate",
             "conditions": [
-                ${isUpdatedAndEqual(actionID, PMM_ACTIVATE)},
+                ${isUpdatedTo(actionID, PMM_ACTIVATE)},
                 ${isEqual(activation, PMM_KEEP_ON)},
                 {
                     "address": "/sensors/${zoneID}/state/status",
@@ -1330,7 +1387,7 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
         const body = `{
             "name": "MTN: Activate",
             "conditions": [
-                ${isUpdatedAndEqual(actionID, PMM_ACTIVATE)},
+                ${isUpdatedTo(actionID, PMM_ACTIVATE)},
                 ${isEqual(activation, PMM_TURN_ON)}
             ],
             "actions": [
