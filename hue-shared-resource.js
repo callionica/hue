@@ -681,9 +681,9 @@ export async function createLinks(connection, name, description, links) {
 
 export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     cycle = cycle || [
-        { fullPower: "Bright"    , lowPower: "Dimmed"    , auto: "08:00:00" },
+        { fullPower: "Bright"    , lowPower: "Dimmed"    , startTime: "08:00:00" },
         { fullPower: "Relax"     , lowPower: "Dimmed"                       },
-        { fullPower: "Nightlight", lowPower: "Nightlight", auto: "23:00:00" },
+        { fullPower: "Nightlight", lowPower: "Nightlight", startTime: "23:00:00" },
     ];
     
     const bri_inc = 56;
@@ -788,12 +788,12 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         return createRule(connection, body);
     }
 
-    async function createAuto(index, auto) {
+    async function createStartTime(index, startTime) {
         const body = `{
         "name": "SC: Time-based",
         "description": "Time-based scene selection",
         "recycle": false,
-        "localtime": "W127/T${auto}",
+        "localtime": "W127/T${startTime}",
         "command": {
             "address": "/api/${connection.app}/sensors/${cycleID}/state",
             "body": {
@@ -811,8 +811,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         rules.push(await createNext(index));
         rules.push(await createFullPower(item, index));
         rules.push(await createLowPower(item, index));
-        if (item.auto) {
-            schedules.push(await createAuto(index, item.auto));
+        if (item.startTime) {
+            schedules.push(await createStartTime(index, item.startTime));
         }
     }
 
@@ -888,8 +888,8 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     return { cycle: cycleID, action: actionID, sensors: [cycleID, actionID], rules, schedules };
 }
 
-// zone: { name, power: { enabled, fullPower, lowPower, failsafe }}
-// cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", auto: "hh:mm:ss" }]
+// zone: { name, power: { enabled, fullPower, lowPower, reenable }}
+// cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", startTime: "hh:mm:ss" }]
 export async function createPowerManagedZone(connection, zone, cycle) {
 
     // A power managed zone has three states: ON(2), LOWPOWER(1), and OFF(0)
@@ -1034,15 +1034,15 @@ export async function createPowerManagedZone(connection, zone, cycle) {
     const powerLevelID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerLevel", PMZ_OFF);
 
     // Power management can be enabled/disabled for each zone
-    const powerManagementID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerManagement", (zone.power.enabled ? PMZ_ENABLED : PMZ_DISABLED));
+    const powerManagementID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerManagement", PMZ_ENABLED);
 
     // The power switching rules
-    const fullToLow = await fullPowerToLowPower(powerLevelID, powerManagementID, zone.power.fullPower);
-    const fullToLowEnabled = await fullPowerToLowPowerEnablement(powerLevelID, powerManagementID, zone.power.fullPower);
-    const lowToOff = await lowPowerToOff(powerLevelID, powerManagementID, zone.power.lowPower);
+    const fullToLow = await fullPowerToLowPower(powerLevelID, powerManagementID, zone.powerManagement.fullPower);
+    const fullToLowEnabled = await fullPowerToLowPowerEnablement(powerLevelID, powerManagementID, zone.powerManagement.fullPower);
+    const lowToOff = await lowPowerToOff(powerLevelID, powerManagementID, zone.powerManagement.lowPower);
 
     // Reenable power management if off for too long
-    const reenable = await createReenableRule(powerManagementID, zone.power.failsafe);
+    const reenable = await createReenableRule(powerManagementID, zone.powerManagement.reenable);
 
     // Create a scene cycle
     const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, cycle);
