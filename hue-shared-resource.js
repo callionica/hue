@@ -890,7 +890,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
 
 // zone: { name, power: { enabled, fullPower, lowPower, reenable }}
 // cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", startTime: "hh:mm:ss" }]
-export async function createPowerManagedZone(connection, zone, cycle) {
+export async function createPowerManagedZone(connection, zone) {
 
     // A power managed zone has three states: ON(2), LOWPOWER(1), and OFF(0)
     // It also has a separate setting for enabling/disabling standard power management.
@@ -1037,15 +1037,17 @@ export async function createPowerManagedZone(connection, zone, cycle) {
     const powerManagementID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerManagement", PMZ_ENABLED);
 
     // The power switching rules
-    const fullToLow = await fullPowerToLowPower(powerLevelID, powerManagementID, zone.powerManagement.fullPower);
-    const fullToLowEnabled = await fullPowerToLowPowerEnablement(powerLevelID, powerManagementID, zone.powerManagement.fullPower);
-    const lowToOff = await lowPowerToOff(powerLevelID, powerManagementID, zone.powerManagement.lowPower);
+    const configuration = zone.configurations[0];
+    
+    const fullToLow = await fullPowerToLowPower(powerLevelID, powerManagementID, configuration.fullPower);
+    const fullToLowEnabled = await fullPowerToLowPowerEnablement(powerLevelID, powerManagementID, configuration.fullPower);
+    const lowToOff = await lowPowerToOff(powerLevelID, powerManagementID, configuration.lowPower);
 
     // Reenable power management if off for too long
-    const reenable = await createReenableRule(powerManagementID, zone.powerManagement.reenable);
+    const reenable = await createReenableRule(powerManagementID, configuration.reenable);
 
     // Create a scene cycle
-    const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, cycle);
+    const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, zone.scenes);
 
     // Visualize power states
     const fullPowerRule = await createFullPowerRule(powerLevelID, sceneCycle);
