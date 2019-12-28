@@ -888,6 +888,128 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
     return { cycle: cycleID, action: actionID, sensors: [cycleID, actionID], rules, schedules };
 }
 
+async function createPMZConfiguration(connection, configuration, index, powerLevelID, powerManagementID, configurationID) {
+
+    // A time after switching to full power, switch to low power
+    async function fullPowerToLowPower() {
+        const body = `{
+            "name": "PMZ: Full power to low power",
+            "conditions": [
+                ${isEqual(powerManagementID, PMZ_ENABLED)},
+                ${isEqual(configurationID, index)},
+                {
+                    "address": "/sensors/${powerLevelID}/state/lastupdated",
+                    "operator": "ddx",
+                    "value": "PT${configuration.fullPower}"
+                },
+                ${isEqual(powerLevelID, PMZ_FULL_POWER)}
+            ],
+            "actions": [
+                ${setValue(powerLevelID, PMZ_LOW_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    // A time after power management enabled and stable at full power, switch to low power
+    async function fullPowerToLowPowerEnablement() {
+        const body = `{
+            "name": "PMZ: Full power to low power",
+            "conditions": [
+                ${isEqual(powerManagementID, PMZ_ENABLED)},
+                ${isEqual(configurationID, index)},
+                {
+                    "address": "/sensors/${powerManagementID}/state/status",
+                    "operator": "ddx",
+                    "value": "PT${configuration.fullPower}"
+                },
+                ${isEqual(powerLevelID, PMZ_FULL_POWER)},
+                {
+                    "address": "/sensors/${powerLevelID}/state/status",
+                    "operator": "stable",
+                    "value": "PT${configuration.fullPower}"
+                }
+            ],
+            "actions": [
+                ${setValue(powerLevelID, PMZ_LOW_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    // A time after being in low power, switch off
+    async function lowPowerToOff() {
+        const body = `{
+            "name": "PMZ: Low power to off",
+            "conditions": [
+                ${isEqual(configurationID, index)},
+                ${isEqualSince(powerLevelID, PMZ_LOW_POWER, configuration.lowPower)}
+            ],
+            "actions": [
+                ${setValue(powerLevelID, PMZ_OFF)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    // A time after power management was disabled, switch it back on
+    async function createReenableRule() {
+        const body = `{
+            "name": "PMZ: Enable power management",
+            "conditions": [
+                ${isEqual(configurationID, index)},
+                {
+                    "address": "/sensors/${powerManagementID}/state/lastupdated",
+                    "operator": "ddx",
+                    "value": "PT${configuration.reenable}"
+                },
+                ${isEqual(powerManagementID, PMZ_DISABLED)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function createStartTime() {
+        const body = `{
+        "name": "PMZ: Time-based",
+        "description": "Time-based power management",
+        "recycle": false,
+        "localtime": "W127/T${configuration.startTime}",
+        "command": {
+            "address": "/api/${connection.app}/sensors/${configurationID}/state",
+            "body": {
+                "status": ${index}
+            },
+            "method": "PUT"
+        }
+        }`;
+        return createSchedule(connection, body);
+    }
+
+    // TODO - rule(s) for when current config is switched and the time limits have already been exceeded for new config
+
+    const result = {
+        rules: [
+            await fullPowerToLowPower(),
+            await fullPowerToLowPowerEnablement(),
+            await lowPowerToOff(),
+            await createReenableRule(),
+        ],
+        schedules: []
+    };
+
+    if (configuration.startTime) {
+        result.schedules = [
+            await createStartTime()
+        ];
+    }
+
+    return result;
+}
+
 // zone: { name, power: { enabled, fullPower, lowPower, reenable }}
 // cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", startTime: "hh:mm:ss" }]
 export async function createPowerManagedZone(connection, zone) {
@@ -910,82 +1032,6 @@ export async function createPowerManagedZone(connection, zone) {
     // but doesn't reset the timer if in that state already.
     // If you disable and reenable power management, the timers start again at the point that
     // power management is enabled.
-
-    // 2. A rule: status == on(2) and lastupdate ddx A, change status to lowpower(1)
-    async function fullPowerToLowPower(id, controlID, hms) {
-        const body = `{
-            "name": "PMZ: Full power to low power",
-            "conditions": [
-                ${isEqual(controlID, PMZ_ENABLED)},
-                {
-                    "address": "/sensors/${id}/state/lastupdated",
-                    "operator": "ddx",
-                    "value": "PT${hms}"
-                },
-                ${isEqual(id, PMZ_FULL_POWER)}
-            ],
-            "actions": [
-                ${setValue(id, PMZ_LOW_POWER)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }
-
-    async function fullPowerToLowPowerEnablement(id, controlID, hms) {
-        const body = `{
-            "name": "PMZ: Full power to low power",
-            "conditions": [
-                ${isEqual(controlID, PMZ_ENABLED)},
-                {
-                    "address": "/sensors/${controlID}/state/status",
-                    "operator": "ddx",
-                    "value": "PT${hms}"
-                },
-                ${isEqual(id, PMZ_FULL_POWER)},
-                {
-                    "address": "/sensors/${id}/state/status",
-                    "operator": "stable",
-                    "value": "PT${hms}"
-                }
-            ],
-            "actions": [
-                ${setValue(id, PMZ_LOW_POWER)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }
-
-    // 3. A rule: status == lowpower(1) and status ddx B, change status to off(0)
-    async function lowPowerToOff(id, controlID, hms) {
-        const body = `{
-            "name": "PMZ: Low power to off",
-            "conditions": [
-                ${isEqualSince(id, PMZ_LOW_POWER, hms)}
-            ],
-            "actions": [
-                ${setValue(id, PMZ_OFF)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }
-
-    async function createReenableRule(controlID, hms) {
-        const body = `{
-            "name": "PMZ: Enable power management",
-            "conditions": [
-                {
-                    "address": "/sensors/${controlID}/state/lastupdated",
-                    "operator": "ddx",
-                    "value": "PT${hms}"
-                },
-                ${isEqual(controlID, PMZ_DISABLED)}
-            ],
-            "actions": [
-                ${setValue(controlID, PMZ_ENABLED)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }
 
     async function createFullPowerRule(id, sceneCycle) {
         const body = `{
@@ -1036,15 +1082,15 @@ export async function createPowerManagedZone(connection, zone) {
     // Power management can be enabled/disabled for each zone
     const powerManagementID = await createStatusSensor(connection, zone.name, "PM.Zone.PowerManagement", PMZ_ENABLED);
 
-    // The power switching rules
-    const configuration = zone.configurations[0];
-    
-    const fullToLow = await fullPowerToLowPower(powerLevelID, powerManagementID, configuration.fullPower);
-    const fullToLowEnabled = await fullPowerToLowPowerEnablement(powerLevelID, powerManagementID, configuration.fullPower);
-    const lowToOff = await lowPowerToOff(powerLevelID, powerManagementID, configuration.lowPower);
+    const configurationID = await createStatusSensor(connection, zone.name, "PM.Zone.Configurations.Current", 0);
 
-    // Reenable power management if off for too long
-    const reenable = await createReenableRule(powerManagementID, configuration.reenable);
+    // The power switching rules
+    var configs = [];
+    for (var index = 0; index < zone.configurations.length; ++index) {
+        const configuration = zone.configurations[index];
+        const config = await createPMZConfiguration(connection, configuration, index, powerLevelID, powerManagementID, configurationID);
+        configs.push(config);
+    }
 
     // Create a scene cycle
     const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, zone.scenes);
@@ -1059,10 +1105,8 @@ export async function createPowerManagedZone(connection, zone) {
         `/sensors/${powerLevelID}`,
         `/sensors/${powerManagementID}`,
 
-        `/rules/${fullToLow}`,
-        `/rules/${fullToLowEnabled}`,
-        `/rules/${lowToOff}`,
-        `/rules/${reenable}`,
+        ...configs.flatMap(c => c.rules).map(r => `/rules/${r}`),
+        ...configs.flatMap(c => c.schedules).map(r => `/schedules/${r}`),
 
         `/rules/${fullPowerRule}`,
         `/rules/${lowPowerRule}`,
@@ -1073,7 +1117,7 @@ export async function createPowerManagedZone(connection, zone) {
         ...sceneCycle.schedules.map(r => `/schedules/${r}`),
     ]);
 
-    return { sceneCycle, sensors: [powerLevelID, powerManagementID], rules: [fullToLow, fullToLowEnabled, lowToOff, reenable, fullPowerRule, lowPowerRule, offRule], resourceLinks: [rl] };
+    return { sceneCycle, sensors: [powerLevelID, powerManagementID], resourceLinks: [rl] };
 }
 
 export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID, sceneCycle) {
@@ -1111,7 +1155,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         return createRule(connection, body);
     }
 
-    async function onLongUp() {
+    /*async function onLongUp() {
         const body = `{
             "name": "DMR: Power management disabled",
             "conditions": [
@@ -1122,9 +1166,9 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
             ]
         }`;
         return createRule(connection, body);
-    }
+    }*/
 
-    async function onShortUp() {
+    /*async function onShortUp() {
         const body = `{
             "name": "DMR: Next scene",
             "conditions": [
@@ -1136,9 +1180,9 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
             ]
         }`;
         return createRule(connection, body);
-    }
+    }*/
 
-    async function bigStarShortUp() {
+    /*async function bigStarShortUp() {
         const body = `{
             "name": "DMR: Next scene",
             "conditions": [
@@ -1150,7 +1194,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
             ]
         }`;
         return createRule(connection, body);
-    }
+    }*/
 
     async function bigStarDown() {
         const body = `{
