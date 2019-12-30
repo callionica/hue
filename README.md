@@ -99,3 +99,7 @@ Yes, a quick experiment of pulling the power cable from a v2 (square) Hue bridge
 
 ## all_on, any_on, reachable
 Lights have boolean properties `on` and `reachable`. Groups have boolean properties `all_on` and `any_on`. `all_on` and `any_on` are just a summary of the lights' `on` properties and do not take into account whether they are `reachable`. A light in a reliable network will have `reachable == false` only when it has lost power (switched off at the wired switch, for example). If you wish to automate a network where lights are likely to be switched off at the switch or if you wish to account for power cuts, you cannot use only the `on` property, you must also take into account the `reachable` property. Because the groups' `all_on` and `any_on` properties do not take the `reachable` property of the lights into consideration, you should be careful how you use these properties.
+
+## Tips
+1. Give your Hue bridge a static IP address
+2. Get adaptors for different bulb socket types: B22 to E27, E27 to B22, and GU10 to E27 are useful in the UK. DiCuno adapters are about £7 for 6. It's not ideal to use an adapter because it lengthens the bulb, but it also gives you a lot of flexibility and you can take advantage of bulb sales.
