@@ -24,6 +24,11 @@ This document only covers Level 1. Level 2 is not yet specified.
 ### A. Store the component on the bridge
 Your component will consist of sensors, rules, schedules, groups, and other bridge resources to achieve a particular goal. Create those on the bridge so that your expected feature works.
 
+To simplify things, sensors that you expect end users to interact with and for which you will provide metadata, must be implemented as `CLIPGenericStatus` sensors.
+
+For more information on designing and implementing a Hue components using sensors, rules, schedules, etc., please see https://developers.meethue.com/develop/hue-api/.
+
+
 ### B. Describe the component on the bridge
 Now you need to add some extra information to the bridge so that conforming apps can discover that a component instance exists on the bridge.
 
@@ -32,15 +37,16 @@ Now you need to add some extra information to the bridge so that conforming apps
 3. Set the `name` of your `resourcelink` to be the name of the instance of your component. (Example: `"Hall"`)
 4. Set the `description` of your `resourcelink` to be the name of the type of your component. (Example: `"Power Managed Zone"`)
 5. If your component is "tied to" or "contained within" a `group`, include that group as the first `link`. (Example: `"\groups\3"`)
-6. If your component is not tied to or contained within a particular `group`, add `"\groups\0"` as your first `link`. (Example: `"\groups\0"`)
-7. Include other `groups` related to your component in the `links`.
-8. Include any `sensors` controlled by your component in the `links`.
-9. Include any `rules` controlled by your component in the `links`.
-10. Include any `schedules` controlled by your component in the `links`.
+6. If your component is "tied to" or "contained within" a hardware `sensor`, include that sensor as the first `link`. (Example: `"\sensors\3"`)
+7. If your component is not tied to or contained within a particular `group` or hardware `sensor`, add `"\groups\0"` as your first `link`. (Example: `"\groups\0"`)
+8. Include any other `groups` related to your component in the `links`.
+9. Include any other `sensors` controlled by your component in the `links`.
+10. Include any `rules` controlled by your component in the `links`.
+11. Include any `schedules` controlled by your component in the `links`.
 
 ### C. Provide metadata about your component
 
-Provide a JSON description of your component with the following properties: `manufacturer`, `name`, `comment`, `description`, `url`.
+Provide a JSON description of your component with the following properties: `manufacturer`, `name`, `comment`, `description`, `url`. All properties are intended to be of use to the end users of your component, not other developers.
 
 Example:
 
@@ -56,7 +62,11 @@ Example:
 
 ### D. Provide metadata about your component sensors
 
-Provide a JSON description of your sensor with the following properties: `modelid`, `manufacturername`, `component`, `property`, `status`.
+Provide a JSON description of your sensor with the following properties: `modelid`, `manufacturername`, `component`, `property`, `status`. (`status` is optional).
+
+`status` is an array of objects with `value`, `name`, and `description` properties. (`description` is optional). This provides human-readable names for the possible values that `state.status` can contain. Apps can use these values to show a more informative UI for viewing the current state of the sensor or changing it to a new value. The order of values in the `status` property is intended to be the most suitable order for displaying a choice to the end user.
+
+`status` will be missing when the values can't easily be statically described. In the examples below, you can see that neither `Scenes > Current Scene` nor `Configurations > Current Configuration` have `status` properties describing the current values.
 
 ```
 {
@@ -151,5 +161,75 @@ Provide a JSON description of your sensor with the following properties: `modeli
   ]
 }
 ```
+## Discovering a Hue Component
+
+If you're implementing an app that lets users control their Hue bridge, discovering components is a straightforward process:
+
+1. Get `resourcelinks` where `classid` is `9090`
+2. The `name` of the `resourcelink` is the name of the component instance
+3. The `description` of the component instance is the component type
+4. Map the `resourcelink` to the component metadata using `rl.description === component.name`
+5. Map each `sensor` in the `links` to the component sensor metadata using `s.modelid === componentSensor.modelid && s.manufacturername === componentSensor.manufacturername`
+
+In the example Javascript code below, `data` is the complete set of data that can be obtained from the Hue bridge from https://${connection.hub}/api/${connection.app}/ parsed to Javascript objects, `components` is an array of component metadata and `componentSensors` is an array of component sensor metadata:
+
+```javascript
+function expandLink(link, data) {
+    const path = link.split("/");
+    if (path.length === 3 && path[0] === "") {
+        const category = path[1]; // category will be "groups", "sensors", etc
+        const c = data[category];
+        if (c) {
+            const id = path[2]; // id will be "1", "3TcLCtr5vuebVK1", etc
+            const o = c[id];
+            if (o) {
+                return { category, item: { id, ...o } };
+            }
+        }
+    }
+
+    return { category: "invalidLinks", item: link };
+}
+
+// Converts all links to their respective objects and separates them into categories
+function expandLinks(links, data) {
+    var result = {};
+    for (const link of links) {
+        const o = expandLink(link, data);
+        const c = result[o.category] || [];
+        c.push(o.item);
+        result[o.category] = c;
+    }
+    return result;
+}
+
+// Expands a resource link by adding an id property and pulling in referred-to objects
+function expandResourceLink(id, data) {
+    const resourceLink = data.resourcelinks[id];
+    const links = expandLinks(resourceLink.links, data);
+    return { id, ...resourceLink, ...links };
+}
+
+function getComponents(data) {
+    return Object.entries(data.resourcelinks).filter(([id, resourceLink]) => resourceLink.classid === COMPONENT_CLASSID).map(([id, resourceLink]) => {
+        const o = expandResourceLink(id, data);
+        const component = components.filter(c => c.name === o.description)[0];
+        for (const s of o.sensors) {
+            const cs = componentSensors.filter(cs => cs.modelid === s.modelid && cs.manufacturername == s.manufacturername)[0];
+            s.component = cs;
+        }
+        o.component = component;
+        return o;
+    });
+}
+```
+
+Once you have all the data together, you can choose how to display it to the user for viewing and editing.
+
+If you display a list of sensors, we recommend that you filter the list for sensors that are included in components, so that you can group those sensors separately with their component instance and give textual descriptions of `state.status`.
+
 
 ## Summary
+I hope this informal specification of Hue Components Level 1 is clear and understandable enough for you to implement your components and/or apps. If you have any questions or comments, please feel free to open an _Issue_ here on GitHub.
+
+-- Callionica
