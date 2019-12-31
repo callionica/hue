@@ -17,7 +17,9 @@ This specification is divided in to 2 levels:
 1. Level 1: Component metadata describes how to group related sensors together, what possible state values are available for each sensor, and what each value means. Apps that have access to the component metadata can recognize components and group related sensors together in the UI and give users easy control over the state and functionality of the component as held in the sensors.
 2. Level 2: Component code implements complete creation and editing of a component's settings and configuration, including manipulating rules and schedules.
 
-This document only covers Level 1. Level 2 is not yet specified.
+This document only covers Level 1.
+
+Level 2 is not yet specified.
 
 ## Implementing a Hue Component
 
@@ -26,7 +28,7 @@ Your component will consist of sensors, rules, schedules, groups, and other brid
 
 To simplify things, sensors that you expect end users to interact with and for which you will provide metadata, must be implemented as `CLIPGenericStatus` sensors.
 
-For more information on designing and implementing a Hue components using sensors, rules, schedules, etc., please see https://developers.meethue.com/develop/hue-api/.
+For more information on designing and implementing a Hue component using sensors, rules, schedules, etc., please see https://developers.meethue.com/develop/hue-api/.
 
 
 ### B. Describe the component on the bridge
@@ -174,6 +176,7 @@ If you're implementing an app that lets users control their Hue bridge, discover
 In the example Javascript code below, `data` is the complete set of data that can be obtained from the Hue bridge from https://${connection.hub}/api/${connection.app}/ parsed to Javascript objects, `components` is an array of component metadata and `componentSensors` is an array of component sensor metadata:
 
 ```javascript
+// Converts a link as used in resourcelinks to a real object with an id property
 function expandLink(link, data) {
     const path = link.split("/");
     if (path.length === 3 && path[0] === "") {
@@ -210,15 +213,26 @@ function expandResourceLink(id, data) {
     return { id, ...resourceLink, ...links };
 }
 
-function getComponents(data) {
+export function getComponents(data) {
     return Object.entries(data.resourcelinks).filter(([id, resourceLink]) => resourceLink.classid === COMPONENT_CLASSID).map(([id, resourceLink]) => {
         const o = expandResourceLink(id, data);
+        
         const component = components.filter(c => c.name === o.description)[0];
+        o.component = component;
+
         for (const s of o.sensors) {
             const cs = componentSensors.filter(cs => cs.modelid === s.modelid && cs.manufacturername == s.manufacturername)[0];
             s.component = cs;
         }
-        o.component = component;
+        
+        const first = o.links && o.links[0];
+        if (first && first !== "/groups/0") {
+            if (first.startsWith("/groups/")) {
+                o.tiedTo = { category: "groups", item: o.groups[0] };
+            } else if (first.startsWith("/sensors/")) {
+                o.tiedTo = { category: "sensors", item: o.sensors[0] };
+            }
+        }
         return o;
     });
 }
