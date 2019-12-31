@@ -26,6 +26,7 @@ Your component will consist of sensors, rules, schedules, groups, and other brid
 
 ### B. Describe the component on the bridge
 Now you need to add some extra information to the bridge so that conforming apps can discover that a component instance exists on the bridge.
+
 1. Create a `resourcelink`
 2. Set `classid` to `9090`
 3. Set the `name` of your `resourcelink` to be the name of the instance of your component. (Example: `"Hall"`)
@@ -39,8 +40,11 @@ Now you need to add some extra information to the bridge so that conforming apps
 
 ### C. Provide metadata about your component
 
+Provide a JSON description of your component with the following properties: `manufacturer`, `name`, `comment`, `description`, `url`.
+
 Example:
 
+```
 {
         manufacturer: "Callionica",
         name: "Power Managed Zone",
@@ -48,9 +52,13 @@ Example:
         description: "A room or zone that turns itself off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. The Low Power level gives you a warning that the lights will be turning off, allowing you to take an action to keep the lights on if necessary. Power Managed Zones have custom integrations with dimmers and motion sensors to ensure that all devices work well together in a standard way. Power management can be disabled (temporarily). The timings are all configurable, but examples might be 10 minutes before the zone switches from Full Power to Low Power, 1 minute before the zone switches from Low Power to Off, and 8 hours before the zone re-enables power management automatically.",
         url: "https://github.com/callionica/hue/power-managed-zone.md",
 }
+```
 
 ### D. Provide metadata about your component sensors
 
+Provide a JSON description of your sensor with the following properties: `modelid`, `manufacturername`, `entity`, `property`, `status`.
+
+```
 {
         modelid: "PM.Zone.PowerLevel",
         manufacturername: "Callionica",
@@ -99,3 +107,6 @@ Example:
             { value: SC_OFF, name: "Off", description: "Turn off the lights" },
         ]
     }
+```
+
+## Summary
