@@ -46,11 +46,11 @@ Example:
 
 ```
 {
-        manufacturer: "Callionica",
-        name: "Power Managed Zone",
-        comment: "A room or zone that turns itself off after a period of time",
-        description: "A room or zone that turns itself off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. The Low Power level gives you a warning that the lights will be turning off, allowing you to take an action to keep the lights on if necessary. Power Managed Zones have custom integrations with dimmers and motion sensors to ensure that all devices work well together in a standard way. Power management can be disabled (temporarily). The timings are all configurable, but examples might be 10 minutes before the zone switches from Full Power to Low Power, 1 minute before the zone switches from Low Power to Off, and 8 hours before the zone re-enables power management automatically.",
-        url: "https://github.com/callionica/hue/power-managed-zone.md",
+  "manufacturer": "Callionica",
+  "name": "Power Managed Zone",
+  "comment": "A room or zone that turns itself off after a period of time",
+  "description": "A room or zone that turns itself off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. The Low Power level gives you a warning that the lights will be turning off, allowing you to take an action to keep the lights on if necessary. Power Managed Zones have custom integrations with dimmers and motion sensors to ensure that all devices work well together in a standard way. Power management can be disabled (temporarily). The timings are all configurable, but examples might be 10 minutes before the zone switches from Full Power to Low Power, 1 minute before the zone switches from Low Power to Off, and 8 hours before the zone re-enables power management automatically.",
+  "url": "https://github.com/callionica/hue/power-managed-zone.md"
 }
 ```
 
@@ -60,53 +60,96 @@ Provide a JSON description of your sensor with the following properties: `modeli
 
 ```
 {
-        modelid: "PM.Zone.PowerLevel",
-        manufacturername: "Callionica",
-        entity: "Power Managed Zone",
-        property: "Power Level",
-        status: [
-            { value: PMZ_FULL_POWER, name: "Full power" },
-            { value: PMZ_LOW_POWER, name: "Low power" },
-            { value: PMZ_OFF, name: "Off" }
-        ]
+  "modelid": "PM.Zone.PowerLevel",
+  "manufacturername": "Callionica",
+  "entity": "Power Managed Zone",
+  "property": "Power Level",
+  "status": [
+    {
+      "value": 2,
+      "name": "Full power"
     },
     {
-        modelid: "PM.Zone.PowerManagement",
-        manufacturername: "Callionica",
-        entity: "Power Managed Zone",
-        property: "Power Management",
-        status: [
-            { value: PMZ_ENABLED, name: "Enabled" },
-            { value: PMZ_DISABLED, name: "Disabled" }
-        ]
+      "value": 1,
+      "name": "Low power"
     },
     {
-        modelid: "PM.Zone.Configurations.Current",
-        manufacturername: "Callionica",
-        entity: "Power Managed Zone",
-        property: "Configurations > Current Configuration"
-    },
-    {
-        modelid: "PM.Zone.Scenes.Current",
-        manufacturername: "Callionica",
-        entity: "Power Managed Zone",
-        property: "Scenes > Current Scene"
-    },
-    {
-        modelid: "PM.Zone.Scenes.Action",
-        manufacturername: "Callionica",
-        entity: "Power Managed Zone",
-        property: "Scenes > Action",
-        status: [
-            { value: SC_ACTIVATE, name: "Activate", description: "Activate the appropriate version of the current scene for the zone's power state" },
-            { value: SC_NEXT, name: "Next", description: "Move to the next scene and activate it" },
-            { value: SC_BRIGHTER, name: "Brighter", description: "Make the lighting brighter" },
-            { value: SC_DIMMER, name: "Dimmer", description: "Make the lighting dimmer" },
-            { value: SC_FULL_POWER, name: "Full power", description: "Activate the full power version of the current scene" },
-            { value: SC_LOW_POWER, name: "Low power", description: "Activate the low power version of the current scene" },
-            { value: SC_OFF, name: "Off", description: "Turn off the lights" },
-        ]
+      "value": 0,
+      "name": "Off"
     }
+  ]
+},
+{
+  "modelid": "PM.Zone.PowerManagement",
+  "manufacturername": "Callionica",
+  "entity": "Power Managed Zone",
+  "property": "Power Management",
+  "status": [
+    {
+      "value": 1,
+      "name": "Enabled"
+    },
+    {
+      "value": 0,
+      "name": "Disabled"
+    }
+  ]
+},
+{
+  "modelid": "PM.Zone.Configurations.Current",
+  "manufacturername": "Callionica",
+  "entity": "Power Managed Zone",
+  "property": "Configurations > Current Configuration"
+},
+{
+  "modelid": "PM.Zone.Scenes.Current",
+  "manufacturername": "Callionica",
+  "entity": "Power Managed Zone",
+  "property": "Scenes > Current Scene"
+},
+{
+  "modelid": "PM.Zone.Scenes.Action",
+  "manufacturername": "Callionica",
+  "entity": "Power Managed Zone",
+  "property": "Scenes > Action",
+  "status": [
+    {
+      "value": 2100,
+      "name": "Activate",
+      "description": "Activate the appropriate version of the current scene for the zone's power state"
+    },
+    {
+      "value": 1001,
+      "name": "Next",
+      "description": "Move to the next scene and activate it"
+    },
+    {
+      "value": 1011,
+      "name": "Brighter",
+      "description": "Make the lighting brighter"
+    },
+    {
+      "value": 1021,
+      "name": "Dimmer",
+      "description": "Make the lighting dimmer"
+    },
+    {
+      "value": 2002,
+      "name": "Full power",
+      "description": "Activate the full power version of the current scene"
+    },
+    {
+      "value": 2001,
+      "name": "Low power",
+      "description": "Activate the low power version of the current scene"
+    },
+    {
+      "value": 2000,
+      "name": "Off",
+      "description": "Turn off the lights"
+    }
+  ]
+}
 ```
 
 ## Summary
