@@ -68,7 +68,7 @@ Provide a JSON description of your sensor with the following properties: `modeli
 
 `status` is an array of objects with `value`, `name`, and `description` properties. (`description` is optional). This provides human-readable names for the possible values that `state.status` can contain. Apps can use these values to show a more informative UI for viewing the current state of the sensor or changing it to a new value. The order of values in the `status` property is intended to be the most suitable order for displaying a choice to the end user.
 
-`status` will be missing when the values can't easily be statically described. In the examples below, you can see that neither `Scenes > Current Scene` nor `Configurations > Current Configuration` have `status` properties describing the current values.
+`status` will be missing when the values can't easily be statically described. In the examples below, you can see that neither `Scenes > Current Scene` nor `Configurations > Current Configuration` have `status` properties describing the possible values.
 
 ```
 {
