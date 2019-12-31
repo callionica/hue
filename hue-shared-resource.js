@@ -1,5 +1,6 @@
 "use strict";
 
+
 // Hope this works!
 export function uuid() {
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
@@ -7,7 +8,8 @@ export function uuid() {
     );
 }
 
-
+// Component classid for use in resourcelinks
+const COMPONENT_CLASSID = 9090;
 
 // Dimmer constants
 const BTN_initial_press = 0;
@@ -687,6 +689,8 @@ export async function deleteUserCount(connection, uc) {
     await deleteSensor(connection, uc.id);
 }
 
+// =============================
+
 export async function createStatusSensor(connection, name, model, value) {
     const body = statusSensorBody(name, model, value)
     return createSensor(connection, body);
@@ -998,7 +1002,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
     }
 
     // A time after power management was disabled, switch it back on
-    async function createReenableRule() {
+    async function reenable() {
         const body = `{
             "name": "PMZ: Enable power management",
             "conditions": [
@@ -1012,7 +1016,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
         return createRule(connection, body);
     }
 
-    async function createReenableRuleConfigChange() {
+    async function reenableConfigChange() {
         const body = `{
             "name": "PMZ: Enable power management",
             "conditions": [
@@ -1043,8 +1047,6 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
         return createSchedule(connection, body);
     }
 
-    // TODO - rule(s) for when current config is switched and the time limits have already been exceeded for new config
-
     const result = {
         rules: [
             await fullPowerToLowPower(),
@@ -1052,8 +1054,8 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
             await fullPowerToLowPowerConfigChange(),
             await lowPowerToOff(),
             await lowPowerToOffConfigChange(),
-            await createReenableRule(),
-            await createReenableRuleConfigChange(),
+            await reenable(),
+            await reenableConfigChange(),
         ],
         schedules: []
     };
@@ -1067,7 +1069,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
     return result;
 }
 
-// zone: { name, power: { enabled, fullPower, lowPower, reenable }}
+// zone: { name, power: { fullPower, lowPower, reenable }}
 // cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", startTime: "hh:mm:ss" }]
 export async function createPowerManagedZone(connection, zone) {
 
@@ -1161,16 +1163,17 @@ export async function createPowerManagedZone(connection, zone) {
         `/groups/${zone.id}`,
         `/sensors/${powerLevelID}`,
         `/sensors/${powerManagementID}`,
+        `/sensors/${configurationID}`,
+        ...sceneCycle.sensors.map(r => `/sensors/${r}`),
 
         ...configs.flatMap(c => c.rules).map(r => `/rules/${r}`),
-        ...configs.flatMap(c => c.schedules).map(r => `/schedules/${r}`),
-
+        
+        ...sceneCycle.rules.map(r => `/rules/${r}`),
         `/rules/${fullPowerRule}`,
         `/rules/${lowPowerRule}`,
         `/rules/${offRule}`,
 
-        ...sceneCycle.sensors.map(r => `/sensors/${r}`),
-        ...sceneCycle.rules.map(r => `/rules/${r}`),
+        ...configs.flatMap(c => c.schedules).map(r => `/schedules/${r}`),
         ...sceneCycle.schedules.map(r => `/schedules/${r}`),
     ]);
 
@@ -1211,47 +1214,6 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         }`;
         return createRule(connection, body);
     }
-
-    /*async function onLongUp() {
-        const body = `{
-            "name": "DMR: Power management disabled",
-            "conditions": [
-                ${isButton(dimmerID, BTN_ON + BTN_long_release)}
-            ],
-            "actions": [
-                ${setValue(zoneControlID, PMZ_DISABLED)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }*/
-
-    /*async function onShortUp() {
-        const body = `{
-            "name": "DMR: Next scene",
-            "conditions": [
-                ${isButton(dimmerID, BTN_ON + BTN_short_release)}
-            ],
-            "actions": [
-                ${setValue(zoneID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_NEXT)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }*/
-
-    /*async function bigStarShortUp() {
-        const body = `{
-            "name": "DMR: Next scene",
-            "conditions": [
-                ${isButton(dimmerID, BTN_STAR_UP + BTN_short_release)}
-            ],
-            "actions": [
-                ${setValue(zoneID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_NEXT)}
-            ]
-        }`;
-        return createRule(connection, body);
-    }*/
 
     async function bigStarDown() {
         const body = `{
@@ -1352,9 +1314,6 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         await bigStarRepeat(),    // Brighter
         await littleStarDown(),   // Dimmer
         await littleStarRepeat(), // Dimmer
-        //await onShortUp(),
-        //await onLongUp(),
-        //await bigStarShortUp(),
     ];
 }
 
@@ -1446,11 +1405,11 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
     ];
 }
 
-const sensors = [
+const componentSensors = [
     {
         modelid: "PM.Zone.PowerLevel",
         manufacturername: "Callionica",
-        entity: "Power Managed Zone",
+        component: "Power Managed Zone",
         property: "Power Level",
         status: [
             { value: PMZ_FULL_POWER, name: "Full power" },
@@ -1461,7 +1420,7 @@ const sensors = [
     {
         modelid: "PM.Zone.PowerManagement",
         manufacturername: "Callionica",
-        entity: "Power Managed Zone",
+        component: "Power Managed Zone",
         property: "Power Management",
         status: [
             { value: PMZ_ENABLED, name: "Enabled" },
@@ -1469,21 +1428,27 @@ const sensors = [
         ]
     },
     {
+        modelid: "PM.Zone.Configurations.Current",
+        manufacturername: "Callionica",
+        component: "Power Managed Zone",
+        property: "Configurations > Current Configuration"
+    },
+    {
         modelid: "PM.Zone.Scenes.Current",
         manufacturername: "Callionica",
-        entity: "Power Managed Zone",
+        component: "Power Managed Zone",
         property: "Scenes > Current Scene"
     },
     {
         modelid: "PM.Zone.Scenes.Action",
         manufacturername: "Callionica",
-        entity: "Power Managed Zone",
+        component: "Power Managed Zone",
         property: "Scenes > Action",
         status: [
             { value: SC_ACTIVATE, name: "Activate", description: "Activate the appropriate version of the current scene for the zone's power state" },
             { value: SC_NEXT, name: "Next", description: "Move to the next scene and activate it" },
-            { value: SC_BRIGHTER, name: "Brighter", description: "Make the scene brighter" },
-            { value: SC_DIMMER, name: "Dimmer", description: "Make the scene dimmer" },
+            { value: SC_BRIGHTER, name: "Brighter", description: "Make the lighting brighter" },
+            { value: SC_DIMMER, name: "Dimmer", description: "Make the lighting dimmer" },
             { value: SC_FULL_POWER, name: "Full power", description: "Activate the full power version of the current scene" },
             { value: SC_LOW_POWER, name: "Low power", description: "Activate the low power version of the current scene" },
             { value: SC_OFF, name: "Off", description: "Turn off the lights" },
@@ -1492,7 +1457,7 @@ const sensors = [
     {
         modelid: "PM.Motion.Activation",
         manufacturername: "Callionica",
-        entity: "Power Managed Motion Sensor",
+        component: "Power Managed Motion Sensor",
         property: "Activation",
         status: [
             { value: PMM_TURN_ON, name: "Turn on", description: "Turn on the power managed zone" },
@@ -1503,7 +1468,7 @@ const sensors = [
     {
         modelid: "PM.Motion.Action",
         manufacturername: "Callionica",
-        entity: "Power Managed Motion Sensor",
+        component: "Power Managed Motion Sensor",
         property: "Action",
         status: [
             { value: PMM_ACTIVATE, name: "Activate", description: "Activate according to the motion sensor's Activation setting" }
@@ -1541,3 +1506,71 @@ const components = [
 // 3. and description matching one of the known component names
 // The resourcelink bundles all the pieces of the component together
 // not all of which are created by the component (e.g. PMZ stores the group in its resourcelink)
+
+// Converts a link as used in resourcelinks to a real object with an id property
+function expandLink(link, data) {
+    const path = link.split("/");
+    if (path.length === 3 && path[0] === "") {
+        const category = path[1]; // category will be "groups", "sensors", etc
+        const c = data[category];
+        if (c) {
+            const id = path[2]; // id will be "1", "3TcLCtr5vuebVK1", etc
+            const o = c[id];
+            if (o) {
+                return { category, item: { id, ...o } };
+            }
+        }
+    }
+
+    return { category: "invalidLinks", item: link };
+}
+
+// Converts all links to their respective objects and separates them into categories
+function expandLinks(links, data) {
+    var result = {};
+    for (const link of links) {
+        const o = expandLink(link, data);
+        const c = result[o.category] || [];
+        c.push(o.item);
+        result[o.category] = c;
+    }
+    return result;
+}
+
+// Expands a resource link by adding an id property and pulling in referred-to objects
+function expandResourceLink(id, data) {
+    const resourceLink = data.resourcelinks[id];
+    const links = expandLinks(resourceLink.links, data);
+    return { id, ...resourceLink, ...links };
+}
+
+export function getComponents(data) {
+    return Object.entries(data.resourcelinks).filter(([id, resourceLink]) => resourceLink.classid === COMPONENT_CLASSID).map(([id, resourceLink]) => {
+        const result = expandResourceLink(id, data);
+        
+        const component = components.filter(c => c.name === result.description)[0];
+        result.component = component;
+
+        for (const sensor of result.sensors) {
+            const metadata = componentSensors.filter(cs => cs.modelid === sensor.modelid && cs.manufacturername == sensor.manufacturername)[0];
+            if (metadata) {
+                sensor.metadata = metadata;
+                var value = { value: sensor.state.status, name: sensor.state.status };
+                if (metadata.status) {
+                    value = metadata.status.filter(status => status.value === sensor.state.status)[0];
+                }
+                sensor.value = value;
+            }
+        }
+        
+        const first = result.links && result.links[0];
+        if (first && first !== "/groups/0") {
+            if (first.startsWith("/groups/")) {
+                result.tiedTo = { category: "groups", item: result.groups[0] };
+            } else if (first.startsWith("/sensors/")) {
+                result.tiedTo = { category: "sensors", item: result.sensors[0] };
+            }
+        }
+        return result;
+    });
+}
