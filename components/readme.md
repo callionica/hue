@@ -56,13 +56,13 @@ Example:
 
 ### D. Provide metadata about your component sensors
 
-Provide a JSON description of your sensor with the following properties: `modelid`, `manufacturername`, `entity`, `property`, `status`.
+Provide a JSON description of your sensor with the following properties: `modelid`, `manufacturername`, `component`, `property`, `status`.
 
 ```
 {
   "modelid": "PM.Zone.PowerLevel",
   "manufacturername": "Callionica",
-  "entity": "Power Managed Zone",
+  "component": "Power Managed Zone",
   "property": "Power Level",
   "status": [
     {
@@ -82,7 +82,7 @@ Provide a JSON description of your sensor with the following properties: `modeli
 {
   "modelid": "PM.Zone.PowerManagement",
   "manufacturername": "Callionica",
-  "entity": "Power Managed Zone",
+  "component": "Power Managed Zone",
   "property": "Power Management",
   "status": [
     {
@@ -98,19 +98,19 @@ Provide a JSON description of your sensor with the following properties: `modeli
 {
   "modelid": "PM.Zone.Configurations.Current",
   "manufacturername": "Callionica",
-  "entity": "Power Managed Zone",
+  "component": "Power Managed Zone",
   "property": "Configurations > Current Configuration"
 },
 {
   "modelid": "PM.Zone.Scenes.Current",
   "manufacturername": "Callionica",
-  "entity": "Power Managed Zone",
+  "component": "Power Managed Zone",
   "property": "Scenes > Current Scene"
 },
 {
   "modelid": "PM.Zone.Scenes.Action",
   "manufacturername": "Callionica",
-  "entity": "Power Managed Zone",
+  "component": "Power Managed Zone",
   "property": "Scenes > Action",
   "status": [
     {
