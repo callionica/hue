@@ -16,8 +16,8 @@
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         function componentToHTML(component) {
-            var tiedToHTML = component.tiedTo ? ("<h3>" + component.tiedTo.item.name + "</h3>\n") : "";
-            var properties = component.sensors.map(sensor => `<div>${sensor.metadata.property} = ${sensor.value.name}</div>`).join("\n");
+            var tiedToHTML = component.tiedTo ? ("<h3>" + component.tiedTo.item.name + " " + component.tiedTo.category + "</h3>\n") : "";
+            var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => `<div>${sensor.metadata.property.replace(">", "›")} = ${sensor.value ? sensor.value.name : "Unknown"}</div>`).join("\n");
             var html = `<h1>${component.name}</h1>
             <h2>${component.metadata.name} by ${component.metadata.manufacturer}</h2>
             ${tiedToHTML}
