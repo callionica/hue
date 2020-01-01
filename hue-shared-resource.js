@@ -705,7 +705,7 @@ export async function createLinks(connection, name, description, links) {
     const body = `{
     "name": "${name}",
     "description": "${description}",
-    "classid": 9090,
+    "classid": ${COMPONENT_CLASSID},
     "links": [
         ${links.map(l => JSON.stringify(l)).join(",\n\t\t")}
     ]
@@ -1305,7 +1305,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         return createRule(connection, body);
     }
 
-    return [
+    const rules = [
         await onDownWhenOff(), // Zone full power
         await onDownWhenOn(),  // Next scene
         await offDownWhenOn(), // Zone off and management on
@@ -1315,6 +1315,13 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         await littleStarDown(),   // Dimmer
         await littleStarRepeat(), // Dimmer
     ];
+
+    const rl = await createLinks(connection, "TODO", "Power Managed Dimmer", [
+        `/sensors/${dimmerID}`,
+        ...rules.map(rule => `/rules/${rule}`)
+    ]);
+
+    return rules;
 }
 
 
@@ -1397,12 +1404,21 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
     }
 
     // TODO - return all items, resourcelink
-    return [
+    let rules = [
         await onActivate1(),
         await onActivate2(),
         await onLowPower(),
         await onPresence(),
     ];
+
+    const rl = await createLinks(connection, "TODO", "Power Managed Motion Sensor", [
+        `/sensors/${motionID}`,
+        `/sensors/${activation}`,
+        `/sensors/${actionID}`,
+        ...rules.map(rule => `/rules/${rule}`)
+    ]);
+
+    return rules;
 }
 
 const componentSensors = [
@@ -1671,7 +1687,7 @@ function rearrangeProperties(values) {
 
 function pseudoStatus(values, data) {
     function displayValue(p) {
-        if (p.kind === "ddx" && p.value.startsWith("PT")) {
+        if (((p.kind === "ddx") || (p.kind === "schedule")) && p.value.startsWith("PT")) {
             return p.value.substring(2);
         }
 
