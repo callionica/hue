@@ -1,5 +1,7 @@
 # Hue Bluetooth FAQ
 
+This FAQ covers questions related to the Bluetooth functionality of Philips Hue bulbs.
+
 ### Can a BT bulb be added to the Hue bridge?
 Yes.
 
