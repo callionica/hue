@@ -29,7 +29,7 @@ No. The Hue BT iOS app has no way to provide the serial number or other informat
 ### Can a BT bulb be controlled using Bluetooth from outside the room?
 Depends on the size of the room and what the walls are made of, but Yes. The Verge said "within 30 feet".
 
-### Does the Hue BT iOS app allow you to assign lights to rooms?
+### Does the Hue BT iOS app allow you to assign lights to rooms or otherwise create groups of lights?
 No. (Hue Bluetooth iOS app Version 1.11.0 (1579)) The Hue BT iOS app is limited compared to the full-featured Hue iOS app that works with the Hue bridge. Google Home and Alexa can control Hue BT lights over Bluetooth and allow you to assign them to rooms.
 
 ### Does the Hue BT iOS app allow you to create schedules to change lights at specific times?
