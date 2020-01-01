@@ -6,7 +6,7 @@ This FAQ covers questions related to the Bluetooth functionality of Philips Hue 
 Yes.
 
 ### Can a BT bulb be added to the Hue bridge after pairing it to a Bluetooth device?
-Yes.
+Yes. Bulbs can be paired in the normal way. The iOS app also has a software feature "Add Hue Bridge" that can transfer information about the lights to the bridge.
 
 ### Can a BT bulb be Bluetooth-paired to a phone before it has been added to a Hue bridge?
 Yes.
@@ -30,7 +30,7 @@ No. The Hue BT iOS app has no way to provide the serial number or other informat
 Depends on the size of the room and what the walls are made of, but Yes. The Verge said "within 30 feet".
 
 ### Does the Hue BT iOS app allow you to assign lights to rooms?
-No. (Hue Bluetooth iOS app Version 1.11.0 (1579)) The Hue BT iOS app is limited compared to the full-featured Hue iOS app that works with the Hue bridge.
+No. (Hue Bluetooth iOS app Version 1.11.0 (1579)) The Hue BT iOS app is limited compared to the full-featured Hue iOS app that works with the Hue bridge. Google Home and Alexa can control Hue BT lights over Bluetooth and allow you to assign them to rooms.
 
 ### Does the Hue BT iOS app allow you to create schedules to change lights at specific times?
 No. (Hue Bluetooth iOS app Version 1.11.0 (1579))
