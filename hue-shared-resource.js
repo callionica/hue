@@ -1431,13 +1431,42 @@ const componentSensors = [
         modelid: "PM.Zone.Configurations.Current",
         manufacturername: "Callionica",
         component: "Power Managed Zone",
-        property: "Configurations > Current Configuration"
+        property: "Configurations > Current Configuration",
+        list: [
+            {
+                property: "Full power",
+                rule: "PMZ: Full power to low power",
+                kind: "ddx"
+            },
+            {
+                property: "Low power",
+                rule: "PMZ: Low power to off",
+                kind: "ddx"
+            },
+            {
+                property: "Reenable power management",
+                rule: "PMZ: Enable power management",
+                kind: "ddx"
+            },
+            ]
     },
     {
         modelid: "PM.Zone.Scenes.Current",
         manufacturername: "Callionica",
         component: "Power Managed Zone",
-        property: "Scenes > Current Scene"
+        property: "Scenes > Current Scene",
+        list: [
+            {
+                property: "Full power",
+                rule: "SC: Full power",
+                kind: "scene"
+            },
+            {
+                property: "Low power",
+                rule: "SC: Low power",
+                kind: "scene"
+            },
+            ]
     },
     {
         modelid: "PM.Zone.Scenes.Action",
@@ -1544,33 +1573,145 @@ function expandResourceLink(id, data) {
     return { id, ...resourceLink, ...links };
 }
 
+function extractProperty(sensor, rules, propertyMetadata) {
+    const address = `/sensors/${sensor.id}/state/status`;
+    const ruleName = propertyMetadata.rule.toLowerCase();
+    const enabledRules = rules.filter(rule => (rule.name.toLowerCase() === ruleName) && (rule.status === "enabled"));
+
+    let values = [];
+    for (const rule of enabledRules) {
+        const valueCondition = rule.conditions.filter(condition => (condition.address === address) && (condition.operator === "eq"))[0];
+        if (valueCondition) {
+            let value = parseInt(valueCondition.value, 10);
+            if (propertyMetadata.kind === "ddx") {
+                const propertyCondition = rule.conditions.filter(condition => (condition.operator === "ddx"))[0];
+                if (propertyCondition) {
+                    let propertyValue = propertyCondition.value;
+                    values.push({ value, propertyValue });
+                    continue;
+                }
+            } else if (propertyMetadata.kind === "scene") {
+                // TODO error handling
+                let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
+                values.push({ value, propertyValue });
+                continue;
+            }
+            
+            values.push({ value });
+        }
+    }
+
+    let result = [];
+
+    // Condense all the found values
+    for (const v of values) {
+        const existing = result.find(e => e.value === v.value);
+        if (!existing) {
+            result.push(v);
+            continue;
+        }
+
+        if (v.propertyValue === undefined) {
+            continue;
+        }
+        
+        if (existing.propertyValue === undefined) {
+            existing.propertyValue = v.propertyValue;
+            continue;
+        }
+
+        if (existing.propertyValue !== v.propertyValue) {
+            // TODO - how to deal with inconsistency
+            console.log(existing, v);
+        }
+    }
+
+    return result;
+}
+
+function rearrangeProperties(values) {
+    let result = [];
+
+    for (const v of values) {
+        for (const d of v.data) {
+            let existing = result.find(e => e.value === d.value);
+            if (!existing) {
+                existing = {value: d.value, properties: []};
+                result.push(existing);
+            }
+
+            existing.properties.push({ name: v.metadata.property, value: d.propertyValue, kind: v.metadata.kind });
+        }
+    }
+
+    return result;
+}
+
+function pseudoStatus(values, data) {
+    function displayValue(p) {
+        if (p.kind === "ddx" && p.value.startsWith("PT")) {
+            return p.value.substring(2);
+        }
+
+        if (p.kind === "scene") {
+            return data.scenes[p.value].name;
+        }
+
+        return p.value;
+    }
+
+    return values.map(v => {
+        return {
+            value: v.value,
+            name: v.properties.map(p => p.name + ": " + displayValue(p)).join(", ")
+        };
+    });
+}
+
 export function getComponents(data) {
     return Object.entries(data.resourcelinks).filter(([id, resourceLink]) => resourceLink.classid === COMPONENT_CLASSID).map(([id, resourceLink]) => {
-        const result = expandResourceLink(id, data);
-        
-        const component = components.filter(c => c.name === result.description)[0];
-        result.component = component;
+        const component = expandResourceLink(id, data);
 
-        for (const sensor of result.sensors) {
+        component.metadata = components.filter(c => c.name === component.description)[0];
+
+        for (const sensor of component.sensors) {
             const metadata = componentSensors.filter(cs => cs.modelid === sensor.modelid && cs.manufacturername == sensor.manufacturername)[0];
             if (metadata) {
                 sensor.metadata = metadata;
-                var value = { value: sensor.state.status, name: sensor.state.status };
-                if (metadata.status) {
-                    value = metadata.status.filter(status => status.value === sensor.state.status)[0];
+                let value = { value: sensor.state.status, name: sensor.state.status };
+
+                let st = metadata.status;
+
+                if (metadata.list) {
+                    let v = metadata.list.map(propertyMetadata => {
+                        return {
+                            metadata: propertyMetadata,
+                            data: extractProperty(sensor, component.rules, propertyMetadata)
+                        };
+                    });
+                    
+                    sensor.valueList = rearrangeProperties(v);
+                    console.log(sensor.valueList);
+
+                    st = pseudoStatus(sensor.valueList, data);
+                }
+
+                if (st) {
+                    value = st.filter(status => status.value === sensor.state.status)[0];
                 }
                 sensor.value = value;
             }
         }
-        
-        const first = result.links && result.links[0];
+
+        const first = component.links && component.links[0];
         if (first && first !== "/groups/0") {
             if (first.startsWith("/groups/")) {
-                result.tiedTo = { category: "groups", item: result.groups[0] };
+                component.tiedTo = { category: "groups", item: component.groups[0] };
             } else if (first.startsWith("/sensors/")) {
-                result.tiedTo = { category: "sensors", item: result.sensors[0] };
+                component.tiedTo = { category: "sensors", item: component.sensors[0] };
             }
         }
-        return result;
+
+        return component;
     });
 }
