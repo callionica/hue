@@ -3,10 +3,10 @@
 This FAQ covers questions related to the Bluetooth functionality of Philips Hue bulbs.
 
 ### Can a BT bulb be added to the Hue bridge before pairing it to a Bluetooth device?
-Yes.
+Yes. BT bulbs can be added to the Hue bridge in the normal ways.
 
 ### Can a BT bulb be added to the Hue bridge after pairing it to a Bluetooth device?
-Yes. Bulbs can be paired in the normal way. The iOS app also has a software feature "Add Hue Bridge" that can transfer information about the lights to the bridge.
+Yes. BT bulbs can be added to the Hue bridge in the normal ways. The iOS app also has a software feature "Add Hue Bridge" that can transfer information about the lights to the bridge.
 
 ### Can a BT bulb be Bluetooth-paired to a phone before it has been added to a Hue bridge?
 Yes.
