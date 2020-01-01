@@ -1180,7 +1180,7 @@ export async function createPowerManagedZone(connection, zone) {
     return { sceneCycle, sensors: [powerLevelID, powerManagementID], resourceLinks: [rl] };
 }
 
-export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID, zoneControlID, sceneCycle) {
+export async function createPowerManagedDimmerRules(connection, name, dimmerID, zoneID, zoneControlID, sceneCycle) {
 
     async function onDownWhenOff() {
         const body = `{
@@ -1316,7 +1316,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
         await littleStarRepeat(), // Dimmer
     ];
 
-    const rl = await createLinks(connection, "TODO", "Power Managed Dimmer", [
+    const rl = await createLinks(connection, name, "Power Managed Dimmer", [
         `/sensors/${dimmerID}`,
         ...rules.map(rule => `/rules/${rule}`)
     ]);
@@ -1325,7 +1325,7 @@ export async function createPowerManagedDimmerRules(connection, dimmerID, zoneID
 }
 
 
-export async function createPowerManagedMotionSensorRules(connection, motionID, zoneID, zoneControlID) {
+export async function createPowerManagedMotionSensorRules(connection, name, motionID, zoneID, zoneControlID) {
     
     const activation = await createStatusSensor(connection, "Motion Activation", "PM.Motion.Activation", PMM_TURN_ON);
     const actionID = await createStatusSensor(connection, "Motion Action", "PM.Motion.Action", 0);
@@ -1411,7 +1411,7 @@ export async function createPowerManagedMotionSensorRules(connection, motionID, 
         await onPresence(),
     ];
 
-    const rl = await createLinks(connection, "TODO", "Power Managed Motion Sensor", [
+    const rl = await createLinks(connection, name, "Power Managed Motion Sensor", [
         `/sensors/${motionID}`,
         `/sensors/${activation}`,
         `/sensors/${actionID}`,
