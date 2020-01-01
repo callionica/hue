@@ -15,10 +15,10 @@ Yes.
 Yes.
 
 ### Can a BT bulb be controlled by Bluetooth after it has been added to a Hue bridge?
-Yes.
+Yes. It requires the device to go through Bluetooth pairing using the Hue BT app. The control mechanisms are separate.
 
-### Can a BT bulb be controlled by the Hue bridge after is has been Bluetooth-paired?
-Yes.
+### Can a BT bulb be controlled by the Hue bridge after it has been Bluetooth-paired?
+Yes. It requires the device to be added to the Hue bridge. The control mechanisms are separate.
 
 ### Can the Hue BT iOS app be used without providing an email address?
 No. There's no way to skip the page that asks for an email address (Hue Bluetooth iOS app Version 1.11.0 (1579)).
