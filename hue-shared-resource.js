@@ -1435,17 +1435,17 @@ const componentSensors = [
         list: [
             {
                 property: "Full power",
-                rule: "PMZ: Full power to low power",
+                item: "PMZ: Full power to low power",
                 kind: "ddx"
             },
             {
                 property: "Low power",
-                rule: "PMZ: Low power to off",
+                item: "PMZ: Low power to off",
                 kind: "ddx"
             },
             {
                 property: "Reenable power management",
-                rule: "PMZ: Enable power management",
+                item: "PMZ: Enable power management",
                 kind: "ddx"
             },
             ]
@@ -1458,13 +1458,18 @@ const componentSensors = [
         list: [
             {
                 property: "Full power",
-                rule: "SC: Full power",
+                item: "SC: Full power",
                 kind: "scene"
             },
             {
                 property: "Low power",
-                rule: "SC: Low power",
+                item: "SC: Low power",
                 kind: "scene"
+            },
+            {
+                property: "Activate",
+                item: "SC: Time-based",
+                kind: "schedule"
             },
             ]
     },
@@ -1573,31 +1578,48 @@ function expandResourceLink(id, data) {
     return { id, ...resourceLink, ...links };
 }
 
-function extractProperty(sensor, rules, propertyMetadata) {
-    const address = `/sensors/${sensor.id}/state/status`;
-    const ruleName = propertyMetadata.rule.toLowerCase();
-    const enabledRules = rules.filter(rule => (rule.name.toLowerCase() === ruleName) && (rule.status === "enabled"));
+function extractProperty(sensor, schedules, rules, propertyMetadata) {
 
     let values = [];
-    for (const rule of enabledRules) {
-        const valueCondition = rule.conditions.filter(condition => (condition.address === address) && (condition.operator === "eq"))[0];
-        if (valueCondition) {
-            let value = parseInt(valueCondition.value, 10);
-            if (propertyMetadata.kind === "ddx") {
-                const propertyCondition = rule.conditions.filter(condition => (condition.operator === "ddx"))[0];
-                if (propertyCondition) {
-                    let propertyValue = propertyCondition.value;
+
+    if (propertyMetadata.kind === "schedule") {
+        const address = `/sensors/${sensor.id}/state`;
+        const name = propertyMetadata.item.toLowerCase();
+        const enabledSchedules = schedules.filter(schedule => (schedule.name.toLowerCase() === name) && (schedule.status === "enabled") && schedule.command.address.endsWith(address));
+        for (const schedule of enabledSchedules) {
+            let value = schedule.command.body.status;
+            let propertyValue = schedule.localtime;
+
+            values.push({ value, propertyValue });
+        }
+
+    } else {
+
+        const address = `/sensors/${sensor.id}/state/status`;
+        const ruleName = propertyMetadata.item.toLowerCase();
+        const enabledRules = rules.filter(rule => (rule.name.toLowerCase() === ruleName) && (rule.status === "enabled"));
+
+
+        for (const rule of enabledRules) {
+            const valueCondition = rule.conditions.filter(condition => (condition.address === address) && (condition.operator === "eq"))[0];
+            if (valueCondition) {
+                let value = parseInt(valueCondition.value, 10);
+                if (propertyMetadata.kind === "ddx") {
+                    const propertyCondition = rule.conditions.filter(condition => (condition.operator === "ddx"))[0];
+                    if (propertyCondition) {
+                        let propertyValue = propertyCondition.value;
+                        values.push({ value, propertyValue });
+                        continue;
+                    }
+                } else if (propertyMetadata.kind === "scene") {
+                    // TODO error handling
+                    let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
                     values.push({ value, propertyValue });
                     continue;
                 }
-            } else if (propertyMetadata.kind === "scene") {
-                // TODO error handling
-                let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
-                values.push({ value, propertyValue });
-                continue;
+
+                values.push({ value });
             }
-            
-            values.push({ value });
         }
     }
 
@@ -1653,6 +1675,10 @@ function pseudoStatus(values, data) {
             return p.value.substring(2);
         }
 
+        if (p.kind === "schedule" && p.value.startsWith("W127/T")) {
+            return p.value.substring("W127/T".length);
+        }
+
         if (p.kind === "scene") {
             return data.scenes[p.value].name;
         }
@@ -1686,7 +1712,7 @@ export function getComponents(data) {
                     let v = metadata.list.map(propertyMetadata => {
                         return {
                             metadata: propertyMetadata,
-                            data: extractProperty(sensor, component.rules, propertyMetadata)
+                            data: extractProperty(sensor, component.schedules, component.rules, propertyMetadata)
                         };
                     });
                     
