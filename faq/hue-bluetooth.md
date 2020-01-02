@@ -34,3 +34,7 @@ No. (Hue Bluetooth iOS app Version 1.11.0 (1579)) The Hue BT iOS app is limited 
 
 ### Does the Hue BT iOS app allow you to create schedules to change lights at specific times?
 No. (Hue Bluetooth iOS app Version 1.11.0 (1579))
+
+### Can a single bulb be controlled by multiple iOS devices?
+Yes. You can connect any iOS device to the bulb and multiple devices can control the bulb without repairing.
+
