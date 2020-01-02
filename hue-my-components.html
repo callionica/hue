@@ -46,14 +46,30 @@
         h2 {
             color: silver;
         }
+        select {
+            -webkit-appearance: none;
+            font-size: inherit;
+            background: inherit;
+        }
+        option {
+            -webkit-appearance: none;
+            font-size: inherit;
+            background: inherit;
+        }
     </style>
     <script type="module">
         import { connect, getAllCategories, getComponents } from "./hue-shared-resource.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
+        function valuesHTML(sensor) {
+            return `<select>\n` + 
+                    sensor.values.map(s => `<option value="${s.value}" ${s.selected ? "selected" : ""}>${s.name}</option>`) +
+                    `</select>\n`;
+        }
         function propertyToHTML(sensor) {
-            return `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${sensor.value ? sensor.value.name : "Unknown"}</span></div>`;
+            var v = sensor.values ? valuesHTML(sensor) : "";
+            return `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
         }
 
         function componentToHTML(component) {
