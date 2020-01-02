@@ -1412,6 +1412,7 @@ export async function createPowerManagedMotionSensorRules(connection, name, moti
     ];
 
     const rl = await createLinks(connection, name, "Power Managed Motion Sensor", [
+      //  `/groups/0`,
         `/sensors/${motionID}`,
         `/sensors/${activation}`,
         `/sensors/${actionID}`,
@@ -1667,7 +1668,7 @@ function extractProperty(sensor, schedules, rules, propertyMetadata) {
     return result;
 }
 
-function rearrangeProperties(values) {
+function rearrangeProperties(values, data) {
     let result = [];
 
     for (const v of values) {
@@ -1682,10 +1683,6 @@ function rearrangeProperties(values) {
         }
     }
 
-    return result;
-}
-
-function pseudoStatus(values, data) {
     function displayValue(p) {
         if (((p.kind === "ddx") || (p.kind === "schedule")) && p.value.startsWith("PT")) {
             return p.value.substring(2);
@@ -1702,12 +1699,11 @@ function pseudoStatus(values, data) {
         return p.value;
     }
 
-    return values.map(v => {
-        return {
-            value: v.value,
-            name: v.properties.map(p => p.name + ": " + displayValue(p)).join(", ")
-        };
-    });
+    for (const v of result) {
+        v.name = v.properties.map(p => p.name + ": " + displayValue(p)).join(", ");
+    }
+
+    return result;
 }
 
 export function getComponents(data) {
@@ -1722,7 +1718,7 @@ export function getComponents(data) {
                 sensor.metadata = metadata;
                 let value = { value: sensor.state.status, name: sensor.state.status };
 
-                let st = metadata.status;
+                let values = metadata.status;
 
                 if (metadata.list) {
                     let v = metadata.list.map(propertyMetadata => {
@@ -1732,15 +1728,16 @@ export function getComponents(data) {
                         };
                     });
                     
-                    sensor.valueList = rearrangeProperties(v);
-                    console.log(sensor.valueList);
-
-                    st = pseudoStatus(sensor.valueList, data);
+                    values = rearrangeProperties(v, data);
+                    console.log(values);
                 }
 
-                if (st) {
-                    value = st.filter(status => status.value === sensor.state.status)[0];
+                if (values) {
+                    sensor.values = values;
+                    value = values.filter(status => status.value === sensor.state.status)[0];
+                    value.selected = true;
                 }
+
                 sensor.value = value;
             }
         }
