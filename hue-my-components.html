@@ -82,7 +82,13 @@
             document.getElementById("data").innerHTML = html;
         }
 
-        main().then(x => console.log("Done"));
+        const oneSecond = 1.0 * 1000;
+        window.setInterval(() => {
+            main().then(x => console.log("Update"));
+        }, oneSecond);
+
+        main().then(x => console.log("Initial"));
+        
     </script>
 </head>
 <body>
