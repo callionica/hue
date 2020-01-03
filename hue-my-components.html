@@ -58,12 +58,14 @@
         }
     </style>
     <script type="module">
-        import { connect, getAllCategories, getComponents } from "./hue-shared-resource.js";
+        import { connect, getAllCategories, getComponents, setSensorValue } from "./hue-shared-resource.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
+        
+
         function valuesHTML(sensor) {
-            return `<select>\n` + 
+            return `<select data-sensor="${sensor.id}">\n` + 
                     sensor.values.map(s => `<option value="${s.value}" ${s.selected ? "selected" : ""}>${s.name}</option>`) +
                     `</select>\n`;
         }
@@ -96,12 +98,24 @@
             const components = getComponents(data);
             const html = components.map(componentToHTML).join("\n");
             document.getElementById("data").innerHTML = html;
+
+            function onSensorChange(evt) {
+                const sensor = evt.srcElement.getAttribute("data-sensor");
+                const value = evt.srcElement.value;
+                setSensorValue(connection, sensor, value).then(x => console.log("Sensor change"));
+                const timeout = 2.0 * 1000;
+                window.setTimeout(() => {
+                    document.location = document.location;
+                     //main().then(x => console.log("Update"));
+                }, timeout);
+            }
+            [...document.getElementsByTagName("select")].forEach(s => s.onchange = onSensorChange);
         }
 
-        const oneSecond = 1.0 * 1000;
-        window.setInterval(() => {
-            main().then(x => console.log("Update"));
-        }, oneSecond);
+        // const oneSecond = 1.0 * 1000;
+        // window.setInterval(() => {
+        //     main().then(x => console.log("Update"));
+        // }, oneSecond);
 
         main().then(x => console.log("Initial"));
         
