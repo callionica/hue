@@ -350,23 +350,8 @@ export async function registerApp(hub, appName, user) {
     const address = `https://${hub}/api/`;
     const body = `{"devicetype": "${appName}#${user}"}`;
     const method = "POST";
-    let bridgeResult;
-    try {
-        const result = await fetch(address, { method, body });
-        bridgeResult = await result.json();
-    } catch (e) {
-        console.log(body);
-        console.log(e);
-        throw { body, e };
-    }
-
-    if (Array.isArray(bridgeResult) && (bridgeResult.length === 1) && bridgeResult[0].success) {
-        return { hub, app: bridgeResult[0].success.username };
-    }
-
-    console.log(body);
-    console.log(bridgeResult);
-    throw { body, bridgeResult };
+    let bridgeResult = await send(method, address, body);
+    return { hub, app: bridgeResult[0].success.username };
 }
 
 export async function connect(hub, appName) {
