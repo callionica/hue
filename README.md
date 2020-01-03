@@ -107,4 +107,4 @@ Lights have boolean properties `on` and `reachable`. Groups have boolean propert
 
 ## Can CLIPGenericStatus sensors store custom data on the bridge?
 Doesn't look like you can store arbitrary custom data in the `config` section.
-You can store a value from `0` to `255` in `config.battery`. This could be useful for *Hue Components*.
+You don't get an error if you attempt to store a value from `0` to `255` in `config.battery`, but the returned result from the API is `config.battery: null`, so doesn't work for storing data.
