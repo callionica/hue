@@ -175,7 +175,7 @@ export async function createSensor(connection, body) {
     return create(address, body);
 }
 
-export async function setSensorValue(id, value) {
+export async function setSensorValue(connection, id, value) {
     const store = (typeof value === "boolean") ? "flag" : "status";
     const address = `https://${connection.hub}/api/${connection.app}/sensors/${id}/state`;
     const body = `{ "${store}": ${value} }`;
