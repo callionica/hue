@@ -175,6 +175,13 @@ export async function createSensor(connection, body) {
     return create(address, body);
 }
 
+export async function setSensorValue(id, value) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    const address = `https://${connection.hub}/api/${connection.app}/sensors/${id}/state`;
+    const body = `{ "${store}": ${value} }`;
+    return put(address, body);
+}
+
 export async function createSchedule(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/schedules`;
     return create(address, body);
