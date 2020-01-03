@@ -104,3 +104,7 @@ Lights have boolean properties `on` and `reachable`. Groups have boolean propert
 1. Give your Hue bridge a static IP address
 2. Get adaptors for different bulb socket types: B22 to E27, E27 to B22, and GU10 to E27 are useful in the UK. DiCuno adapters are about £7 for 6. It's not ideal to use an adapter because it lengthens bulbs of the same overall shape, but it also gives you a lot of flexibility, shortens the bulb if you can use a GU10 instead of an E27, and you can take advantage of bulb & fixture sales.
 3. Write down the "Serial No." printed on the bulb of every Hue bulb you get
+
+## Can CLIPGenericStatus sensors store custom data on the bridge?
+Doesn't look like you can store arbitrary custom data in the `config` section.
+You can store a value from `0` to `255` in `config.battery`. This could be useful for *Hue Components*.
