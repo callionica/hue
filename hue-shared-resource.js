@@ -141,52 +141,53 @@ const PMM_ACTIVATE = 2000 + 100; // Activate according to the motion sensor acti
 // This gets rid of any confusion around motion detection and multiple users
 // The motion detector is just another user who can let the hallway know it's being used, but is not responsible for turning lights off
 
-export async function create(method, address, body) {
-    var json;
+export async function send(method, address, body) {
+    let bridgeResult;
     try {
         const result = await fetch(address, { method, body });
-        json = await result.json();
+        bridgeResult = await result.json();
     } catch (e) {
         console.log(body);
         console.log(e);
         throw { body, e };
     }
 
-    if (Array.isArray(json) && (json.length === 1) && json[0].success) {
-        return json[0].success.id;
+    if (Array.isArray(bridgeResult) && (bridgeResult.length === 1) && bridgeResult[0].success) {
+        return bridgeResult;
     }
 
     console.log(body);
-    console.log(json);
-    throw { body, json };
+    console.log(bridgeResult);
+    throw { body, bridgeResult };
+}
+
+export async function put(address, body) {
+    return send("PUT", address, body);
+}
+
+export async function create(address, body) {
+    let bridgeResult = await send("POST", address, body);
+    return bridgeResult[0].success.id;
 }
 
 export async function createSensor(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/sensors`;
-    const method = "POST";
-
-    return create(method, address, body);
+    return create(address, body);
 }
 
 export async function createSchedule(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/schedules`;
-    const method = "POST";
-
-    return create(method, address, body);
+    return create(address, body);
 }
 
 export async function createRule(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/rules`;
-    const method = "POST";
-
-    return create(method, address, body);
+    return create(address, body);
 }
 
 export async function createResourceLink(connection, body) {
     const address = `https://${connection.hub}/api/${connection.app}/resourcelinks`;
-    const method = "POST";
-
-    return create(method, address, body);
+    return create(address, body);
 }
 
 export async function deleteRule(connection, id) {
@@ -216,16 +217,16 @@ export async function deleteSchedule(connection, id) {
 export async function getCategory(connection, category) {
     const address = `https://${connection.hub}/api/${connection.app}/${category}`;
 
-    var json;
+    var bridgeResult;
     try {
         const result = await fetch(address);
-        json = await result.json();
+        bridgeResult = await result.json();
     } catch (e) {
         console.log(e);
         throw { body, e };
     }
 
-    return json;
+    return bridgeResult;
 }
 
 export async function getAllCategories(connection) {
@@ -289,24 +290,7 @@ export async function getMotionSensors(connection) {
 export async function touchlink(connection) {
     const address = `https://${connection.hub}/api/${connection.app}/config/`;
     const body = `{"touchlink": true}`;
-    const method = "PUT";
-    var json;
-    try {
-        const result = await fetch(address, { method, body });
-        json = await result.json();
-    } catch (e) {
-        console.log(body);
-        console.log(e);
-        throw { body, e };
-    }
-
-    if (Array.isArray(json) && (json.length === 1) && json[0].success) {
-        return json;
-    }
-
-    console.log(body);
-    console.log(json);
-    throw { body, json };
+    return put(address, body);
 }
 
 export async function deleteAppRules(connection) {
@@ -366,29 +350,29 @@ export async function registerApp(hub, appName, user) {
     const address = `https://${hub}/api/`;
     const body = `{"devicetype": "${appName}#${user}"}`;
     const method = "POST";
-    let json;
+    let bridgeResult;
     try {
         const result = await fetch(address, { method, body });
-        json = await result.json();
+        bridgeResult = await result.json();
     } catch (e) {
         console.log(body);
         console.log(e);
         throw { body, e };
     }
 
-    if (Array.isArray(json) && (json.length === 1) && json[0].success) {
-        return { hub, app: json[0].success.username };
+    if (Array.isArray(bridgeResult) && (bridgeResult.length === 1) && bridgeResult[0].success) {
+        return { hub, app: bridgeResult[0].success.username };
     }
 
     console.log(body);
-    console.log(json);
-    throw { body, json };
+    console.log(bridgeResult);
+    throw { body, bridgeResult };
 }
 
 export async function connect(hub, appName) {
     const key = "hue-connection:" + hub;
     const json = localStorage.getItem(key);
-    var connection;
+    let connection;
     if (json) {
         connection = JSON.parse(json);
         if (connection && connection.hub === hub) {
@@ -1465,6 +1449,11 @@ const componentSensors = [
                 item: "PMZ: Enable power management",
                 kind: "ddx"
             },
+            {
+                property: "Activate",
+                item: "PMZ: Time-based",
+                kind: "schedule"
+            }
             ]
     },
     {
@@ -1696,7 +1685,7 @@ function rearrangeProperties(values, data) {
             return data.scenes[p.value].name;
         }
 
-        return p.value;
+        return "" + p.value;
     }
 
     for (const v of result) {
@@ -1754,3 +1743,5 @@ export function getComponents(data) {
         return component;
     });
 }
+
+// TODO - freeze/copy metadata
