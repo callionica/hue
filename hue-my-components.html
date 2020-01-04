@@ -46,6 +46,9 @@
         h2 {
             color: silver;
         }
+        td {
+            padding-left: 12pt;
+        }
         select {
             -webkit-appearance: none;
             font-size: inherit;
@@ -62,13 +65,13 @@
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
-        
-
         function valuesHTML(sensor) {
             return `<select data-sensor="${sensor.id}">\n` + 
-                    sensor.values.map(s => `<option value="${s.value}" ${s.selected ? "selected" : ""}>${s.name}</option>`) +
+                    `<option value="${sensor.value}" "selected"}>${sensor.value.name}</option>` +
+                    sensor.values.map(s => `<option value="${s.value}">${s.name}</option>`) +
                     `</select>\n`;
         }
+
         function propertyToHTML(sensor) {
             var v = sensor.values ? valuesHTML(sensor) : "";
             return `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
@@ -76,18 +79,23 @@
 
         function componentToHTML(component) {
 
-            var tiedToHTML = "";
-            if (component.tiedTo){
-                let category = component.tiedTo.category;
-                let item = component.tiedTo.item;
-                let description = (category === "sensors") ? item.productname : item.type;
-                tiedToHTML =  (`<div class="connected">` + item.name + " (" + description + ")</div>\n");
-            }
+            var tiedToHTML = component.connections.map(connection => {
+                let category = connection.category;
+                let item = connection.item;
+                let description = (category === "sensors") ? (item.productname || item.modelid) : item.type;
+                return `<div class="connected">${item.name} (${description})</div>\n`;
+            }).join("\n");
+            
             var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => propertyToHTML(sensor)).join("\n");
+            var agenda = "";
+            if (component.agenda && component.agenda.length > 0) {
+                agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div><table>` + component.agenda.map(a => "<tr><td>" + [a.property.displayValue, a.sensor.metadata.property, a.value.properties.filter(p => p != a.property).map(p => p.displayValue).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
+            }
             var html = `<div class="component"><h1>${component.name}</h1>
-            <h2>${component.metadata.name} by ${component.metadata.manufacturer}</h2>
+            <h2 title="${component.metadata.comment}">${component.metadata.name} by ${component.metadata.manufacturer}</h2>
             ${tiedToHTML}
             ${properties}
+            ${agenda}
             </div>`;
             return html;
         }
