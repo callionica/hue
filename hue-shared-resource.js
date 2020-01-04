@@ -1137,6 +1137,7 @@ export async function createPowerManagedZone(connection, zone) {
 
     const rl = await createLinks(connection, zone.name, "Power Managed Zone", [
         `/groups/${zone.id}`,
+        `/groups/0`,
         `/sensors/${powerLevelID}`,
         `/sensors/${powerManagementID}`,
         `/sensors/${configurationID}`,
@@ -1294,6 +1295,7 @@ export async function createPowerManagedDimmerRules(connection, name, dimmerID, 
 
     const rl = await createLinks(connection, name, "Power Managed Dimmer", [
         `/sensors/${dimmerID}`,
+        `/groups/0`,
         ...rules.map(rule => `/rules/${rule}`)
     ]);
 
@@ -1388,8 +1390,9 @@ export async function createPowerManagedMotionSensorRules(connection, name, moti
     ];
 
     const rl = await createLinks(connection, name, "Power Managed Motion Sensor", [
-      //  `/groups/0`,
         `/sensors/${motionID}`,
+        `/sensors/${zoneID}`,
+        `/groups/0`,
         `/sensors/${activation}`,
         `/sensors/${actionID}`,
         ...rules.map(rule => `/rules/${rule}`)
@@ -1558,13 +1561,25 @@ function expandLink(link, data) {
 }
 
 // Converts all links to their respective objects and separates them into categories
+// Links from the start of the list up to the first "/groups/0" are "connections"
 function expandLinks(links, data) {
-    var result = {};
+    let result = {};
+    let connections = [];
     for (const link of links) {
+        if (connections && link === "/groups/0") {
+            result.connections = connections;
+            connections = null;
+        }
         const o = expandLink(link, data);
-        const c = result[o.category] || [];
-        c.push(o.item);
-        result[o.category] = c;
+        if (o) {
+            const c = result[o.category] || [];
+            c.push(o.item);
+            result[o.category] = c;
+
+            if (connections) {
+                connections.push(o);
+            }
+        }
     }
     return result;
 }
@@ -1681,7 +1696,7 @@ function rearrangeProperties(values, data) {
     }
 
     for (const v of result) {
-        v.name = v.properties.map(p => p.name + ": " + displayValue(p)).join(", ");
+        v.name = v.properties.map(p => { p.displayValue = displayValue(p); return p.name + ": " + p.displayValue; }).join(", ");
     }
 
     return result;
@@ -1697,10 +1712,10 @@ export function getComponents(data) {
             const metadata = componentSensors.filter(cs => cs.modelid === sensor.modelid && cs.manufacturername == sensor.manufacturername)[0];
             if (metadata) {
                 sensor.metadata = metadata;
+
                 let value = { value: sensor.state.status, name: sensor.state.status };
 
-                let values = metadata.status;
-
+                let values;
                 if (metadata.list) {
                     let v = metadata.list.map(propertyMetadata => {
                         return {
@@ -1710,17 +1725,52 @@ export function getComponents(data) {
                     });
                     
                     values = rearrangeProperties(v, data);
-                    console.log(values);
+                } else {
+                    values = metadata.status.map(s => { return {...s}; });
                 }
 
                 if (values) {
                     sensor.values = values;
-                    value = values.filter(status => status.value === sensor.state.status)[0];
-                    value.selected = true;
+                    const v = values.filter(status => status.value === sensor.state.status)[0];
+                    if (v) {
+                        value = v;
+                        value.selected = true;
+                    }
                 }
 
                 sensor.value = value;
             }
+        }
+
+        const agenda = [];
+
+        for (const sensor of component.sensors) {
+            if (sensor.values) {
+                for (const value of sensor.values) {
+                    if (value.properties) {
+                        for (const property of value.properties) {
+                            if (property.kind === "schedule") {
+                                agenda.push({
+                                    sensor,
+                                    value,
+                                    property
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        component.agenda = agenda;
+        console.log(agenda);
+
+        /*const connections = [];
+        for (const link of component.links) {
+            if (link === "/groups/0") {
+                break;
+            }
+            connections.push
         }
 
         const first = component.links && component.links[0];
@@ -1730,7 +1780,7 @@ export function getComponents(data) {
             } else if (first.startsWith("/sensors/")) {
                 component.tiedTo = { category: "sensors", item: component.sensors[0] };
             }
-        }
+        }*/
 
         return component;
     });
