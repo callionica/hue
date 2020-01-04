@@ -53,13 +53,13 @@
 
                 const dimmers = (await getDimmers(connection)).filter(dimmer => dimmer.name === zone.name);
                 for (const dimmer of dimmers) {
-                    const rules = await createPowerManagedDimmerRules(connection, dimmer.name, dimmer.id, result.sensors[0], result.sensors[1], result.sceneCycle);
+                    const rules = await createPowerManagedDimmerRules(connection, dimmer.name, dimmer.id, result);
                     console.log(rules);
                 }
 
                 const motionSensors = (await getMotionSensors(connection)).filter(motionSensor => motionSensor.name === zone.name);
                 for (const motionSensor of motionSensors) {
-                    const rules = await createPowerManagedMotionSensorRules(connection, motionSensor.name, motionSensor.id, result.sensors[0], result.sensors[1]);
+                    const rules = await createPowerManagedMotionSensorRules(connection, motionSensor.name, motionSensor.id, result);
                     console.log(rules);
                 }
             }
