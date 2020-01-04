@@ -1045,7 +1045,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
     return result;
 }
 
-// zone: { name, power: { fullPower, lowPower, reenable }}
+// zone: { id, name, power: { fullPower, lowPower, reenable }}
 // cycle: [{ fullPower: "Scene 1", lowPower: "Scene 2", startTime: "hh:mm:ss" }]
 export async function createPowerManagedZone(connection, zone) {
 
@@ -1154,10 +1154,22 @@ export async function createPowerManagedZone(connection, zone) {
         ...sceneCycle.schedules.map(r => `/schedules/${r}`),
     ]);
 
-    return { sceneCycle, sensors: [powerLevelID, powerManagementID], resourceLinks: [rl] };
+    return {
+        id: rl,
+        zone,
+        powerLevel: powerLevelID,
+        powerManagement: powerManagementID,
+        configuration: configurationID,
+        sceneCycle,
+        sensors: [powerLevelID, powerManagementID], resourceLinks: [rl]
+    };
 }
 
-export async function createPowerManagedDimmerRules(connection, name, dimmerID, zoneID, zoneControlID, sceneCycle) {
+export async function createPowerManagedDimmerRules(connection, name, dimmerID, pmz) {
+
+    const zoneID = pmz.powerLevel;
+    const zoneControlID = pmz.powerManagement;
+    const sceneCycle = pmz.sceneCycle;
 
     async function onDownWhenOff() {
         const body = `{
@@ -1302,9 +1314,11 @@ export async function createPowerManagedDimmerRules(connection, name, dimmerID, 
     return rules;
 }
 
-
-export async function createPowerManagedMotionSensorRules(connection, name, motionID, zoneID, zoneControlID) {
+export async function createPowerManagedMotionSensorRules(connection, name, motionID, pmz) {
     
+    const zoneID = pmz.powerLevel;
+    const zoneControlID = pmz.powerManagement;
+
     const activation = await createStatusSensor(connection, "Motion Activation", "PM.Motion.Activation", PMM_TURN_ON);
     const actionID = await createStatusSensor(connection, "Motion Action", "PM.Motion.Action", 0);
 
