@@ -36,5 +36,7 @@ No. (Hue Bluetooth iOS app Version 1.11.0 (1579)) The Hue BT iOS app is limited 
 No. (Hue Bluetooth iOS app Version 1.11.0 (1579))
 
 ### Can a single bulb be controlled by multiple iOS devices?
-Yes. You can connect any iOS device to the bulb and multiple devices can control the bulb without repairing.
+Yes. You can connect any iOS device to the bulb and multiple devices can control the bulb without repairing. Apparently there is a 15 device limit per bulb. I don't know what happens when that limit is reached.
 
+### Can you prevent people pairing with Hue BT bulbs?
+Not exactly. According to Philips Hue support on Twitter (https://twitter.com/tweethue/status/1213478944739119104), Bluetooth pairing is only possible within 30 minutes of a power cycle of the bulb, so if you can be sure of keeping your bulbs powered, people can't pair with them.
