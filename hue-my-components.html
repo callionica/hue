@@ -138,7 +138,9 @@
 
                 let doIt = true;
                 if (connected.length > 0) {
-                    doIt = confirm(`Component in use by ${connected.map(c => `${c.name} (${c.description})`).join(", ")}.\nOK to delete this component anyway?`);
+                    doIt = confirm(`Component in use by ${connected.map(c => `${c.name} (${c.description})`).join(", ")}.\n\nContinuing will delete ${component.name} (${component.description}) and all its resources, but will leave these other components in a broken state.\n\nOK to delete ${component.name} (${component.description}) anyway?`);
+                } else {
+                    doIt = confirm(`Continuing will delete ${component.name} (${component.description}) and all its resources.\n\nOK to delete ${component.name} (${component.description})?`);
                 }
 
                 if (!doIt) {
