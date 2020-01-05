@@ -1579,7 +1579,7 @@ function expandLink(link, data) {
             const id = path[2]; // id will be "1", "3TcLCtr5vuebVK1", etc
             const o = c[id];
             if (o) {
-                return { category, item: { id, ...o } };
+                return { category, item: o };
             }
         }
     }
@@ -1589,11 +1589,20 @@ function expandLink(link, data) {
 
 // Converts all links to their respective objects and separates them into categories
 // Links from the start of the list up to the first "/groups/0" are "connections"
-function expandLinks(links, data) {
-    let result = { connections: [], groups:[], schedules:[], scenes:[], sensors:[], rules:[], resourcelinks:[] };
-    let connections = result.connections;
+function expandResourceLink(id, data) {
+    const resourceLink = data.resourcelinks[id];
 
-    for (const link of links) {
+    resourceLink.connections = [];
+    resourceLink.groups = [];
+    resourceLink.schedules = [];
+    resourceLink.scenes = [];
+    resourceLink.sensors = [];
+    resourceLink.rules = [];
+    resourceLink.resourcelinks = [];
+
+    let connections = resourceLink.connections;
+
+    for (const link of resourceLink.links) {
         
         if (connections && link === "/groups/0") {
             connections = null;
@@ -1605,21 +1614,14 @@ function expandLinks(links, data) {
             if (connections) {
                 connections.push(o);
             } else {
-                const c = result[o.category] || [];
+                const c = resourceLink[o.category] || [];
                 c.push(o.item);
-                result[o.category] = c;    
+                resourceLink[o.category] = c;    
             }
         }
     }
 
-    return result;
-}
-
-// Expands a resource link by adding an id property and pulling in referred-to objects
-function expandResourceLink(id, data) {
-    const resourceLink = data.resourcelinks[id];
-    const links = expandLinks(resourceLink.links, data);
-    return { id, ...resourceLink, ...links };
+    return resourceLink;
 }
 
 function extractProperty(sensor, schedules, rules, propertyMetadata) {
@@ -1734,6 +1736,13 @@ function rearrangeProperties(values, data) {
 }
 
 export function rearrangeForHueComponents(data) {
+    // Give all objects their id property
+    Object.entries(data).forEach(([category, collection]) => {
+        if (["lights", "groups", "schedules", "scenes", "sensors", "rules", "resourcelinks"].includes(category)) {
+            Object.entries(collection).forEach(([id, item]) => item.id = id)
+        }
+    });
+
     data.components = {};
 
     return Object.entries(data.resourcelinks).filter(([id, resourceLink]) => resourceLink.classid === COMPONENT_CLASSID).map(([id, resourceLink]) => {
@@ -1804,7 +1813,7 @@ export function rearrangeForHueComponents(data) {
 }
 
 export function getConnectedComponents(component, data) {
-    return Object.values(data.components).filter(c => c.connections.find(cn => cn.item.id === component.id));
+    return Object.values(data.components).filter(c => c.connections.find(cn => cn.item === component));
 }
 
 export async function deleteComponent(connection, component) {
