@@ -1803,6 +1803,10 @@ export function rearrangeForHueComponents(data) {
     });
 }
 
+export function getConnectedComponents(component, data) {
+    return Object.values(data.components).filter(c => c.connections.find(cn => cn.item.id === component.id));
+}
+
 export async function deleteComponent(connection, component) {
     
     for (const group of component.groups) {
