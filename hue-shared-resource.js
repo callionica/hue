@@ -221,6 +221,18 @@ export async function deleteSchedule(connection, id) {
     return fetch(address, { method });
 }
 
+export async function deleteGroup(connection, id) {
+    const address = `https://${connection.hub}/api/${connection.app}/groups/${id}`;
+    const method = "DELETE";
+    return fetch(address, { method });
+}
+
+export async function deleteScene(connection, id) {
+    const address = `https://${connection.hub}/api/${connection.app}/scenes/${id}`;
+    const method = "DELETE";
+    return fetch(address, { method });
+}
+
 export async function getCategory(connection, category) {
     const address = `https://${connection.hub}/api/${connection.app}/${category}`;
 
@@ -1307,6 +1319,7 @@ export async function createPowerManagedDimmerRules(connection, name, dimmerID, 
 
     const rl = await createLinks(connection, name, "Power Managed Dimmer", [
         `/sensors/${dimmerID}`,
+        `/resourcelinks/${pmz.id}`,
         `/groups/0`,
         ...rules.map(rule => `/rules/${rule}`)
     ]);
@@ -1405,7 +1418,7 @@ export async function createPowerManagedMotionSensorRules(connection, name, moti
 
     const rl = await createLinks(connection, name, "Power Managed Motion Sensor", [
         `/sensors/${motionID}`,
-        `/sensors/${zoneID}`,
+        `/resourcelinks/${pmz.id}`,
         `/groups/0`,
         `/sensors/${activation}`,
         `/sensors/${actionID}`,
@@ -1577,24 +1590,28 @@ function expandLink(link, data) {
 // Converts all links to their respective objects and separates them into categories
 // Links from the start of the list up to the first "/groups/0" are "connections"
 function expandLinks(links, data) {
-    let result = {};
-    let connections = [];
+    let result = { connections: [], groups:[], schedules:[], scenes:[], sensors:[], rules:[], resourcelinks:[] };
+    let connections = result.connections;
+
     for (const link of links) {
+        
         if (connections && link === "/groups/0") {
-            result.connections = connections;
             connections = null;
+            continue;
         }
+
         const o = expandLink(link, data);
         if (o) {
-            const c = result[o.category] || [];
-            c.push(o.item);
-            result[o.category] = c;
-
             if (connections) {
                 connections.push(o);
+            } else {
+                const c = result[o.category] || [];
+                c.push(o.item);
+                result[o.category] = c;    
             }
         }
     }
+
     return result;
 }
 
@@ -1716,9 +1733,13 @@ function rearrangeProperties(values, data) {
     return result;
 }
 
-export function getComponents(data) {
+export function rearrangeForHueComponents(data) {
+    data.components = {};
+
     return Object.entries(data.resourcelinks).filter(([id, resourceLink]) => resourceLink.classid === COMPONENT_CLASSID).map(([id, resourceLink]) => {
         const component = expandResourceLink(id, data);
+
+        data.components[component.id] = component;
 
         component.metadata = components.filter(c => c.name === component.description)[0];
 
@@ -1748,7 +1769,6 @@ export function getComponents(data) {
                     const v = values.filter(status => status.value === sensor.state.status)[0];
                     if (v) {
                         value = v;
-                        value.selected = true;
                     }
                 }
 
@@ -1779,25 +1799,46 @@ export function getComponents(data) {
         component.agenda = agenda;
         console.log(agenda);
 
-        /*const connections = [];
-        for (const link of component.links) {
-            if (link === "/groups/0") {
-                break;
-            }
-            connections.push
-        }
-
-        const first = component.links && component.links[0];
-        if (first && first !== "/groups/0") {
-            if (first.startsWith("/groups/")) {
-                component.tiedTo = { category: "groups", item: component.groups[0] };
-            } else if (first.startsWith("/sensors/")) {
-                component.tiedTo = { category: "sensors", item: component.sensors[0] };
-            }
-        }*/
-
         return component;
     });
+}
+
+export async function deleteComponent(connection, component) {
+    
+    for (const group of component.groups) {
+        await deleteGroup(connection, group.id);
+    }
+
+    for (const schedule of component.schedules) {
+        await deleteSchedule(connection, schedule.id);
+    }
+
+    for (const scene of component.scenes) {
+        await deleteScene(connection, scene.id);
+    }
+
+    for (const sensor of component.sensors) {
+        await deleteSensor(connection, sensor.id);
+    }
+
+    for (const rule of component.rules) {
+        await deleteRule(connection, rule.id);
+    }
+
+    for (const resourceLink of component.resourcelinks) {
+        if (resourceLink.classid === COMPONENT_CLASSID) {
+            // Don't recommend having subcomponents
+            // If you want to refer to another component that you depend on, put it in the "connections" list
+            // If another component depends on you, your component should be in its connections list
+            console.log(`Delete: subcomponent ${resourceLink.description}`);
+            await deleteComponent(connection, resourceLink);
+        } else {
+            await deleteResourceLink(connection, resourceLink.id);
+        }
+    }
+
+    // The component itself is a resourcelink
+    await deleteResourceLink(connection, component.id);
 }
 
 // TODO - freeze/copy metadata
