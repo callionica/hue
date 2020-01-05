@@ -13,6 +13,10 @@
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
         body {
             padding: 8pt;
         }
@@ -67,7 +71,7 @@
         }
     </style>
     <script type="module">
-        import { connect, getAllCategories, rearrangeForHueComponents, setSensorValue, getConnectedComponents, deleteComponent } from "./hue-shared-resource.js";
+        import { connect, getAllCategories, rearrangeForHueComponents, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime } from "./hue-shared-resource.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
@@ -100,12 +104,12 @@
             var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => propertyToHTML(sensor)).join("\n");
             var agenda = "";
             if (component.agenda && component.agenda.length > 0) {
-                agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div><table>` + component.agenda.map(a => "<tr><td>" + [a.property.displayValue, a.sensor.metadata.property, a.value.properties.filter(p => p != a.property).map(p => p.displayValue).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
+                agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div><table>` + component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
             }
             var html = `
             <div class="component">
             <h1>${component.name}</h1>
-            <h2 title="${component.metadata.comment}">${component.metadata.name} by ${component.metadata.manufacturer}</h2>
+            <h2 title="${component.metadata.comment}"><a href="${component.metadata.url}">${component.metadata.name} by ${component.metadata.manufacturer}</a></h2>
             ${tiedToHTML}
             ${properties}
             ${agenda}
