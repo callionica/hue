@@ -1471,11 +1471,6 @@ const componentSensors = [
                 item: "PMZ: Enable power management",
                 kind: "ddx"
             },
-            {
-                property: "Activate",
-                item: "PMZ: Time-based",
-                kind: "schedule"
-            }
             ]
     },
     {
@@ -1493,11 +1488,6 @@ const componentSensors = [
                 property: "Low power",
                 item: "SC: Low power",
                 kind: "scene"
-            },
-            {
-                property: "Activate",
-                item: "SC: Time-based",
-                kind: "schedule"
             },
             ]
     },
@@ -1624,48 +1614,45 @@ function expandResourceLink(id, data) {
     return resourceLink;
 }
 
+function extractAgenda(sensor, schedules) {
+    const result = [];
+    const address = `/sensors/${sensor.id}/state`;
+    const enabledSchedules = schedules.filter(schedule => (schedule.status === "enabled") && schedule.command.address.endsWith(address));
+    for (const schedule of enabledSchedules) {
+        let localTime = schedule.localtime;
+        let value = schedule.command.body.status;
+        result.push({ localTime, sensor, value, schedule });
+    }
+    return result;
+}
+
 function extractProperty(sensor, schedules, rules, propertyMetadata) {
 
     let values = [];
 
-    if (propertyMetadata.kind === "schedule") {
-        const address = `/sensors/${sensor.id}/state`;
-        const name = propertyMetadata.item.toLowerCase();
-        const enabledSchedules = schedules.filter(schedule => (schedule.name.toLowerCase() === name) && (schedule.status === "enabled") && schedule.command.address.endsWith(address));
-        for (const schedule of enabledSchedules) {
-            let value = schedule.command.body.status;
-            let propertyValue = schedule.localtime;
+    const address = `/sensors/${sensor.id}/state/status`;
+    const ruleName = propertyMetadata.item.toLowerCase();
+    const enabledRules = rules.filter(rule => (rule.name.toLowerCase() === ruleName) && (rule.status === "enabled"));
 
-            values.push({ value, propertyValue });
-        }
-
-    } else {
-
-        const address = `/sensors/${sensor.id}/state/status`;
-        const ruleName = propertyMetadata.item.toLowerCase();
-        const enabledRules = rules.filter(rule => (rule.name.toLowerCase() === ruleName) && (rule.status === "enabled"));
-
-
-        for (const rule of enabledRules) {
-            const valueCondition = rule.conditions.filter(condition => (condition.address === address) && (condition.operator === "eq"))[0];
-            if (valueCondition) {
-                let value = parseInt(valueCondition.value, 10);
-                if (propertyMetadata.kind === "ddx") {
-                    const propertyCondition = rule.conditions.filter(condition => (condition.operator === "ddx"))[0];
-                    if (propertyCondition) {
-                        let propertyValue = propertyCondition.value;
-                        values.push({ value, propertyValue });
-                        continue;
-                    }
-                } else if (propertyMetadata.kind === "scene") {
-                    // TODO error handling
-                    let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
+    for (const rule of enabledRules) {
+        const valueCondition = rule.conditions.filter(condition => (condition.address === address) && (condition.operator === "eq"))[0];
+        if (valueCondition) {
+            let value = parseInt(valueCondition.value, 10);
+            if (propertyMetadata.kind === "ddx") {
+                const propertyCondition = rule.conditions.filter(condition => (condition.operator === "ddx"))[0];
+                if (propertyCondition) {
+                    let propertyValue = propertyCondition.value;
                     values.push({ value, propertyValue });
                     continue;
                 }
-
-                values.push({ value });
+            } else if (propertyMetadata.kind === "scene") {
+                // TODO error handling
+                let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
+                values.push({ value, propertyValue });
+                continue;
             }
+
+            values.push({ value });
         }
     }
 
@@ -1785,25 +1772,7 @@ export function rearrangeForHueComponents(data) {
             }
         }
 
-        const agenda = [];
-
-        for (const sensor of component.sensors) {
-            if (sensor.values) {
-                for (const value of sensor.values) {
-                    if (value.properties) {
-                        for (const property of value.properties) {
-                            if (property.kind === "schedule") {
-                                agenda.push({
-                                    sensor,
-                                    value,
-                                    property
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        const agenda = component.sensors.flatMap(sensor => extractAgenda(sensor, Object.values(data.schedules)));
 
         component.agenda = agenda;
         console.log(agenda);
@@ -1852,6 +1821,13 @@ export async function deleteComponent(connection, component) {
 
     // The component itself is a resourcelink
     await deleteResourceLink(connection, component.id);
+}
+
+export function displayLocalTime(value) {
+    if (value.startsWith("W127/T")) {
+        return value.substring("W127/T".length);
+    }
+    return value;
 }
 
 // TODO - freeze/copy metadata
