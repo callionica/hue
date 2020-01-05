@@ -59,9 +59,15 @@
             font-size: inherit;
             background: inherit;
         }
+        button {
+            font-size: inherit;
+            padding: 4pt;
+            border-radius: 4pt;
+            background-color: silver;
+        }
     </style>
     <script type="module">
-        import { connect, getAllCategories, getComponents, setSensorValue } from "./hue-shared-resource.js";
+        import { connect, getAllCategories, rearrangeForHueComponents, setSensorValue, getConnectedComponents, deleteComponent } from "./hue-shared-resource.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
@@ -82,7 +88,12 @@
             var tiedToHTML = component.connections.map(connection => {
                 let category = connection.category;
                 let item = connection.item;
-                let description = (category === "sensors") ? (item.productname || item.modelid) : item.type;
+                let description = item.type;
+                if (category === "sensors") {
+                    description = (item.productname || item.modelid);   
+                } else if (category === "resourcelinks") {
+                    description = item.description;
+                }
                 return `<div class="connected">${item.name} (${description})</div>\n`;
             }).join("\n");
             
@@ -91,33 +102,54 @@
             if (component.agenda && component.agenda.length > 0) {
                 agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div><table>` + component.agenda.map(a => "<tr><td>" + [a.property.displayValue, a.sensor.metadata.property, a.value.properties.filter(p => p != a.property).map(p => p.displayValue).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
             }
-            var html = `<div class="component"><h1>${component.name}</h1>
+            var html = `
+            <div class="component">
+            <h1>${component.name}</h1>
             <h2 title="${component.metadata.comment}">${component.metadata.name} by ${component.metadata.manufacturer}</h2>
             ${tiedToHTML}
             ${properties}
             ${agenda}
-            </div>`;
+            <div style="margin-top: 16pt;"><button data-component="${component.id}" class="delete">Delete</button></div>
+            </div>
+            `;
             return html;
         }
 
         async function main() {
             const connection = await connect(hub, "Callionica");
             const data = await getAllCategories(connection);
-            const components = getComponents(data);
+            const components = rearrangeForHueComponents(data);
+            //await deleteComponent(connection, components[0]);
             const html = components.map(componentToHTML).join("\n");
             document.getElementById("data").innerHTML = html;
 
             function onSensorChange(evt) {
                 const sensor = evt.srcElement.getAttribute("data-sensor");
                 const value = evt.srcElement.value;
-                setSensorValue(connection, sensor, value).then(x => console.log("Sensor change"));
-                const timeout = 2.0 * 1000;
-                window.setTimeout(() => {
-                    document.location = document.location;
-                     //main().then(x => console.log("Update"));
-                }, timeout);
+                setSensorValue(connection, sensor, value).then(x => document.location = document.location);
             }
             [...document.getElementsByTagName("select")].forEach(s => s.onchange = onSensorChange);
+
+            function onDelete(evt) {
+                const componentID = evt.srcElement.getAttribute("data-component");
+                const component = data.components[componentID];
+
+                const connected = getConnectedComponents(component, data);
+
+                let doIt = true;
+                if (connected.length > 0) {
+                    doIt = confirm(`Component in use by ${connected.map(c => `${c.name} (${c.description})`).join(", ")}.\nOK to delete this component anyway?`);
+                }
+
+                if (!doIt) {
+                    return;
+                }
+
+                deleteComponent(connection, component).then(x => {
+                    document.location = document.location;
+                });
+            }
+            [...document.querySelectorAll("button.delete")].forEach(s => s.onclick = onDelete);
         }
 
         // const oneSecond = 1.0 * 1000;
