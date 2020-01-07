@@ -1640,13 +1640,17 @@ function extractDaylightAgenda(sensor, data) {
     const enabledRules = rules.filter(rule => (rule.status === "enabled") && (rule.actions) && (rule.conditions));
 
     for (const rule of enabledRules) {
-        let condition = rule.conditions.filter(c => c.address === daylight && c.operator === "eq")[0];
-        let dxCondition = rule.conditions.filter(c => c.address.startsWith(daylightSensor) && c.operator === "dx")[0];
-        let ddxCondition = rule.conditions.filter(c => c.address.startsWith(daylightSensor) && c.operator === "ddx")[0];
-        if (condition) {
-            if (rule.conditions.length > 1 && !ddxCondition && !dxCondition) {
+        for (const trigger of rule.triggers) {
+            let condition = trigger.conditions.filter(c => c.address === daylight && c.operator === "eq")[0];
+            if (!condition) {
                 continue;
             }
+
+            // A combination of the test above that gets us a condition that matches
+            // and the fact that we've already paired conditions into a trigger means
+            // that we only need to look at the operator here
+            let ddxCondition = trigger.conditions.filter(c => c.operator === "ddx")[0];
+
             for (const action of rule.actions) {
                 if (action.address === address) {
                     let localTime = (condition.value === "true") ? "sunrise" : "sunset";
@@ -1769,19 +1773,25 @@ export function rearrangeForHueComponents(data) {
 
     // Mark rule conditions as triggers
     Object.values(data.rules).forEach(rule => {
-        // A condition is (part of) a trigger if any of the following applies:
+        // A condition is part of a trigger if any of the following applies:
         // 1. It's a dx condition
         // 2. It's a ddx condition
         // 3. There's a dx condition that matches it
         // 4. There's a ddx condition that matches it
-        // 5. There are no dx or ddx conditions in the rule
+        // 5. There are no dx or ddx conditions anywhere in the rule
+        //
+        // "A dx condition that matches it" is interesting:
+        // For our purposes we match dx and ddx conditions for both "/state/status" and "/state/lastupdated".
+        // Clearly we have to match /state/status.
+        // state/lastupdated might not guarantee that /state/status has changed, but it does include that possibility, so we have to match that too. In fact, many rules with state/lastupdated
+        // appear to be intended to trigger mainly or only when state/status has changed.
 
         const triggers = [];
 
         const dxx = rule.conditions.filter(condition => (condition.operator === "dx") || (condition.operator === "ddx"));
 
         dxx.forEach(condition => {
-            condition.trigger = { tests: [condition] };
+            condition.trigger = { conditions: [condition] };
             triggers.push(condition.trigger);
         });
 
@@ -1798,7 +1808,7 @@ export function rearrangeForHueComponents(data) {
             }
 
             if (allAreTriggers) {
-                condition.trigger = { tests: [condition] };
+                condition.trigger = { conditions: [condition] };
                 triggers.push(condition.trigger);
             }
 
@@ -1809,7 +1819,7 @@ export function rearrangeForHueComponents(data) {
             matchDXX.forEach(d => {
                 const trigger = d.trigger;
                 condition.trigger = trigger;
-                trigger.tests.push(condition);
+                trigger.conditions.push(condition);
             });
         }
 
