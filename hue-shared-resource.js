@@ -1623,6 +1623,39 @@ function extractAgenda(sensor, schedules) {
         let value = schedule.command.body.status;
         result.push({ localTime, sensor, value, schedule });
     }
+
+    return result;
+}
+
+function extractDaylightAgenda(sensor, data) {
+    const result = [];
+    // if (!data.sensors[1].config.on) {
+    //     return result;
+    // }
+    const rules = Object.values(data.rules);
+    const address = `/sensors/${sensor.id}/state`;
+    const daylightSensor = `/sensors/1/state/`; // TODO
+    const daylight = daylightSensor + `daylight`;
+
+    const enabledRules = rules.filter(rule => (rule.status === "enabled") && (rule.actions) && (rule.conditions));
+
+    for (const rule of enabledRules) {
+        let condition = rule.conditions.filter(c => c.address === daylight && c.operator === "eq")[0];
+        let ddxCondition = rule.conditions.filter(c => c.address.startsWith(daylightSensor) && c.operator === "ddx")[0];
+        if (condition) {
+            for (const action of rule.actions) {
+                if (action.address === address) {
+                    let localTime = (condition.value === "true") ? "sunrise" : "sunset";
+                    if (ddxCondition) {
+                        localTime += "+" + ddxCondition.value; // TODO
+                    }
+                    let value = action.body.status;
+                    result.push({ localTime, sensor, value, rule });
+                }
+            }
+        }
+    }
+
     return result;
 }
 
@@ -1774,8 +1807,12 @@ export function rearrangeForHueComponents(data) {
 
         const agenda = component.sensors.flatMap(sensor => extractAgenda(sensor, Object.values(data.schedules)));
 
+        const daylightAgenda = component.sensors.flatMap(sensor => extractDaylightAgenda(sensor, data));
+
+
         component.agenda = agenda;
-        console.log(agenda);
+        component.daylightAgenda = daylightAgenda;
+        console.log(daylightAgenda);
 
         return component;
     });
