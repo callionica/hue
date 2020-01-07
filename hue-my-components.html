@@ -106,6 +106,10 @@
             if (component.agenda && component.agenda.length > 0) {
                 agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div><table>` + component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
             }
+            var daylightAgenda = "";
+            if (component.daylightAgenda && component.daylightAgenda.length > 0) {
+                daylightAgenda = `<div style="font-weight: bold; margin-top: 12pt;">Daylight Schedule</div><table>` + component.daylightAgenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
+            }
             var html = `
             <div class="component">
             <h1>${component.name}</h1>
@@ -113,6 +117,7 @@
             ${tiedToHTML}
             ${properties}
             ${agenda}
+            ${daylightAgenda}
             <div style="margin-top: 16pt;"><button data-component="${component.id}" class="delete">Delete</button></div>
             </div>
             `;
