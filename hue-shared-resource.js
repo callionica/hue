@@ -1641,8 +1641,12 @@ function extractDaylightAgenda(sensor, data) {
 
     for (const rule of enabledRules) {
         let condition = rule.conditions.filter(c => c.address === daylight && c.operator === "eq")[0];
+        let dxCondition = rule.conditions.filter(c => c.address.startsWith(daylightSensor) && c.operator === "dx")[0];
         let ddxCondition = rule.conditions.filter(c => c.address.startsWith(daylightSensor) && c.operator === "ddx")[0];
         if (condition) {
+            if (rule.conditions.length > 1 && !ddxCondition && !dxCondition) {
+                continue;
+            }
             for (const action of rule.actions) {
                 if (action.address === address) {
                     let localTime = (condition.value === "true") ? "sunrise" : "sunset";
@@ -1761,6 +1765,56 @@ export function rearrangeForHueComponents(data) {
         if (["lights", "groups", "schedules", "scenes", "sensors", "rules", "resourcelinks"].includes(category)) {
             Object.entries(collection).forEach(([id, item]) => item.id = id)
         }
+    });
+
+    // Mark rule conditions as triggers
+    Object.values(data.rules).forEach(rule => {
+        // A condition is (part of) a trigger if any of the following applies:
+        // 1. It's a dx condition
+        // 2. It's a ddx condition
+        // 3. There's a dx condition that matches it
+        // 4. There's a ddx condition that matches it
+        // 5. There are no dx or ddx conditions in the rule
+
+        const triggers = [];
+
+        const dxx = rule.conditions.filter(condition => (condition.operator === "dx") || (condition.operator === "ddx"));
+
+        dxx.forEach(condition => {
+            condition.trigger = { tests: [condition] };
+            triggers.push(condition.trigger);
+        });
+
+        const allAreTriggers = (dxx.length === 0);
+
+        function lastUpdated(address) {
+            const path = address.split("/");
+            return path.slice(0, path.length - 1).join("/") + "/lastupdated";
+        }
+
+        function noteTrigger(condition) {
+            if ((condition.operator === "dx") || (condition.operator === "ddx")) {
+                return;
+            }
+
+            if (allAreTriggers) {
+                condition.trigger = { tests: [condition] };
+                triggers.push(condition.trigger);
+            }
+
+            const myself = condition.address;
+            const mylastupdated = lastUpdated(condition.address);
+
+            const matchDXX = dxx.filter(c => (c.address === myself) || (c.address === mylastupdated));
+            matchDXX.forEach(d => {
+                const trigger = d.trigger;
+                condition.trigger = trigger;
+                trigger.tests.push(condition);
+            });
+        }
+
+        rule.conditions.forEach(noteTrigger);
+        rule.triggers = triggers;
     });
 
     data.components = {};
