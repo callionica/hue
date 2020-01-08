@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Power Managed Zone by Callionica</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+        body {
+            padding: 8pt;
+        }
+        h2 {
+            margin-top: 4pt;
+            margin-bottom: 4pt;
+        }
+        h3 {
+            margin-top: 4pt;
+            margin-bottom: 4pt;
+        }
+        p {
+            margin-top: 8pt;
+            margin-bottom: 8pt;
+        }
+        div {
+            margin-top: 4pt;
+            margin-bottom: 4pt;
+        }
+        .scene {
+            border-radius: 8pt;
+            padding: 8pt;
+            margin: 8pt;
+            background-color: whitesmoke;
+        }
+        .configuration {
+            border-radius: 8pt;
+            padding: 8pt;
+            margin: 8pt;
+            background-color: whitesmoke;
+        }
+        .connected {
+            color: silver;
+        }
+        .connected::before {
+            content: "Connected: ";
+        }
+        .property {
+            font-weight: bold;
+        }
+        h2 {
+            color: silver;
+        }
+        td {
+            padding-left: 12pt;
+        }
+        select {
+            -webkit-appearance: none;
+            font-size: inherit;
+            background: inherit;
+        }
+        option {
+            -webkit-appearance: none;
+            font-size: inherit;
+            background: inherit;
+        }
+        button {
+            font-size: inherit;
+            padding: 4pt;
+            border-radius: 4pt;
+            background-color: silver;
+        }
+    </style>
+    <script type="module">
+        import { connect, getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime, createPowerManagedZone } from "./hue-shared-resource.js";
+
+        const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
+
+        function groupSelector(data) {
+            return `<select>\n` + 
+                    Object.values(data.groups).map(g => `<option value="${g.id}">${g.name}</option>`) +
+                    `</select>\n`;
+        }
+
+        function sceneSelector(group, data, sc) {
+            return `<select>\n` + 
+                    Object.values(data.scenes).filter(s => s.group === group.id).map(s => `<option value="${s.id}" ${sc === s.name ? "selected" : ""}>${s.name}</option>`) +
+                    `</select>\n`;
+        }
+
+        function timeSelector(s) {
+            const names = ["1 min", "5 mins", "15 mins", "30 mins", "1 hour", "2 hours", "4 hours", "8 hours"]
+            return `<select>\n` + 
+                    ["00:01:00", "00:05:00", "00:15:00", "00:30:00", "01:00:00", "02:00:00", "04:00:00", "08:00:00"].map((g, n) => `<option value="${g}" ${s === n ? "selected" : ""}>${names[n]}</option>`).join("\n") +
+                    `</select>\n`;
+        }
+
+        function configuration(c) {
+            let [f,l,e] = c;
+            return `<div class="configuration">
+            <div>Full power: ${timeSelector(f)}</div>
+            <div>Low power: ${timeSelector(l)}</div>
+            <div>Reenable power management: ${timeSelector(e)}</div>
+            </div>`;
+        }
+
+        function scene(group, data, full, low) {
+            return `<div class="scene">
+            <div class="full">Full power: ${sceneSelector(group, data, full)}</div>
+            <div class="low">Low power: ${sceneSelector(group, data, low)}</div>
+            </div>`;
+        }
+
+        function recreateScenes(group, data) {
+            const container = document.getElementById("scenes");
+            const scenes = [...container.querySelectorAll(".scene")];
+            const html = scenes.map(s => {
+                let [full, low] = [...s.querySelectorAll("select")].map(sel => sel.options[sel.selectedIndex].text);
+                return scene(group, data, full, low);
+            }).join("\n");
+            container.innerHTML = html;
+        }
+
+        function settings() {
+            const groupE = document.getElementById("zone").querySelector("select");
+            const name = groupE.options[groupE.selectedIndex].text;
+            const id = groupE.value;
+            const configsE = [...document.getElementById("configurations").querySelectorAll(".configuration")];
+            const configurations = configsE.map(s => {
+                let [fullPower, lowPower, reenable] = [...s.querySelectorAll("select")].map(sel => sel.value);
+                return {fullPower, lowPower, reenable};
+            });
+            const scenesE = [...document.getElementById("scenes").querySelectorAll(".scene")];
+            const scenes = scenesE.map(s => {
+                let [fullPower, lowPower] = [...s.querySelectorAll("select")].map(sel => sel.options[sel.selectedIndex].text);
+                return {fullPower, lowPower};
+            });
+
+            return { name, id, configurations, scenes };
+        }
+
+        async function main() {
+            const connection = await connect(hub, "Callionica");
+            const data = await getAll(connection);
+            const components = Object.values(data);
+            
+            let group = Object.values(data.groups)[1];
+
+            const html = `
+            <div id="zone"><label>Room/Zone:</label> ${groupSelector(data)}</div>
+            <div>Configurations:</div>
+            <div id="configurations">
+            ${configuration([2,0,7])}
+            ${configuration([5,1,7])}
+            </div>
+            <div>Scenes:</div>
+            <div id="scenes">
+            ${scene(group, data, "Bright", "Dimmed")}
+            ${scene(group, data, "Dimmed", "Nightlight")}
+            ${scene(group, data, "Nightlight", "Nightlight")}
+            ${scene(group, data, "Dimmed", "Nightlight")}
+            </div>
+            <div><button class="create">Create</button></div>
+            `;
+            document.getElementById("data").innerHTML = html;
+
+            function onGroupChange(evt) {
+                const value = evt.srcElement.value;
+                const group = data.groups[value];
+                recreateScenes(group, data);
+            }
+            document.querySelector("select").onchange = onGroupChange;
+
+            function onCreate(evt) {
+                const zone = settings();
+                console.log(zone);
+                createPowerManagedZone(connection, zone).then(x => console.log(x));
+            }
+            [...document.querySelectorAll("button.create")].forEach(s => s.onclick = onCreate);
+        }
+
+        main().then(x => console.log("Initial"));
+        
+    </script>
+</head>
+<body>
+    <h1>Power Managed Zone by Callionica</h1>
+    <p>This page will allow you to set up a new Power Managed Zone.</p>
+    <h2>New Power Managed Zone Settings</h2>
+    <div id="data"></div>
+    <p>A Power Managed Zone is a room or zone that turns its lights off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. You can configure which scenes are used for Full power and Low power. You can configure how long the lights will stay at full power before changing to low power. You can configure how long the lights will stay at low power before switching off. You can disable power management temporarily, so you can also configure how long power management can be disabled before it automatically re-enables.</p>
+    <p>Power Managed Zone is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
+    <!--<h2>Instructions</h2>
+    <ol>
+    <li><p>Pick the room or zone</p></li>
+    <li><p>Set how long each power level should last</p></li>
+    <li><p>You can create 2 different configurations for the times</p></li>
+    <li><p>When you're ready, hit Create</p></li>
+    </ol>-->
+    
+</body>
+</html>
