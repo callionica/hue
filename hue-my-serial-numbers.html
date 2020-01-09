@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hue Serial Numbers</title>
+    <style>
+        td {
+            padding-left: 8pt;
+        }
+    </style>
     <script type="module">
-        import { connect, getAllCategories } from "./hue-shared-resource.js";
+        import { connect, getAllCategories } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
@@ -31,11 +36,23 @@
             });
         }
 
+        function prodmodel(light) {
+            if (light.productid === undefined) {
+                return light.modelid;
+            }
+
+            if (light.productid.length > light.modelid.length) {
+                return light.productid;
+            }
+
+            return light.modelid;
+        }
+
         async function main() {
             const connection = await connect(hub, "Callionica");
             const data = await getAllCategories(connection);
             const gs = groups(data);
-            const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, light.manufacturername, light.modelid, light.productname, light.productid, light.type, light.config.archetype].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
+            const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, light.manufacturername, prodmodel(light), light.productname, light.type, light.config.archetype].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
             document.getElementById("data").innerHTML = html;
         }
 
