@@ -1179,10 +1179,17 @@ export async function createPowerManagedZone(connection, zone) {
 
 export async function createPowerManagedDimmerRules(connection, name, dimmerID, pmz) {
 
-    const zoneID = pmz.powerLevel;
-    const zoneControlID = pmz.powerManagement;
-    const sceneCycle = pmz.sceneCycle;
-
+    function sensorID(name) {
+        return pmz.sensors.filter(sensor => sensor.modelid === name)[0].id;
+    }
+    
+    const zoneID = sensorID("PM.Zone.PowerLevel");
+    const zoneControlID = sensorID("PM.Zone.PowerManagement");
+    const sceneCycle = {
+        current: sensorID("PM.Zone.Scenes.Current"),
+        action: sensorID("PM.Zone.Scenes.Action"),
+    }
+    
     async function onDownWhenOff() {
         const body = `{
             "name": "DMR: Zone on full power",
@@ -1880,6 +1887,12 @@ export function rearrangeForHueComponents(data) {
 
         return component;
     });
+}
+
+export async function getAll(connection) {
+    const data = await getAllCategories(connection);
+    rearrangeForHueComponents(data);
+    return data;
 }
 
 export function getConnectedComponents(component, data) {
