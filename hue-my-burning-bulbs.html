@@ -6,14 +6,20 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hue Burning Bulbs</title>
     <script type="module">
-        import { connect, getAllCategories } from "./hue-shared-resource.js";
+        import { connect, getAllCategories } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
-        // Get detail for all the lights in a group with a calculated on property
+        // Get detail for all the lights in a group with calculated properties: on, displayName, serialNumber
         function lightsInGroup(group, data) {
             return group.lights.map(lightID => {
                 const light = data.lights[lightID];
+                light.displayName = light.name;
+                const m = light.name.match(/^(.*) \((.*)\)$/);
+                if (m) {
+                    light.displayName = m[1];
+                    light.serialNumber = m[2];
+                }
                 return { id: lightID, ...light, on: (light.state.on && light.state.reachable)};
             });
         }
@@ -38,7 +44,7 @@
             const connection = await connect(hub, "Callionica");
             const data = await getAllCategories(connection);
             const groups = burningGroups(data);
-            const html = groups.map(group => `<a href="#${group.id}">${group.name}\n\t${group.burningLights.map(light => light.name).join("\n\t")}</a>`).join("\n");
+            const html = groups.map(group => `<a href="#${group.id}">${group.name}\n\t${group.burningLights.map(light => light.displayName + " " + light.serialNumber).join("\n\t")}</a>`).join("\n");
             document.getElementById("data").innerHTML = html;
         }
 
