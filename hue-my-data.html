@@ -7,7 +7,7 @@
     <title>Hue Bridge</title>
     <script type="module">
         import { hueToHtml } from "./hue-json-to-html.js";
-        import { connect, getAllCategories } from "./hue-shared-resource.js";
+        import { connect, getAllCategories } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
@@ -22,7 +22,6 @@
     </script>
 </head>
 <body>
-    <h1>Hue Bridge</h1>
     <pre id="data"></pre>
 </body>
 </html>
