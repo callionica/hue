@@ -71,7 +71,7 @@
         }
     </style>
     <script type="module">
-        import { connect, getAllCategories, rearrangeForHueComponents, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime } from "./hue-shared-resource.js";
+        import { connect, getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
@@ -126,8 +126,8 @@
 
         async function main() {
             const connection = await connect(hub, "Callionica");
-            const data = await getAllCategories(connection);
-            const components = rearrangeForHueComponents(data);
+            const data = await getAll(connection);
+            const components = Object.values(data.components);
             //await deleteComponent(connection, components[0]);
             const html = components.map(componentToHTML).join("\n");
             document.getElementById("data").innerHTML = html;
