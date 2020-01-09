@@ -36,6 +36,12 @@
             margin-top: 4pt;
             margin-bottom: 4pt;
         }
+        #zone {
+            border-radius: 8pt;
+            padding: 8pt;
+            margin: 8pt;
+            background-color: whitesmoke;
+        }
         .scene {
             border-radius: 8pt;
             padding: 8pt;
@@ -81,13 +87,22 @@
         }
     </style>
     <script type="module">
-        import { connect, getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime, createPowerManagedZone } from "./hue-shared-resource.js";
+        import { connect, getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime, createPowerManagedZone } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
+        function isConnected(component, group) {
+            return component.connections.some(cn => (cn.category === "groups") && (cn.item === group));
+        }
+
         function groupSelector(data) {
+            const pmzs = Object.values(data.components).filter(c => c.metadata.name === "Power Managed Zone");
+            const groups = Object.values(data.groups).filter(g => pmzs.filter(pmz => isConnected(pmz, g)).length === 0);
+            if (groups.length === 0) {
+                return `(None available)`;
+            } 
             return `<select>\n` + 
-                    Object.values(data.groups).map(g => `<option value="${g.id}">${g.name}</option>`) +
+                    groups.map(g => `<option value="${g.id}">${g.name}</option>`) +
                     `</select>\n`;
         }
 
@@ -156,7 +171,8 @@
             let group = Object.values(data.groups)[1];
 
             const html = `
-            <div id="zone"><label>Room/Zone:</label> ${groupSelector(data)}</div>
+            <div><label>Room/Zone:</label></div>
+            <div id="zone">${groupSelector(data)}</div>
             <div>Configurations:</div>
             <div id="configurations">
             ${configuration([2,0,7])}
@@ -183,7 +199,7 @@
             function onCreate(evt) {
                 const zone = settings();
                 console.log(zone);
-                createPowerManagedZone(connection, zone).then(x => console.log(x));
+                createPowerManagedZone(connection, zone).then(x => { console.log(x); alert("Power Managed Zone created"); });
             }
             [...document.querySelectorAll("button.create")].forEach(s => s.onclick = onCreate);
         }
@@ -194,11 +210,11 @@
 </head>
 <body>
     <h1>Power Managed Zone by Callionica</h1>
-    <p>This page will allow you to set up a new Power Managed Zone.</p>
+    <p>Here you can set up and install a new Power Managed Zone.</p>
     <h2>New Power Managed Zone Settings</h2>
     <div id="data"></div>
     <p>A Power Managed Zone is a room or zone that turns its lights off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. You can configure which scenes are used for Full power and Low power. You can configure how long the lights will stay at full power before changing to low power. You can configure how long the lights will stay at low power before switching off. You can disable power management temporarily, so you can also configure how long power management can be disabled before it automatically re-enables.</p>
-    <p>Power Managed Zone is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
+    <p style="padding: 4pt; background-color: gray; color: whitesmoke;">Power Managed Zone is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
     <!--<h2>Instructions</h2>
     <ol>
     <li><p>Pick the room or zone</p></li>
