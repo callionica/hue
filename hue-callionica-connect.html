@@ -196,9 +196,10 @@
                 }
 
                 this.unconnected.push(bridge);
+                const index = this.unconnected.length - 1;
 
                 const ui = this.ui.bridges.getBridge(bridge.ip).rootStatus;
-                ui.innerHTML = `<button class="connect">Connect</button>`;
+                ui.innerHTML = `<button class="connect" data-unconnected="${index}">Connect</button>`;
             }
 
             addIP(ip, token) {
@@ -323,26 +324,39 @@
                     this.processBridge(bridge).then(x => console.log("Bridge"));;
                 }
             }
+
+            async registerUnconnected(index) {
+                const app = "Callionica";
+                const bridge = this.unconnected[index];
+                console.log(bridge);
+
+                let connection;
+                try {
+                    connection = await register(bridge, app);
+                } catch (e) {
+                }
+
+                if (connection) {
+                    connector.addConnection(connection);
+                    return;
+                }
+
+                const doIt = confirm(`Press the button on top of the bridge "${bridge.name}" to connect`);
+                if (doIt) {
+                    try {
+                        connection = await register(bridge, app);
+                    } catch (e) {
+                    }
+
+                    if (connection) {
+                        connector.addConnection(connection);
+                        return;
+                    }
+                }
+            }
         }
 
         const connector = new BridgeConnector();
-
-        function htmlBridgeIP(ip, n) {
-            return `<div id="${ip}">Bridge ${n+1}: ${ip}</div>`;
-        }
-
-        function htmlBridge(bridge) {
-            return `<span class="bridgename">${bridge.name}</span>: <span class="bridgeip">${bridge.ip}</span> <span class="status">OK</span>`;
-        }
-
-        function populateManual(ip) {
-            const input = document.getElementById("manual-ip");
-            input.value = ip;
-        }
-
-        // function doBridgeIP(ip, token, status) {
-        //     const bridge = await bridgeByIP(ip);
-        // }
 
         function onclick(evt) {
             const id = evt.srcElement.id;
@@ -358,12 +372,14 @@
                 return;
             }
 
-            // const op = evt.srcElement.getAttribute("data-op");
-            // if (op) {
-            //     if (op === "connect") {
-
-            //     }
-            // }
+            const op = evt.srcElement.getAttribute("data-unconnected");
+            if (op) {
+                const index = parseInt(op, 10);
+                if ((0 <= index) && (index < connector.unconnected.length)) {
+                    connector.registerUnconnected(index).then(x => console.log(x));
+                }
+                return;
+            }
         }
 
         async function main() {
@@ -374,107 +390,6 @@
             connector.ui.status.innerText = "";
 
             bridgeIPs.forEach(ip => connector.addIP(ip));
-            return;
-
-            if (bridgeIPs[0]) {
-                populateManual(bridgeIPs[0])
-            }
-
-            const d = document.getElementById("discovered");
-            const dh = bridgeIPs.map(htmlBridgeIP).join("\n");
-            d.innerHTML = dh;
-
-            const help = document.getElementById("help");
-            help.innerHTML = "Contacting the Hue bridges...";
-
-            const bridges = [];
-            const unavailableIPs = [];
-            for (const bridgeIP of bridgeIPs) {
-                //ui.bridges.addBridge(bridgeIP);
-                const el = document.getElementById(bridgeIP);
-                try {
-                    const bridge = await bridgeByIP(bridgeIP);
-                    bridges.push(bridge);
-                    el.innerHTML = htmlBridge(bridge);
-                } catch (e) {
-                    unavailableIPs.push(bridgeIP);
-                    el.innerHTML = `Unavailable: <span class="unavailableip">${bridgeIP}</span> <a href="https://${bridgeIP}/api/unauthenticated/config">Check certificate</a>`;
-                }
-            }
-
-            if (unavailableIPs[0]) {
-                populateManual(unavailableIPs[0])
-            }
-
-            if (bridges.length < bridgeIPs.length) {
-                help.innerHTML = `
-                <h2>Check certificates</h2>
-                <p>Not all of the reported bridges were available.</p>
-                <p>A bridge may be unavailable if your browser does not trust the self-signed certificate of that bridge.</p>
-                <p>You can check the certificate and fix the problem by clicking <a href="https://${unavailableIPs[0]}/api/unauthenticated/config">Check certificate</a> for each bridge.</p>
-                <p>If you see an error page in the browser that says "Your connection is not private" or "This connection is not private", it means that your browser does not trust the Hue bridge's self-signed certificate.</p>
-                <p>When the browser does trust the Hue bridge's self-signed certificate, you'll see some data displayed instead of an error page.</p>
-                <b>To trust the certificate and fix the problem:</b>
-                <ol>
-                <li><p>Click <a href="https://${unavailableIPs[0]}/api/unauthenticated/config">Check certificate</a></p></li>
-                <li>
-                    <p>When the error page appears:</p>
-                    <p>In Chrome, click "<b>Advanced</b>", then "<b>Proceed to ${unavailableIPs[0]} (unsafe)</b>"</p>
-                    <p>In Safari, click "<b>visit this website</b>"</p>
-                    <p>Other browsers will allow you to trust the Hue bridge's self-signed certificate in a similar way.</p>
-                </li>
-                <li><p>Use your browser's back button to return to this page.</p></li>
-                </ol>
-                
-                
-                <p>You will need to do this once only for each bridge that you want to use in this browser.</p>
-                <p>If you switch browsers, you will need to trust the self-signed certificate again in the new browser.</p>
-                
-                `;
-            } else {
-                help.innerHTML = "";
-            }
-
-            function updateStatus(bridge, html) {
-                const el = document.getElementById(bridge.ip);
-                const status = el.querySelector(".status");
-                status.innerHTML = html;
-            }
-
-            const app = "Callionica";
-            for (const bridge of bridges) {
-                let connection = loadConnection(app, bridge);
-                if (connection) {
-                    console.log(connection);
-                    // Bridge may have changed name or IP since last stored
-                    let currentConnection = { bridge, app, token: connection.token };
-                    let working = await testConnection(currentConnection);
-                    if (working) {
-                        console.log(currentConnection);
-                        updateStatus(bridge, "Connected: " + currentConnection.token);
-                        storeConnection(currentConnection);
-                    } else {
-                        
-                    }
-                } else {
-                    updateStatus(bridge, `<a href="hue-callionica-connect-2.html?ip=${bridge.ip}&name=${bridge.name}">Connect</a>`);
-                    // const currentConnection = register(bridge, app);
-                    // if (currentConnection) {
-                    //     let working = await testConnection(currentConnection);
-                    //     if (working) {
-                    //         console.log(currentConnection);
-                    //         storeConnection(currentConnection);
-                    //     } else {
-
-                    //     }
-                    // }
-                }
-            }
-            // const bridges = await bridgesByDiscovery();
-            // console.log(bridges);
-
-            // const bridge = await bridgeByIP(hub);
-            // console.log(bridge);
         }
 
         main().then(x => console.log("Done"));
@@ -486,7 +401,7 @@
     <div id="status">Getting bridges...</div>
     <div id="manual">
         <h2>Advanced</h2>
-        <p>If you know your bridge's IP address, you can enter it here:</p>
+        <p>If you know your bridge's IP address, you can search for it:</p>
         <p>IP Address: <input id="manual-ip" type="text" maxlength="40" placeholder="192.168.0.2" value="192.168.0.2"></p>
         <p>Token: <input id="manual-token" type="text" maxlength="128" placeholder="(Optional)" value=""></p>
         <p></p><button id="manual-button" href="hue-callionica-connect-2.html?ip=192.168.0.2">Search</button></p>
