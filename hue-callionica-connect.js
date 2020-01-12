@@ -4,7 +4,7 @@ import { getConfig } from "./hue-callionica.js";
 // bridge: { id, ip, name }
 // connection: { bridge, app, token }
 
-const KEY_BRIDGES = "hue-bridges";
+const KEY_DISCOVERY = "hue-discovery";
 
 export function loadConnection(app, bridge) {
     const key = `hue-connection:${app}:${bridge.id}`;
@@ -14,26 +14,50 @@ export function loadConnection(app, bridge) {
     }
 }
 
-export function storeConnection(connection) {
-    const key = `hue-connection:${connection.app}:${connection.bridge.id}`;
-    localStorage.setItem(key, JSON.stringify(connection));
+function storeBridgeIP(bridge) {
+    const key = KEY_DISCOVERY;
+    const json = localStorage.getItem(key);
+    let list = [{id: bridge.id, internalipaddress: bridge.ip}];
+    if (json) {
+        list = JSON.parse(json);
+        const existing = list.find(item => item.id === bridge.id);
+        if (!existing) {
+            list.push({id: bridge.id, internalipaddress: bridge.ip});
+        } else {
+            existing.internalipaddress = bridge.ip;
+        }    
+    }
+
+    const data = JSON.stringify(list);
+    localStorage.setItem(key, data);
 }
 
-export function loadConnections(app) {
-    const connections = [];
-    const key = KEY_BRIDGES;
-    const json = localStorage.getItem(key);
-    if (json) {
-        const bridges = JSON.parse(json);
-        for (const bridge of bridges) {
-            const connection = loadConnection(app, bridge);
-            if (connection) {
-                connections.push(connection);
-            }
-        }
-    }
-    return connections;
+export function storeConnection(connection) {
+    const data = JSON.stringify(connection);
+    const keys = [
+        `hue-connection:${connection.app}:${connection.bridge.id}`,
+        `hue-connection:${connection.app}:${connection.bridge.ip}`,
+    ];
+    keys.forEach(key => localStorage.setItem(key, data));
+
+    storeBridgeIP(connection.bridge);
 }
+
+// export function loadConnections(app) {
+//     const connections = [];
+//     const key = KEY_BRIDGES;
+//     const json = localStorage.getItem(key);
+//     if (json) {
+//         const bridges = JSON.parse(json);
+//         for (const bridge of bridges) {
+//             const connection = loadConnection(app, bridge);
+//             if (connection) {
+//                 connections.push(connection);
+//             }
+//         }
+//     }
+//     return connections;
+// }
 
 // Given an IP, we can get the bridge ID and name without authenticating
 export async function bridgeByIP(ip) {
@@ -57,13 +81,32 @@ async function jsonFetch(address) {
 
 // Philips Hue bridges report internal IP addresses to meethue
 // The server will send you back the internal IP addresses of any hubs whose public IP matches the public IP address of your request
-export async function bridgeIPsByDiscovery() {
-    const discoveredBridges = await jsonFetch("https://discovery.meethue.com");
-    const result = [];
-    for (const discoveredBridge of discoveredBridges) {
-        result.push(discoveredBridge.internalipaddress);
-    }
+export async function bridgesByRemoteDiscovery() {
+    const result = await jsonFetch("https://discovery.meethue.com");
     return result;
+}
+
+// Every time we get a working connection, we store the bridge ID and local IP address
+export async function bridgesByLocalDiscovery() {
+    const key = KEY_DISCOVERY;
+    const json = localStorage.getItem(key);
+    if (json) {
+        return JSON.parse(json);
+    }
+    return [];
+}
+
+export async function bridgeIPsByDiscovery() {
+    const locals = await bridgesByLocalDiscovery();
+    const remotes = await bridgesByRemoteDiscovery();
+
+    // Add unknown local items to the remote items
+    for (const local of locals) {
+        if (!remotes.find(r => r.id === local.id)) {
+            remotes.push(local);
+        }
+    }
+    return remotes.map(r => r.internalipaddress);
 }
 
 export async function bridgesByDiscovery() {
@@ -132,22 +175,4 @@ export async function register(bridge, app) {
     const method = "POST";
     let bridgeResult = await send(method, address, body);
     return { bridge, app, token: bridgeResult[0].success.username };
-}
-
-export async function connect(hub, appName) {
-    const key = "hue-connection:" + hub;
-    const json = localStorage.getItem(key);
-    let connection;
-    if (json) {
-        connection = JSON.parse(json);
-        if (connection && connection.hub === hub) {
-            return connection;
-        }
-    }
-
-    connection = await registerApp(hub, appName);
-
-    localStorage.setItem(key, JSON.stringify(connection));
-
-    return connection;
 }
