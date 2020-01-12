@@ -98,7 +98,7 @@
             }
         </style>
     <script type="module">
-        import { connect, bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
+        import { bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
 
         class UIBridge {
             constructor(root, ip) {
@@ -404,7 +404,7 @@
         <p>If you know your bridge's IP address, you can search for it:</p>
         <p>IP Address: <input id="manual-ip" type="text" maxlength="40" placeholder="192.168.0.2" value="192.168.0.2"></p>
         <p>Token: <input id="manual-token" type="text" maxlength="128" placeholder="(Optional)" value=""></p>
-        <p></p><button id="manual-button" href="hue-callionica-connect-2.html?ip=192.168.0.2">Search</button></p>
+        <p></p><button id="manual-button">Search</button></p>
     </div>
     <div id="help"></div>
 </body>
