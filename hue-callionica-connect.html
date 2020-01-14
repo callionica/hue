@@ -101,14 +101,15 @@
         import { bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
 
         class UIBridge {
-            constructor(root, ip) {
+            constructor(root, ip, id, name) {
                 this.root = root;
                 this.ip = ip;
+                this.id = id;
 
-                this.name_ = "Bridge";
+                this.name_ = name || "Bridge";
                 this.status_ = "";
 
-                this.root.innerHTML = `<span class="bridgename">Bridge</span>: <span class="bridgeip">${ip}</span> <span class="bridgestatus"></span>`;
+                this.root.innerHTML = `<span class="bridgename">${this.name_}</span>: <span class="bridgeip">${ip}</span> <span class="bridgestatus"></span>`;
 
                 this.rootName = this.root.querySelector(".bridgename");
                 this.rootIP = this.root.querySelector(".bridgeip");
@@ -140,21 +141,26 @@
                 this.bridges = [];
             }
 
-            getBridge(ip) {
-                return this.bridges.find(bridge => bridge.ip === ip);
+            getBridge(ip, id) {
+                if (id) {
+                    return this.bridges.find(bridge => bridge.id === id);
+                }
+                if (ip) {
+                    return this.bridges.find(bridge => bridge.ip === ip);
+                }
             }
 
-            addBridge(ip) {
-                const existing = this.getBridge(ip);
+            addBridge(ip, id, name) {
+                const existing = this.getBridge(ip, id);
                 if (existing) {
                     return existing;
                 }
 
                 const bridgeRoot = this.root.ownerDocument.createElement("div");
-                bridgeRoot.id = ip;
+                bridgeRoot.id = id || ip;
                 this.root.appendChild(bridgeRoot);
 
-                const current = new UIBridge(bridgeRoot, ip);
+                const current = new UIBridge(bridgeRoot, ip, id, name);
                 this.bridges.push(current);
 
                 return current;
@@ -181,7 +187,9 @@
                 this.connections.push(connection);
                 storeConnection(connection);
 
-                const ui = this.ui.bridges.getBridge(connection.bridge.ip);
+                const ip = connection.bridge.ip;
+                const id = connection.bridge.id;
+                const ui = this.ui.bridges.getBridge(ip, id);
                 ui.status = "Connected: " + connection.token;
             }
 
@@ -198,24 +206,24 @@
                 this.unconnected.push(bridge);
                 const index = this.unconnected.length - 1;
 
-                const ui = this.ui.bridges.getBridge(bridge.ip).rootStatus;
+                const ui = this.ui.bridges.getBridge(bridge.ip, bridge.ip).rootStatus;
                 ui.innerHTML = `<button class="connect" data-unconnected="${index}">Connect</button>`;
             }
 
-            addIP(ip, token) {
+            addIP(ip, id, name, token) {
                 if (token) {
                     this.tokens[ip] = token;
                 }
 
-                if (this.ips.find(i => i === ip)) {
+                if (this.ips.find(i => i === ip)) { // TODO
                     return;
                 }
 
-                this.ui.bridges.addBridge(ip);
+                this.ui.bridges.addBridge(ip, id, name);
 
-                const empty = this.ips.length === 0;
+                const isFirst = this.ips.length === 0;
                 this.ips.push(ip);
-                if (empty) {
+                if (isFirst) {
                     this.processIPs().then(x => console.log("IPs"));;
                 }
             }
@@ -256,13 +264,13 @@
             }
 
             addBridge(bridge) {
-                const ui = this.ui.bridges.addBridge(bridge.ip);
+                const ui = this.ui.bridges.addBridge(bridge.ip, bridge.id);
                 ui.id = bridge.id;
                 ui.name = bridge.name;
 
-                const empty = this.bridges.length === 0;
+                const isFirst = this.bridges.length === 0;
                 this.bridges.push(bridge);
-                if (empty) {
+                if (isFirst) {
                     this.processBridges().then(x => console.log("Bridges"));
                 }
             }
@@ -368,7 +376,7 @@
                 const tokenInput = document.getElementById("manual-token");
                 const token = tokenInput.value || undefined;
 
-                connector.addIP(ip, token);
+                connector.addIP(ip, undefined, undefined, token);
                 return;
             }
 
@@ -385,11 +393,11 @@
         async function main() {
             document.onclick = onclick;
 
-            const bridgeIPs = await bridgeIPsByDiscovery();
+            const bridges = await bridgeIPsByDiscovery();
 
             connector.ui.status.innerText = "";
 
-            bridgeIPs.forEach(ip => connector.addIP(ip));
+            bridges.forEach(bridge => connector.addIP(bridge.internalipaddress, bridge.id, bridge.name));
         }
 
         main().then(x => console.log("Done"));
@@ -407,5 +415,9 @@
         <p></p><button id="manual-button">Search</button></p>
     </div>
     <div id="help"></div>
+    <div id="tips">
+        <h2>Tips</h2>
+        <p>If you haven't already, we recommend you set a static internal IP address for each of your bridges.</p>
+    </div>
 </body>
 </html>
