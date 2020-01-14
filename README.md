@@ -5,7 +5,7 @@ This URL is likely to be able to find info on a Hue bridge from Safari on a Mac:
 
 https://philips-hue.local/api/unauthenticated/config
 
-The Hue Bridge uses mDNS.
+The Hue Bridge uses [mDNS](https://developers.meethue.com/develop/application-design-guidance/hue-bridge-discovery/#mDNS).
 
 Command to list Hue bridges: `dns-sd -B _hue._tcp .`
 
