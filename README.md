@@ -1,7 +1,7 @@
 # Thoughts and Experiments with Philips Hue lights from Signify
 
 ## Discovery
-This URL is likely to be able to find info on a Hue bridge from Safari on a Mac:
+This URL is likely to be able to find info on a Hue bridge from Safari on a Mac (as long as you trust the self-signed certificate):
 
 https://philips-hue.local/api/unauthenticated/config
 
@@ -12,6 +12,8 @@ Command to list Hue bridges: `dns-sd -B _hue._tcp .`
 Command to resolve Hue bridges: `dns-sd -L "Philips Hue - 231268" _hue._tcp .` where the stuff in  quotes is a name provided by the previous command.
 
 The names contain the last 6 digits of the Bridge ID.
+
+This resolves to a host name of "philips-hue". How does it resolve on a network with multiple bridges?
 
 ## Starting
 
