@@ -17,14 +17,16 @@ export function loadConnection(app, bridge) {
 function storeBridgeIP(bridge) {
     const key = KEY_DISCOVERY;
     const json = localStorage.getItem(key);
-    let list = [{id: bridge.id, internalipaddress: bridge.ip}];
+    const item = {id: bridge.id, internalipaddress: bridge.ip, name: bridge.name};
+    let list = [item];
     if (json) {
         list = JSON.parse(json);
-        const existing = list.find(item => item.id === bridge.id);
+        const existing = list.find(existing => existing.id === item.id);
         if (!existing) {
-            list.push({id: bridge.id, internalipaddress: bridge.ip});
+            list.push(item);
         } else {
-            existing.internalipaddress = bridge.ip;
+            existing.name = item.name;
+            existing.internalipaddress = item.internalipaddress;
         }    
     }
 
@@ -86,6 +88,10 @@ export async function bridgesByRemoteDiscovery() {
     return result;
 }
 
+// export async function bridgesByStandardMdnsName() {
+//     const host = "philips-hue.local";
+// }
+
 // Every time we get a working connection, we store the bridge ID and local IP address
 export async function bridgesByLocalDiscovery() {
     const key = KEY_DISCOVERY;
@@ -102,18 +108,21 @@ export async function bridgeIPsByDiscovery() {
 
     // Add unknown local items to the remote items
     for (const local of locals) {
-        if (!remotes.find(r => r.id === local.id)) {
+        const remote = remotes.find(remote => remote.id === local.id);
+        if (remote) {
+            remote.name = local.name;
+        } else {
             remotes.push(local);
         }
     }
-    return remotes.map(r => r.internalipaddress);
+    return remotes;
 }
 
 export async function bridgesByDiscovery() {
     const discoveredBridges = await bridgeIPsByDiscovery();
     const result = [];
     for (const discoveredBridge of discoveredBridges) {
-        const bridge = await bridgeByIP(discoveredBridge);
+        const bridge = await bridgeByIP(discoveredBridge.internalipaddress);
         result.push(bridge);
     }
     return result;
