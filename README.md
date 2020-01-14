@@ -9,7 +9,9 @@ The Hue Bridge uses [mDNS](https://developers.meethue.com/develop/application-de
 
 Command to list Hue bridges: `dns-sd -B _hue._tcp .`
 
-Command tto resolve Hue bridges: `dns-sd -L "Philips Hue - 231268" _hue._tcp .` where the stuff in  quotes in a name provided by the previous command.
+Command to resolve Hue bridges: `dns-sd -L "Philips Hue - 231268" _hue._tcp .` where the stuff in  quotes is a name provided by the previous command.
+
+The names contain the last 6 digits of the Bridge ID.
 
 ## Starting
 
