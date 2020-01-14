@@ -4,7 +4,7 @@ import { getConfig } from "./hue-callionica.js";
 // bridge: { id, ip, name }
 // connection: { bridge, app, token }
 
-const KEY_DISCOVERY = "hue-discovery";
+const KEY_DISCOVERY = "hue-bridges";
 
 export function loadConnection(app, bridge) {
     const key = `hue-connection:${app}:${bridge.id}`;
@@ -14,10 +14,10 @@ export function loadConnection(app, bridge) {
     }
 }
 
-function storeBridgeIP(bridge) {
+function storeBridge(bridge) {
     const key = KEY_DISCOVERY;
     const json = localStorage.getItem(key);
-    const item = {id: bridge.id, internalipaddress: bridge.ip, name: bridge.name};
+    const item = bridge;
     let list = [item];
     if (json) {
         list = JSON.parse(json);
@@ -26,7 +26,7 @@ function storeBridgeIP(bridge) {
             list.push(item);
         } else {
             existing.name = item.name;
-            existing.internalipaddress = item.internalipaddress;
+            existing.ip = item.ip;
         }    
     }
 
@@ -37,12 +37,11 @@ function storeBridgeIP(bridge) {
 export function storeConnection(connection) {
     const data = JSON.stringify(connection);
     const keys = [
-        `hue-connection:${connection.app}:${connection.bridge.id}`,
-        `hue-connection:${connection.app}:${connection.bridge.ip}`,
+        `hue-connection:${connection.app}:${connection.bridge.id}`
     ];
     keys.forEach(key => localStorage.setItem(key, data));
 
-    storeBridgeIP(connection.bridge);
+    storeBridge(connection.bridge);
 }
 
 // export function loadConnections(app) {
@@ -85,7 +84,7 @@ async function jsonFetch(address) {
 // The server will send you back the internal IP addresses of any hubs whose public IP matches the public IP address of your request
 export async function bridgesByRemoteDiscovery() {
     const result = await jsonFetch("https://discovery.meethue.com");
-    return result;
+    return result.map(item => { return { id: item.id, ip: item.internalipaddress }; });
 }
 
 // export async function bridgesByStandardMdnsName() {
@@ -112,7 +111,8 @@ export async function bridgeIPsByDiscovery() {
         if (remote) {
             remote.name = local.name;
         } else {
-            remotes.push(local);
+            const ip = local.ip || local.internalipaddress;
+            remotes.push({...local, ip});
         }
     }
     return remotes;
@@ -122,7 +122,7 @@ export async function bridgesByDiscovery() {
     const discoveredBridges = await bridgeIPsByDiscovery();
     const result = [];
     for (const discoveredBridge of discoveredBridges) {
-        const bridge = await bridgeByIP(discoveredBridge.internalipaddress);
+        const bridge = await bridgeByIP(discoveredBridge.ip);
         result.push(bridge);
     }
     return result;
