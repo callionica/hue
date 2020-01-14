@@ -143,10 +143,16 @@
 
             getBridge(ip, id) {
                 if (id) {
-                    return this.bridges.find(bridge => bridge.id === id);
+                    const idMatch = this.bridges.find(bridge => bridge.id === id);
+                    if (idMatch) {
+                        return idMatch;
+                    }
                 }
                 if (ip) {
-                    return this.bridges.find(bridge => bridge.ip === ip);
+                    const ipMatch = this.bridges.find(bridge => bridge.ip === ip);
+                    if (ipMatch && ((id === undefined) || (ipMatch.id === undefined))) {
+                        return ipMatch;
+                    }
                 }
             }
 
@@ -397,7 +403,7 @@
 
             connector.ui.status.innerText = "";
 
-            bridges.forEach(bridge => connector.addIP(bridge.internalipaddress, bridge.id, bridge.name));
+            bridges.forEach(bridge => connector.addIP(bridge.ip, bridge.id, bridge.name));
         }
 
         main().then(x => console.log("Done"));
