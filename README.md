@@ -1,5 +1,18 @@
 # Thoughts and Experiments with Philips Hue lights from Signify
 
+## Discovery
+This URL is likely to be able to find info on a Hue bridge from Safari on a Mac:
+
+https://philips-hue.local/api/unauthenticated/config
+
+The Hue Bridge uses mDNS.
+
+Command to list Hue bridges: `dns-sd -B _hue._tcp .`
+
+Command tto resolve Hue bridges: `dns-sd -L "Philips Hue - 231268" _hue._tcp .` where the stuff in  quotes in a name provided by the previous command.
+
+## Starting
+
 Just a bunch of thoughts as I learn:
 
 The Philips Hue API is REST using JSON format requests and responses
