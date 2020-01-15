@@ -77,7 +77,7 @@ export function storeConnection(connection) {
 
 // Given an IP, we can get the bridge ID and name without authenticating
 export async function bridgeByIP(ip) {
-    const connection = { hub: ip, app: "unauthenticated" };
+    const connection = { bridge: {ip}, token: "unauthenticated" };
     const config = await getConfig(connection);
     return { id: config.bridgeid.toLowerCase(), ip, name: config.name };
 }
@@ -96,7 +96,7 @@ async function jsonFetch(address) {
 }
 
 // Philips Hue bridges report internal IP addresses to meethue
-// The server will send you back the internal IP addresses of any hubs whose public IP matches the public IP address of your request
+// The server will send you back the internal IP addresses of any bridges whose public IP matches the public IP address of your request
 export async function bridgesByRemoteDiscovery() {
     const result = await jsonFetch("https://discovery.meethue.com");
     return result.map(item => { return { id: item.id, ip: item.internalipaddress }; });
