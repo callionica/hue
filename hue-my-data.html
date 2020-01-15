@@ -7,12 +7,14 @@
     <title>Hue Data</title>
     <script type="module">
         import { hueToHtml } from "./hue-json-to-html.js";
-        import { connect, getAllCategories } from "./hue-callionica.js";
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAllCategories } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         async function main() {
-            const connection = await connect(hub, "Callionica");
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
             const data = await getAllCategories(connection);
             const html = hueToHtml(data);
             document.getElementById("data").innerHTML = html;
