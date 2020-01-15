@@ -11,9 +11,10 @@
         }
     </style>
     <script type="module">
-        import { connect, getAllCategories } from "./hue-callionica.js";
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAllCategories } from "./hue-callionica.js";
 
-        const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
+        // const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         // Get detail for all the lights in a group with calculated properties: on, displayName, serialNumber
         function lightsInGroup(group, data) {
@@ -49,7 +50,8 @@
         }
 
         async function main() {
-            const connection = await connect(hub, "Callionica");
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
             const data = await getAllCategories(connection);
             const gs = groups(data);
             const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, light.manufacturername, prodmodel(light), light.productname, light.type, light.config.archetype].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
