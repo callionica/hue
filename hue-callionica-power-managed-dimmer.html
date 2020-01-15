@@ -81,9 +81,10 @@
         }
     </style>
     <script type="module">
-        import { connect, getAll, createPowerManagedDimmerRules } from "./hue-callionica.js";
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll, createPowerManagedDimmer } from "./hue-callionica.js";
 
-        const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
+        //const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         function isConnected(component, item) {
             return component.connections.some(cn => (cn.item === item));
@@ -125,7 +126,9 @@
         }
 
         async function main() {
-            const connection = await connect(hub, "Callionica");
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
+            
             const data = await getAll(connection);
             const components = Object.values(data);
             
@@ -145,7 +148,7 @@
                 console.log(setts);
                 const dimmer = setts.dimmer;
                 const pmz = setts.pmz;
-                createPowerManagedDimmerRules(connection, dimmer.name, dimmer.id, pmz).then(x => { console.log(x); alert("Power Managed Dimmer created"); });
+                createPowerManagedDimmer(connection, dimmer.name, dimmer.id, pmz).then(x => { console.log(x); alert("Power Managed Dimmer created"); });
             }
             [...document.querySelectorAll("button.create")].forEach(s => s.onclick = onCreate);
         }
