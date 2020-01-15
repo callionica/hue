@@ -71,9 +71,10 @@
         }
     </style>
     <script type="module">
-        import { connect, getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime } from "./hue-callionica.js";
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime } from "./hue-callionica.js";
 
-        const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
+        // const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         function valuesHTML(sensor) {
             return `<select data-sensor="${sensor.id}">\n` + 
@@ -125,7 +126,8 @@
         }
 
         async function main() {
-            const connection = await connect(hub, "Callionica");
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
             const data = await getAll(connection);
             const components = Object.values(data.components);
             //await deleteComponent(connection, components[0]);
