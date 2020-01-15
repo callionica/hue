@@ -170,71 +170,75 @@ export async function create(address, body) {
     return bridgeResult[0].success.id;
 }
 
+function Address(connection, suffix) {
+    return `https://${connection.bridge.ip}/api/${connection.token}/` + suffix;
+}
+
 export async function createSensor(connection, body) {
-    const address = `https://${connection.hub}/api/${connection.app}/sensors`;
+    const address = Address(connection, `sensors`);
     return create(address, body);
 }
 
 export async function setSensorValue(connection, id, value) {
     const store = (typeof value === "boolean") ? "flag" : "status";
-    const address = `https://${connection.hub}/api/${connection.app}/sensors/${id}/state`;
+    const address = Address(connection, `sensors/${id}/state`);
     const body = `{ "${store}": ${value} }`;
     return put(address, body);
 }
 
 export async function createSchedule(connection, body) {
-    const address = `https://${connection.hub}/api/${connection.app}/schedules`;
+    const address = Address(connection, `schedules`);
     return create(address, body);
 }
 
 export async function createRule(connection, body) {
-    const address = `https://${connection.hub}/api/${connection.app}/rules`;
+    const address = Address(connection, `rules`);
     return create(address, body);
 }
 
 export async function createResourceLink(connection, body) {
-    const address = `https://${connection.hub}/api/${connection.app}/resourcelinks`;
+    const address = Address(connection, `resourcelinks`);
     return create(address, body);
 }
 
 export async function deleteRule(connection, id) {
-    const address = `https://${connection.hub}/api/${connection.app}/rules/${id}`;
+    const address = Address(connection, `rules/${id}`);
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 export async function deleteResourceLink(connection, id) {
-    const address = `https://${connection.hub}/api/${connection.app}/resourcelinks/${id}`;
+    const address = Address(connection, `resourcelinks/${id}`);
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 export async function deleteSensor(connection, id) {
-    const address = `https://${connection.hub}/api/${connection.app}/sensors/${id}`;
+    const address = Address(connection, `sensors/${id}`);
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 export async function deleteSchedule(connection, id) {
-    const address = `https://${connection.hub}/api/${connection.app}/schedules/${id}`;
+    const address = Address(connection, `schedules/${id}`);
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 export async function deleteGroup(connection, id) {
-    const address = `https://${connection.hub}/api/${connection.app}/groups/${id}`;
+    const address = Address(connection, `groups/${id}`);
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 export async function deleteScene(connection, id) {
-    const address = `https://${connection.hub}/api/${connection.app}/scenes/${id}`;
+    const address = Address(connection, `scenes/${id}`);
     const method = "DELETE";
     return fetch(address, { method });
 }
 
 export async function getCategory(connection, category) {
-    const address = `https://${connection.hub}/api/${connection.app}/${category}`;
+    const address = Address(connection, `${category}`);
 
     var bridgeResult;
     try {
@@ -311,7 +315,7 @@ export async function getMotionSensors(connection) {
 }
 
 export async function touchlink(connection) {
-    const address = `https://${connection.hub}/api/${connection.app}/config/`;
+    const address = Address(connection, `config/`);
     const body = `{"touchlink": true}`;
     return put(address, body);
 }
@@ -368,32 +372,32 @@ export async function deleteAppLinks(connection) {
     }
 }
 
-export async function registerApp(hub, appName, user) {
-    user = user || "";
-    const address = `https://${hub}/api/`;
-    const body = `{"devicetype": "${appName}#${user}"}`;
-    const method = "POST";
-    let bridgeResult = await send(method, address, body);
-    return { hub, app: bridgeResult[0].success.username };
-}
+// export async function registerApp(hub, appName, user) {
+//     user = user || "";
+//     const address = `https://${hub}/api/`;
+//     const body = `{"devicetype": "${appName}#${user}"}`;
+//     const method = "POST";
+//     let bridgeResult = await send(method, address, body);
+//     return { hub, app: bridgeResult[0].success.username };
+// }
 
-export async function connect(hub, appName) {
-    const key = "hue-connection:" + hub;
-    const json = localStorage.getItem(key);
-    let connection;
-    if (json) {
-        connection = JSON.parse(json);
-        if (connection && connection.hub === hub) {
-            return connection;
-        }
-    }
+// export async function connect(hub, appName) {
+//     const key = "hue-connection:" + hub;
+//     const json = localStorage.getItem(key);
+//     let connection;
+//     if (json) {
+//         connection = JSON.parse(json);
+//         if (connection && connection.hub === hub) {
+//             return connection;
+//         }
+//     }
 
-    connection = await registerApp(hub, appName);
+//     connection = await registerApp(hub, appName);
 
-    localStorage.setItem(key, JSON.stringify(connection));
+//     localStorage.setItem(key, JSON.stringify(connection));
 
-    return connection;
-}
+//     return connection;
+// }
 
 // =============================
 
@@ -552,134 +556,134 @@ function setScene(groupID, sceneID) {
 
 // =============================
 
-export async function createUserCount(connection, resourceName, userNames) {
-    const hub = connection.hub;
-    const app = connection.app;
+// export async function createUserCount(connection, resourceName, userNames) {
+//     const hub = connection.hub;
+//     const app = connection.app;
 
-    const maximumUserCount = userNames.length;
+//     const maximumUserCount = userNames.length;
 
-    async function createTriggerRule(countID, triggerID, oldValue, newValue) {
-        const body = `{
-            "name": "(${resourceName}${oldValue > newValue ? "-" : "+"})",
-            "conditions": [
-                ${isUpdated(triggerID)},
-                ${isEqual(countID, oldValue)}
-            ],
-            "actions": [
-                ${setValue(countID, newValue)}
-            ]
-        }`;
+//     async function createTriggerRule(countID, triggerID, oldValue, newValue) {
+//         const body = `{
+//             "name": "(${resourceName}${oldValue > newValue ? "-" : "+"})",
+//             "conditions": [
+//                 ${isUpdated(triggerID)},
+//                 ${isEqual(countID, oldValue)}
+//             ],
+//             "actions": [
+//                 ${setValue(countID, newValue)}
+//             ]
+//         }`;
 
-        return createRule(connection, body);
-    }
+//         return createRule(connection, body);
+//     }
 
-    async function createTriggerSensor(countID, value) {
-        const id = await createFlagSensor(connection, `${resourceName}${value > 0 ? "+" : "-"}`, "(User Count Trigger)", false);
-        const rules = [];
-        for (var i = 0; i < maximumUserCount; ++i) {
-            const oldValue = (value > 0) ? i : i - value;
-            const newValue = oldValue + value;
-            const ruleID = await createTriggerRule(countID, id, oldValue, newValue);
-            rules.push(ruleID);
-        }
+//     async function createTriggerSensor(countID, value) {
+//         const id = await createFlagSensor(connection, `${resourceName}${value > 0 ? "+" : "-"}`, "(User Count Trigger)", false);
+//         const rules = [];
+//         for (var i = 0; i < maximumUserCount; ++i) {
+//             const oldValue = (value > 0) ? i : i - value;
+//             const newValue = oldValue + value;
+//             const ruleID = await createTriggerRule(countID, id, oldValue, newValue);
+//             rules.push(ruleID);
+//         }
 
-        return { id, rules };
-    }
+//         return { id, rules };
+//     }
 
-    async function createUserCountSensor() {
-        return createStatusSensor(connection, resourceName, "User Count");
-    }
+//     async function createUserCountSensor() {
+//         return createStatusSensor(connection, resourceName, "User Count");
+//     }
 
-    async function createUserRule(userID, userName, value, triggerID) {
-        const body = `{
-            "name": "(${userName})",
-            "conditions": [
-                ${isEqual(userID, value)}
-            ],
-            "actions": [
-                ${setValue(triggerID, true)}
-            ]
-        }`;
+//     async function createUserRule(userID, userName, value, triggerID) {
+//         const body = `{
+//             "name": "(${userName})",
+//             "conditions": [
+//                 ${isEqual(userID, value)}
+//             ],
+//             "actions": [
+//                 ${setValue(triggerID, true)}
+//             ]
+//         }`;
 
-        return createRule(connection, body);
-    }
+//         return createRule(connection, body);
+//     }
 
-    async function createUserSensor(userName, increment, decrement) {
-        const id = await createFlagSensor(connection, userName, "User Count User", false);
+//     async function createUserSensor(userName, increment, decrement) {
+//         const id = await createFlagSensor(connection, userName, "User Count User", false);
 
-        const inc = await createUserRule(id, userName, true, increment.id);
-        const dec = await createUserRule(id, userName, false, decrement.id);
-        const rules = [inc, dec];
+//         const inc = await createUserRule(id, userName, true, increment.id);
+//         const dec = await createUserRule(id, userName, false, decrement.id);
+//         const rules = [inc, dec];
 
-        return { id, name: userName, rules };
-    }
+//         return { id, name: userName, rules };
+//     }
 
-    async function createOverrideRule(triggerID, users, value) {
-        const actions = users.map(user => setValue(user.id, value)).join(",\n");
+//     async function createOverrideRule(triggerID, users, value) {
+//         const actions = users.map(user => setValue(user.id, value)).join(",\n");
 
-        const body = `{
-            "name": "(${resourceName} Override)",
-            "conditions": [
-                ${isUpdatedTo(triggerID, value)}
-            ],
-            "actions": [
-                ${actions}
-            ]
-        }`;
+//         const body = `{
+//             "name": "(${resourceName} Override)",
+//             "conditions": [
+//                 ${isUpdatedTo(triggerID, value)}
+//             ],
+//             "actions": [
+//                 ${actions}
+//             ]
+//         }`;
 
-        return createRule(connection, body);
-    }
+//         return createRule(connection, body);
+//     }
 
-    async function createOverrideSensor(users) {
-        const id = await createFlagSensor(connection, `${resourceName} Override`, "User Count Override", false);
+//     async function createOverrideSensor(users) {
+//         const id = await createFlagSensor(connection, `${resourceName} Override`, "User Count Override", false);
 
-        const rules = [
-            await createOverrideRule(id, users, false),
-            await createOverrideRule(id, users, true)
-        ];
+//         const rules = [
+//             await createOverrideRule(id, users, false),
+//             await createOverrideRule(id, users, true)
+//         ];
 
-        return { id, rules };
-    }
+//         return { id, rules };
+//     }
 
-    const id = await createUserCountSensor();
-    const increment = await createTriggerSensor(id, +1);
-    const decrement = await createTriggerSensor(id, -1);
-    const users = [];
-    for (const userName of userNames) {
-        const user = await createUserSensor(userName, increment, decrement);
-        users.push(user);
-    }
-    const override = await createOverrideSensor(users);
+//     const id = await createUserCountSensor();
+//     const increment = await createTriggerSensor(id, +1);
+//     const decrement = await createTriggerSensor(id, -1);
+//     const users = [];
+//     for (const userName of userNames) {
+//         const user = await createUserSensor(userName, increment, decrement);
+//         users.push(user);
+//     }
+//     const override = await createOverrideSensor(users);
 
-    return { id, name: resourceName, triggers: [increment, decrement], users, override };
-}
+//     return { id, name: resourceName, triggers: [increment, decrement], users, override };
+// }
 
-export async function deleteUserCount(connection, uc) {
+// export async function deleteUserCount(connection, uc) {
 
-    for (const rule of uc.override.rules) {
-        await deleteRule(connection, rule);
-    }
+//     for (const rule of uc.override.rules) {
+//         await deleteRule(connection, rule);
+//     }
 
-    await deleteSensor(connection, uc.override.id);
+//     await deleteSensor(connection, uc.override.id);
 
-    for (const user of uc.users) {
-        for (const rule of user.rules) {
-            await deleteRule(connection, rule);
-        }
+//     for (const user of uc.users) {
+//         for (const rule of user.rules) {
+//             await deleteRule(connection, rule);
+//         }
 
-        await deleteSensor(connection, user.id);
-    }
+//         await deleteSensor(connection, user.id);
+//     }
 
-    for (const trigger of uc.triggers) {
-        for (const rule of trigger.rules) {
-            await deleteRule(connection, rule);
-        }
+//     for (const trigger of uc.triggers) {
+//         for (const rule of trigger.rules) {
+//             await deleteRule(connection, rule);
+//         }
 
-        await deleteSensor(connection, trigger.id);
-    }
+//         await deleteSensor(connection, trigger.id);
+//     }
 
-    await deleteSensor(connection, uc.id);
-}
+//     await deleteSensor(connection, uc.id);
+// }
 
 // =============================
 
@@ -1380,12 +1384,35 @@ export async function createPowerManagedMotionSensor(connection, name, motionID,
         return createRule(connection, body);
     }
 
+    // When power management is enabled, we can turn on the lights (not just keep them on)
     async function onActivate2() {
         const body = `{
             "name": "MTN: Activate",
             "conditions": [
                 ${isUpdatedTo(actionID, PMM_ACTIVATE)},
+                ${isEqual(powerManagementID, PMZ_ENABLED)},
                 ${isEqual(activation, PMM_TURN_ON)}
+            ],
+            "actions": [
+                ${setValue(powerLevelID, PMZ_FULL_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    // When power management is disabled, we only keep on the lights (not turn them on)
+    async function onActivate3() {
+        const body = `{
+            "name": "MTN: Activate",
+            "conditions": [
+                ${isUpdatedTo(actionID, PMM_ACTIVATE)},
+                ${isEqual(powerManagementID, PMZ_DISABLED)},
+                ${isEqual(activation, PMM_TURN_ON)},
+                {
+                    "address": "/sensors/${powerLevelID}/state/status",
+                    "operator": "gt",
+                    "value": "0"
+                }
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)}
@@ -1434,10 +1461,10 @@ export async function createPowerManagedMotionSensor(connection, name, motionID,
         return createRule(connection, body);
     }
 
-    // TODO - return all items, resourcelink
     let rules = [
         await onActivate1(),
         await onActivate2(),
+        await onActivate3(),
         await onLowPower(),
         await onPresence(),
     ];
