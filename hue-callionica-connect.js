@@ -5,6 +5,7 @@ import { getConfig } from "./hue-callionica.js";
 // connection: { bridge, app, token }
 
 const KEY_DISCOVERY = "hue-bridges";
+const KEY_BRIDGE = "hue-bridge-current";
 
 export function loadConnection(app, bridge) {
     const key = `hue-connection:${app}:${bridge.id}`;
@@ -32,6 +33,20 @@ function storeBridge(bridge) {
 
     const data = JSON.stringify(list);
     localStorage.setItem(key, data);
+}
+
+export function storeCurrentBridge(bridge) {
+    const key = KEY_BRIDGE;
+    const data = JSON.stringify(bridge);
+    localStorage.setItem(key, data);
+}
+
+export function loadCurrentBridge() {
+    const key = KEY_BRIDGE;
+    const json = localStorage.getItem(key);
+    if (json) {
+        return JSON.parse(json);
+    }
 }
 
 export function storeConnection(connection) {
