@@ -5,100 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hue Connect</title>
-    <style>
-            * {
-                box-sizing: border-box;
-                border: 0;
-                padding: 0;
-                margin: 0;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            }
-            input {
-                font-size: inherit;
-            }
-            a {
-                color: inherit;
-                background-color: silver;
-                padding-left: 2pt;
-                padding-right: 2pt;
-                padding: 2pt;
-                border-radius: 4pt;
-                text-decoration: none;
-            }
-            ol {
-                padding-left: 24pt;
-            }
-            body {
-                padding: 8pt;
-            }
-            h2 {
-                margin-top: 4pt;
-                margin-bottom: 4pt;
-            }
-            h3 {
-                margin-top: 4pt;
-                margin-bottom: 4pt;
-            }
-            p {
-                margin-top: 8pt;
-                margin-bottom: 8pt;
-            }
-            div {
-                margin-top: 4pt;
-                margin-bottom: 4pt;
-            }
-            #pmz {
-                border-radius: 8pt;
-                padding: 8pt;
-                margin: 8pt;
-                background-color: whitesmoke;
-            }
-            #dimmer {
-                border-radius: 8pt;
-                padding: 8pt;
-                margin: 8pt;
-                background-color: whitesmoke;
-            }
-            .bridgeip {
-                font-weight: bold;
-            }
-            .unavailableip {
-                font-weight: bold;
-            }
-            .connected {
-                color: silver;
-            }
-            .connected::before {
-                content: "Connected: ";
-            }
-            .property {
-                font-weight: bold;
-            }
-            h2 {
-                color: silver;
-            }
-            td {
-                padding-left: 12pt;
-            }
-            select {
-                -webkit-appearance: none;
-                font-size: inherit;
-                background: inherit;
-            }
-            option {
-                -webkit-appearance: none;
-                font-size: inherit;
-                background: inherit;
-            }
-            button {
-                font-size: inherit;
-                padding: 4pt;
-                border-radius: 4pt;
-                background-color: silver;
-            }
-        </style>
+    <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
-        import { bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
+        import { loadCurrentBridge, storeCurrentBridge, bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
 
         class UIBridge {
             constructor(root, ip, id, name) {
@@ -132,6 +41,14 @@
             set status(value) {
                 this.status_ = value;
                 this.rootStatus.innerText = value;
+            }
+
+            connect(connection) {
+                this.root.innerHTML = `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>IP address: <span class="bridgeip">${connection.bridge.ip}</span></p><!--<p>Token: <span class="token">${connection.token}</span></p>--><p>Status: <span class="bridgestatus"></span></p></div>`;
+
+                this.rootName = this.root.querySelector(".bridgename");
+                this.rootIP = this.root.querySelector(".bridgeip");
+                this.rootStatus = this.root.querySelector(".bridgestatus");
             }
         }
 
@@ -193,10 +110,15 @@
                 this.connections.push(connection);
                 storeConnection(connection);
 
+                if (!loadCurrentBridge()) {
+                    storeCurrentBridge(connection.bridge);
+                }
+
                 const ip = connection.bridge.ip;
                 const id = connection.bridge.id;
                 const ui = this.ui.bridges.getBridge(ip, id);
-                ui.status = "Connected: " + connection.token;
+                ui.connect(connection);
+                ui.status = `Connected`;
             }
 
             addUnconnected(bridge) {
@@ -212,7 +134,7 @@
                 this.unconnected.push(bridge);
                 const index = this.unconnected.length - 1;
 
-                const ui = this.ui.bridges.getBridge(bridge.ip, bridge.ip).rootStatus;
+                const ui = this.ui.bridges.getBridge(bridge.ip, bridge.id).rootStatus;
                 ui.innerHTML = `<button class="connect" data-unconnected="${index}">Connect</button>`;
             }
 
@@ -399,7 +321,7 @@
         async function main() {
             document.onclick = onclick;
 
-            const bridges = await bridgeIPsByDiscovery();
+            let bridges = await bridgeIPsByDiscovery();
 
             connector.ui.status.innerText = "";
 
@@ -410,20 +332,28 @@
     </script>
 </head>
 <body>
-    <h1>Connect to a Philips Hue Bridge</h1>
+    <h1>Hue Bridges - Connect</h1>
+    <p>Here you can see the Hue bridges on your network and connect to them.</p>
+    <hr/>
+    <h2>Hue Bridges</h2>
     <div id="bridges"></div>
     <div id="status">Getting bridges...</div>
+    <p><a href="hue-callionica-bridges.html">View all bridges...</a></p>
+    <hr/>
     <div id="manual">
         <h2>Advanced</h2>
         <p>If you know your bridge's IP address, you can search for it:</p>
-        <p>IP Address: <input id="manual-ip" type="text" maxlength="40" placeholder="192.168.0.2" value="192.168.0.2"></p>
-        <p>Token: <input id="manual-token" type="text" maxlength="128" placeholder="(Optional)" value=""></p>
+        <p><label for="manual-ip">IP Address:</label> <input id="manual-ip" type="text" maxlength="40" placeholder="192.168.0.2" value="192.168.0.2"></p>
+        <p><label for="manual-token">Token:</label> <input id="manual-token" type="text" maxlength="128" placeholder="(Optional)" value=""></p>
         <p></p><button id="manual-button">Search</button></p>
     </div>
+    <hr/>
     <div id="help"></div>
     <div id="tips">
         <h2>Tips</h2>
         <p>If you haven't already, we recommend you set a static internal IP address for each of your bridges.</p>
     </div>
+    <hr/>
+    
 </body>
 </html>
