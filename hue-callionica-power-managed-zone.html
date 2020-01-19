@@ -5,92 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Power Managed Zone by Callionica</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            border: 0;
-            padding: 0;
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-        body {
-            padding: 8pt;
-        }
-        h2 {
-            margin-top: 4pt;
-            margin-bottom: 4pt;
-        }
-        h3 {
-            margin-top: 4pt;
-            margin-bottom: 4pt;
-        }
-        p {
-            margin-top: 8pt;
-            margin-bottom: 8pt;
-        }
-        div {
-            margin-top: 4pt;
-            margin-bottom: 4pt;
-        }
-        #zone {
-            border-radius: 8pt;
-            padding: 8pt;
-            margin: 8pt;
-            background-color: whitesmoke;
-        }
-        .scene {
-            border-radius: 8pt;
-            padding: 8pt;
-            margin: 8pt;
-            background-color: whitesmoke;
-        }
-        .configuration {
-            border-radius: 8pt;
-            padding: 8pt;
-            margin: 8pt;
-            background-color: whitesmoke;
-        }
-        .connected {
-            color: silver;
-        }
-        .connected::before {
-            content: "Connected: ";
-        }
-        .property {
-            font-weight: bold;
-        }
-        h2 {
-            color: silver;
-        }
-        td {
-            padding-left: 12pt;
-        }
-        select {
-            -webkit-appearance: none;
-            font-size: inherit;
-            background: inherit;
-        }
-        option {
-            -webkit-appearance: none;
-            font-size: inherit;
-            background: inherit;
-        }
-        button {
-            font-size: inherit;
-            padding: 4pt;
-            border-radius: 4pt;
-            background-color: silver;
-        }
+    <link rel="stylesheet" href="hue-callionica.css">
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { getAll, setSensorValue, getConnectedComponents, deleteComponent, displayLocalTime, createPowerManagedZone } from "./hue-callionica.js";
-
-        // const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         function isConnected(component, group) {
             return component.connections.some(cn => (cn.category === "groups") && (cn.item === group));
@@ -174,7 +93,7 @@
             let group = Object.values(data.groups)[1];
 
             const html = `
-            <div><label>Room/Zone:</label></div>
+            <div><label for="zone">Room/Zone:</label></div>
             <div id="zone">${groupSelector(data)}</div>
             <div>Configurations:</div>
             <div id="configurations">
@@ -214,9 +133,11 @@
 <body>
     <h1>Power Managed Zone by Callionica</h1>
     <p>Here you can set up and install a new Power Managed Zone.</p>
+    <hr/>
     <h2>New Power Managed Zone Settings</h2>
     <div id="data"></div>
-    <p>A Power Managed Zone is a room or zone that turns its lights off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. You can configure which scenes are used for Full power and Low power. You can configure how long the lights will stay at full power before changing to low power. You can configure how long the lights will stay at low power before switching off. You can disable power management temporarily, so you can also configure how long power management can be disabled before it automatically re-enables.</p>
+    <hr/>
+    <p>A Power Managed Zone is a room or zone that turns its lights off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. You can configure which scenes are used for Full power and Low power. You can configure how long the lights will stay at full power before changing to low power. You can configure how long the lights will stay at low power before switching off. You can disable power management temporarily, so you can also configure how long power management can be disabled before it automatically re-enables. There are components (<a href="hue-callionica-power-managed-dimmer.html">Power Managed Dimmer</a> and Power Managed Motion Sensor) that integrate dimmer switches and motion sensors with your Power Managed Zone.</p>
     <p style="padding: 4pt; background-color: gray; color: whitesmoke;">Power Managed Zone is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
     <!--<h2>Instructions</h2>
     <ol>
