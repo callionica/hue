@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hue Bridges</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <script type="module">
+        import { loadConnections, loadCurrentBridge, storeCurrentBridge } from "./hue-callionica-connect.js";
+
+        function sortBy(keyFn) {
+            return function sorter(a, b) {
+                var keyA = keyFn(a);
+                var keyB = keyFn(b);
+                if (keyA < keyB) return -1;
+                if (keyA > keyB) return 1;
+                return 0;
+            }
+        }
+
+        const connections = loadConnections().sort(sortBy(c => c.bridge.name));
+        const currentBridge = loadCurrentBridge();
+
+        function onclick(evt) {
+            const src = evt.srcElement;
+            const op = src.getAttribute("data-op");
+            if (op === "set-default") {
+                const id = src.getAttribute("data-id");
+                const connection = connections.find(c => c.bridge.id === id);
+                if (connection) {
+                    storeCurrentBridge(connection.bridge);
+                    document.location = document.location;
+                }
+            }
+        }
+
+        async function main() {
+            document.onclick = onclick;
+
+            const html = connections.map(connection => {
+                const isDefault = connection.bridge.id === currentBridge.id;
+                return `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>IP address: <span class="bridgeip">${connection.bridge.ip}</span></p><p>Token: <span class="token">${connection.token}</span></p><p><button data-id="${connection.bridge.id}" data-op="set-default" ${isDefault ? "disabled" : ""}>Set as default</button></p></div>`
+            }).join("\n");
+            document.getElementById("connections").innerHTML = html;
+        }
+
+        main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Hue Bridges - All</h1>
+    <p>Here you can see details of the bridges that this app remembers.</p>
+    <hr/>
+    <h2>Bridges</h2>
+    <div id="connections"></div>
+</body>
+</html>
