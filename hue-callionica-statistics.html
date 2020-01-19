@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hue Statistics</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll } from "./hue-callionica.js";
+
+        async function main() {
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
+            const data = await getAll(connection);
+
+            const o = {};
+            ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
+
+            const counts = [
+                ["Sensors", () => o.sensors.length],
+                ["Components", () => o.components.length],
+                ["Rules", () => o.rules.length],
+                ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0)],
+                ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0)],
+                ["Schedules", () => o.schedules.length],
+                ["Groups", () => o.groups.length],
+                ["Lights", () => o.lights.length],
+                ["Scenes", () => o.scenes.length],
+                ["Tokens", () => Object.values(data.config.whitelist).length],
+            ];
+
+            const html = `<p>Name: ${connection.bridge.name}</p>` 
+            + counts.map(count => `<p>${count[0]}: ${count[1]()}</p>`).join("\n");
+            document.getElementById("statistics").innerHTML = html;
+        }
+
+        main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Hue Statistics</h1>
+    <p>Here you can see statistics for the current bridge.</p>
+    <hr/>
+    <h2>Statistics</h2>
+    <div id="statistics"></div>
+</body>
+</html>
