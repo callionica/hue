@@ -5,86 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Power Managed Dimmer by Callionica</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            border: 0;
-            padding: 0;
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-        body {
-            padding: 8pt;
-        }
-        h2 {
-            margin-top: 4pt;
-            margin-bottom: 4pt;
-        }
-        h3 {
-            margin-top: 4pt;
-            margin-bottom: 4pt;
-        }
-        p {
-            margin-top: 8pt;
-            margin-bottom: 8pt;
-        }
-        div {
-            margin-top: 4pt;
-            margin-bottom: 4pt;
-        }
-        #pmz {
-            border-radius: 8pt;
-            padding: 8pt;
-            margin: 8pt;
-            background-color: whitesmoke;
-        }
-        #dimmer {
-            border-radius: 8pt;
-            padding: 8pt;
-            margin: 8pt;
-            background-color: whitesmoke;
-        }
-        .connected {
-            color: silver;
-        }
-        .connected::before {
-            content: "Connected: ";
-        }
-        .property {
-            font-weight: bold;
-        }
-        h2 {
-            color: silver;
-        }
-        td {
-            padding-left: 12pt;
-        }
-        select {
-            -webkit-appearance: none;
-            font-size: inherit;
-            background: inherit;
-        }
-        option {
-            -webkit-appearance: none;
-            font-size: inherit;
-            background: inherit;
-        }
-        button {
-            font-size: inherit;
-            padding: 4pt;
-            border-radius: 4pt;
-            background-color: silver;
-        }
-    </style>
+    <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { getAll, createPowerManagedDimmer } from "./hue-callionica.js";
-
-        //const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         function isConnected(component, item) {
             return component.connections.some(cn => (cn.item === item));
@@ -128,7 +52,7 @@
         async function main() {
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
-            
+
             const data = await getAll(connection);
             const components = Object.values(data);
             
@@ -161,10 +85,18 @@
     <h1>Power Managed Dimmer by Callionica</h1>
     <p>Here you can set up and install a new Power Managed Dimmer.</p>
     <p>Before installing this component, we recommend clearing any existing settings from the Hue dimmer switch you intend to use.</p>
+    <hr/>
     <h2>New Power Managed Dimmer Settings</h2>
     <div id="data"></div>
-    <p>A Power Managed Dimmer is a Hue dimmer switch that has been configured to work with a Power Managed Zone. Choose the hardware Hue dimmer switch and the Power Managed Zone you want it to control and all the dimmer buttons will be mapped automatically for controlling the zone.</p>
+    <hr/>
+    <p>A Power Managed Dimmer is a Hue dimmer switch that has been configured to work with a <a href="hue-callionica-power-managed-zone.html">Power Managed Zone</a>. Choose the hardware Hue dimmer switch and the Power Managed Zone you want it to control and all the dimmer buttons will be mapped automatically for controlling the zone.</p>
     <p>All actions using the dimmer (except the Off button) will turn on the Power Managed Zone or increase it to Full Power extending the timeout before the zone turns itself off. The On button will (A) Turn on the zone at Full Power if it's off (B) Increase the zone to Full Power if it's at Low Power (C) Switch the lights to the next scene in the scene list managed by the zone if the zone is at Full Power. Note that there is one scene list per zone (and one current scene in the list), not a separate scene list and current scene for each dimmer. Power management can be disabled (temporarily) by using the Off button when the lights are off: this will turn the lights on and keep them on until the zone automatically enables power management again after an extended period of time (configured by the zone). Using the Off button to turn off the lights also immediately re-enables power management.</p>
+    <p>Off button behaviour:</p>
+    <ol>
+        <li><p>Short press when zone is on: Turns zone off and enables power management.</p></li>
+        <li><p>Short press when zone is off: Turns zone on and disables power management.</p></li>
+        <li><p>Long press: Turns zone off and disables power management.</p></li>
+    </ol>
     <p style="padding: 4pt; background-color: gray; color: whitesmoke;">Power Managed Dimmer is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
     <!--<h2>Instructions</h2>
     <ol>
