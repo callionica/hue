@@ -142,6 +142,10 @@ const PMM_ACTIVATE = 2000 + 100; // Activate according to the motion sensor acti
 // The motion detector is just another user who can let the hallway know it's being used, but is not responsible for turning lights off
 
 export async function send(method, address, body) {
+    if (typeof body !== "string") {
+        body = JSON.stringify(body, null, "  ");
+    }
+
     let bridgeResult;
     try {
         const result = await fetch(address, { method, body });
@@ -825,7 +829,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         "recycle": false,
         "localtime": "W127/T${startTime}",
         "command": {
-            "address": "/api/${connection.app}/sensors/${cycleID}/state",
+            "address": "/api/${connection.token}/sensors/${cycleID}/state",
             "body": {
                 "status": ${index}
             },
@@ -1033,7 +1037,7 @@ async function createPMZConfiguration(connection, configuration, index, powerLev
         "recycle": false,
         "localtime": "W127/T${configuration.startTime}",
         "command": {
-            "address": "/api/${connection.app}/sensors/${configurationID}/state",
+            "address": "/api/${connection.token}/sensors/${configurationID}/state",
             "body": {
                 "status": ${index}
             },
@@ -1667,6 +1671,16 @@ function expandResourceLink(id, data) {
     return resourceLink;
 }
 
+function sortBy(keyFn) {
+    return function sorter(a, b) {
+        var keyA = keyFn(a);
+        var keyB = keyFn(b);
+        if (keyA < keyB) return -1;
+        if (keyA > keyB) return 1;
+        return 0;
+    }
+}
+
 function extractAgenda(sensor, schedules) {
     const result = [];
     const address = `/sensors/${sensor.id}/state`;
@@ -1677,7 +1691,7 @@ function extractAgenda(sensor, schedules) {
         result.push({ localTime, sensor, value, schedule });
     }
 
-    return result;
+    return result.sort(sortBy(x => x.localTime));
 }
 
 function extractDaylightAgenda(sensor, data) {
@@ -1922,7 +1936,9 @@ export function rearrangeForHueComponents(data) {
             }
         }
 
-        const agenda = component.sensors.flatMap(sensor => extractAgenda(sensor, Object.values(data.schedules)));
+        const agendaBySensor = component.sensors.flatMap(sensor => extractAgenda(sensor, Object.values(data.schedules)));
+
+        const agenda = agendaBySensor.sort(sortBy(x => x.localTime));
 
         const daylightAgenda = component.sensors.flatMap(sensor => extractDaylightAgenda(sensor, data));
 
@@ -1985,7 +2001,10 @@ export async function deleteComponent(connection, component) {
 
 export function displayLocalTime(value) {
     if (value.startsWith("W127/T")) {
-        return value.substring("W127/T".length);
+        value = value.substring("W127/T".length);
+    }
+    if (value.endsWith(":00")) {
+        value = value.substring(0, value.length - 3);
     }
     return value;
 }
