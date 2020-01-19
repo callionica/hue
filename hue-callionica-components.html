@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hue Components</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll, setSensorValue, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+
+        // Creates the HTML for adding a scheduled change to a component property:
+        // select the time, select the property, select the value, hit Add
+        function createAddScheduleElement(connection, component) {
+            const root = document.createElement("tr");
+            root.className = "add-schedule";
+            const basics = `<td><input type="time" data-role="time" value="08:00"></td><td><select data-role="property"></select></td><td><select data-role="value"></select></td><td><button data-action="add-schedule">Add</button></td>`;
+            root.innerHTML = basics;
+
+            const t = root.querySelector("*[data-role='time']");
+            const p = root.querySelector("*[data-role='property']");
+            const v = root.querySelector("*[data-role='value']");
+            const b = root.querySelector("*[data-action='add-schedule']");
+
+            function populateProperties() {
+                p.innerHTML = component.sensors.filter(sensor => sensor.metadata).map(sensor => `<option value="${sensor.id}">${sensor.metadata.property.replace(">", "›")}</option>`).join("\n");
+            }
+
+            function populateValues() {
+                const sensorID = p.value;
+                const sensor = component.sensors.find(sensor => sensor.id === sensorID);
+                v.innerHTML = sensor.values.map(s => `<option value="${s.value}">${s.name}</option>`).join("\n");
+            }
+
+            function toHMS(value) {
+                const pieces = value.split(":");
+                while (pieces.length < 3) {
+                    pieces.push("00");
+                }
+
+                return pieces.map(p => (p == "") ? "00" : p).join(":");
+            }
+
+            async function addSchedule() {
+                const sensorID = p.value;
+                const sensor = component.sensors.find(sensor => sensor.id === sensorID);
+                const value = parseInt(v.value, 10);
+                const time = toHMS(t.value);
+
+                const body = {
+                    name: component.name.substring(0, 32),
+                    description: sensor.metadata.property.substring(0, 32),
+                    recycle: false,
+                    localtime: `W127/T${time}`,
+                    command: {
+                        address: `/api/${connection.token}/sensors/${sensorID}/state`,
+                        body: {
+                            status: value
+                        },
+                        method: "PUT"
+                    }
+                };
+                return createSchedule(connection, body);
+            }
+
+            populateProperties();
+            populateValues();
+
+            p.onchange = populateValues;
+            b.onclick = () => {
+                addSchedule().then(x => {
+                    document.location = document.location;
+                });
+            };
+
+            return root;
+        }
+
+        function valuesHTML(sensor) {
+            return `<select data-sensor="${sensor.id}">\n` + 
+                    `<option value="${sensor.value}" "selected"}>${sensor.value.name}</option>` +
+                    sensor.values.map(s => `<option value="${s.value}">${s.name}</option>`) +
+                    `</select>\n`;
+        }
+
+        function propertyHTML(sensor) {
+            var v = sensor.values ? valuesHTML(sensor) : "";
+            return `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
+        }
+
+        function createComponentElement(connection, component) {
+
+            var tiedToHTML = component.connections.map(connection => {
+                let category = connection.category;
+                let item = connection.item;
+                let description = item.type;
+                if (category === "sensors") {
+                    description = (item.productname || item.modelid);   
+                } else if (category === "resourcelinks") {
+                    description = item.description;
+                }
+                return `<div class="connected">${item.name} (${description})</div>\n`;
+            }).join("\n");
+            
+            var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => propertyHTML(sensor)).join("\n");
+            var agenda = "";
+            agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div>`;
+            agenda += `<table class="agenda">`;
+            if (component.agenda && component.agenda.length > 0) {
+                // Columns: time, property, value, controls
+                agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", "), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
+            }
+            agenda += "</table>";
+            var daylightAgenda = "";
+            if (component.daylightAgenda && component.daylightAgenda.length > 0) {
+                daylightAgenda = `<div style="font-weight: bold; margin-top: 12pt;">Daylight Schedule</div><table>` + component.daylightAgenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
+            }
+            const root = document.createElement("div");
+            root.className = "component";
+            var html = `
+            <h1>${component.name}</h1>
+            <h2 class="metadata" title="${component.metadata.comment}"><a href="${component.metadata.url}">${component.metadata.name} by ${component.metadata.manufacturer}</a></h2>
+            ${tiedToHTML}
+            ${properties}
+            ${agenda}
+            ${daylightAgenda}
+            <div style="margin-top: 16pt;"><button data-component="${component.id}" class="delete">Delete</button></div>
+            `;
+            root.innerHTML = html;
+
+            const agendaElement = root.querySelector(".agenda");
+            agendaElement.appendChild(createAddScheduleElement(connection, component));
+
+            return root;
+        }
+
+        async function main() {
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
+            const data = await getAll(connection);
+            const components = Object.values(data.components);
+            //await deleteComponent(connection, components[0]);
+            const componentElements = components.map(component => createComponentElement(connection, component));
+            const d = document.getElementById("data");
+            componentElements.map(componentElement => d.appendChild(componentElement));
+
+            function onSensorChange(evt) {
+                const sensor = evt.srcElement.getAttribute("data-sensor");
+                const value = evt.srcElement.value;
+                setSensorValue(connection, sensor, value).then(x => document.location = document.location);
+            }
+            [...document.querySelectorAll("select[data-sensor]")].forEach(s => s.onchange = onSensorChange);
+
+            function onDelete(evt) {
+                const componentID = evt.srcElement.getAttribute("data-component");
+                const component = data.components[componentID];
+
+                const connected = getConnectedComponents(component, data);
+
+                let doIt = true;
+                if (connected.length > 0) {
+                    doIt = confirm(`Component in use by ${connected.map(c => `${c.name} (${c.description})`).join(", ")}.\n\nContinuing will delete ${component.name} (${component.description}) and all its resources, but will leave these other components in a broken state.\n\nOK to delete ${component.name} (${component.description}) anyway?`);
+                } else {
+                    doIt = confirm(`Continuing will delete ${component.name} (${component.description}) and all its resources.\n\nOK to delete ${component.name} (${component.description})?`);
+                }
+
+                if (!doIt) {
+                    return;
+                }
+
+                deleteComponent(connection, component).then(x => {
+                    document.location = document.location;
+                });
+            }
+            [...document.querySelectorAll("button.delete")].forEach(s => s.onclick = onDelete);
+
+            document.onclick = (evt) => {
+                const src = evt.srcElement;
+                const action = src.getAttribute("data-action");
+                if (action) {
+                    if (action === "delete-schedule") {
+                        const id = src.getAttribute("data-id");
+                        deleteSchedule(connection, id).then(x => {
+                            document.location = document.location;
+                        });
+                        return;
+                    }
+                }
+            };
+        }
+
+        // const oneSecond = 1.0 * 1000;
+        // window.setInterval(() => {
+        //     main().then(x => console.log("Update"));
+        // }, oneSecond);
+
+        main().then(x => console.log("Initial"));
+        
+    </script>
+</head>
+<body>
+    <h1>Hue Components</h1>
+    <div id="data"></div>
+</body>
+</html>
