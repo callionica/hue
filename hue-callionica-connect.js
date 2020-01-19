@@ -15,6 +15,15 @@ export function loadConnection(app, bridge) {
     }
 }
 
+export function forgetConnection(connection) {
+    const key = `hue-connection:${connection.app}:${connection.bridge.id}`;
+    localStorage.removeItem(key);
+}
+
+export function loadConnections() {
+    return Object.keys(localStorage).filter(key => key.startsWith("hue-connection:")).map(key => JSON.parse(localStorage[key]));
+}
+
 function storeBridge(bridge) {
     const key = KEY_DISCOVERY;
     const json = localStorage.getItem(key);
@@ -58,22 +67,6 @@ export function storeConnection(connection) {
 
     storeBridge(connection.bridge);
 }
-
-// export function loadConnections(app) {
-//     const connections = [];
-//     const key = KEY_BRIDGES;
-//     const json = localStorage.getItem(key);
-//     if (json) {
-//         const bridges = JSON.parse(json);
-//         for (const bridge of bridges) {
-//             const connection = loadConnection(app, bridge);
-//             if (connection) {
-//                 connections.push(connection);
-//             }
-//         }
-//     }
-//     return connections;
-// }
 
 // Given an IP, we can get the bridge ID and name without authenticating
 export async function bridgeByIP(ip) {
