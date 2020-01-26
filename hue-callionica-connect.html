@@ -9,6 +9,8 @@
     <script type="module">
         import { loadCurrentBridge, storeCurrentBridge, bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
 
+        const currentBridge = loadCurrentBridge();
+
         class UIBridge {
             constructor(root, ip, id, name) {
                 this.root = root;
@@ -44,7 +46,8 @@
             }
 
             connect(connection) {
-                this.root.innerHTML = `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>IP address: <span class="bridgeip">${connection.bridge.ip}</span></p><!--<p>Token: <span class="token">${connection.token}</span></p>--><p>Status: <span class="bridgestatus"></span></p></div>`;
+                const isDefault = connection.bridge.id === currentBridge.id;
+                this.root.innerHTML = `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>IP address: <span class="bridgeip">${connection.bridge.ip}</span></p><!--<p>Token: <span class="token">${connection.token}</span></p>--><p>Status: <span class="bridgestatus"></span></p><p><button data-id="${connection.bridge.id}" data-op="set-default" ${isDefault ? "disabled" : ""}>Set as default</button></p></div>`;
 
                 this.rootName = this.root.querySelector(".bridgename");
                 this.rootIP = this.root.querySelector(".bridgeip");
@@ -295,6 +298,7 @@
         const connector = new BridgeConnector();
 
         function onclick(evt) {
+            const src = evt.srcElement;
             const id = evt.srcElement.id;
 
             if (id === "manual-button") {
@@ -308,13 +312,23 @@
                 return;
             }
 
-            const op = evt.srcElement.getAttribute("data-unconnected");
+            {const op = src.getAttribute("data-unconnected");
             if (op) {
                 const index = parseInt(op, 10);
                 if ((0 <= index) && (index < connector.unconnected.length)) {
                     connector.registerUnconnected(index).then(x => console.log(x));
                 }
                 return;
+            }}
+
+            const op = src.getAttribute("data-op");
+            if (op === "set-default") {
+                const id = src.getAttribute("data-id");
+                const connection = connector.connections.find(c => c.bridge.id === id);
+                if (connection) {
+                    storeCurrentBridge(connection.bridge);
+                    document.location = document.location;
+                }
             }
         }
 
