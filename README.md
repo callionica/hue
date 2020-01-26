@@ -13,7 +13,7 @@ Command to resolve Hue bridges: `dns-sd -L "Philips Hue - 231268" _hue._tcp .` w
 
 The names contain the last 6 digits of the Bridge ID.
 
-This resolves to a host name of "philips-hue". How does it resolve on a network with multiple bridges?
+This resolves to a host name of "philips-hue". Host names use the name of the bridge set by the user (but only sometimes?!?!)
 
 ## Starting
 
