@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Hue Connect</title>
+    <title>Hue Connect Bridges</title>
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, storeCurrentBridge, bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
@@ -20,7 +20,8 @@
                 this.name_ = name || "Bridge";
                 this.status_ = "";
 
-                this.root.innerHTML = `<span class="bridgename">${this.name_}</span>: <span class="bridgeip">${ip}</span> <span class="bridgestatus"></span>`;
+                this.root.innerHTML = `<div id="${ip}" class="connection"><p><span class="bridgename">${this.name_}</span></p><p>ID: <span class="bridgeid">${id}</p><p>IP address: <span class="bridgeip">${ip}</span></p><p>Status: <span class="bridgestatus">Not connected</span></p></div>`;
+                //`<span class="bridgename">${this.name_}</span>: <span class="bridgeip">${ip}</span> <span class="bridgestatus"></span>`;
 
                 this.rootName = this.root.querySelector(".bridgename");
                 this.rootIP = this.root.querySelector(".bridgeip");
@@ -346,13 +347,13 @@
     </script>
 </head>
 <body>
-    <h1>Hue Bridges - Connect</h1>
+    <h1>Hue Bridges › Connect</h1>
     <p>Here you can see the Hue bridges on your network and connect to them.</p>
     <hr/>
     <h2>Hue Bridges</h2>
     <div id="bridges"></div>
-    <div id="status">Getting bridges...</div>
-    <p><a href="hue-callionica-bridges.html">View all bridges...</a></p>
+    <div id="status">Looking for bridges...</div>
+    <!--<p><a href="hue-callionica-bridges.html">View all bridges...</a></p>-->
     <hr/>
     <div id="manual">
         <h2>Advanced</h2>
