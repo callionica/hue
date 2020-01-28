@@ -47,7 +47,10 @@
             }
 
             connect(connection) {
-                const isDefault = connection.bridge.id === currentBridge.id;
+                let isDefault = false;
+                if (currentBridge) {
+                    isDefault = connection.bridge.id === currentBridge.id;
+                }
                 this.root.innerHTML = `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>IP address: <span class="bridgeip">${connection.bridge.ip}</span></p><!--<p>Token: <span class="token">${connection.token}</span></p>--><p>Status: <span class="bridgestatus"></span></p><p><button data-id="${connection.bridge.id}" data-op="set-default" ${isDefault ? "disabled" : ""}>Set as default</button></p></div>`;
 
                 this.rootName = this.root.querySelector(".bridgename");
