@@ -11,28 +11,6 @@
         import { getAll } from "./hue-callionica.js";
 
         async function main() {
-            const bridge = loadCurrentBridge();
-            const connection = await loadConnection("Callionica", bridge);
-            const data = await getAll(connection);
-
-            const o = {};
-            ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
-
-            const counts = [
-                ["Sensors", () => o.sensors.length],
-                ["Components", () => o.components.length],
-                ["Rules", () => o.rules.length],
-                ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0)],
-                ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0)],
-                ["Schedules", () => o.schedules.length],
-                ["Groups", () => o.groups.length],
-                ["Lights", () => o.lights.length],
-                ["Scenes", () => o.scenes.length],
-                ["Tokens", () => Object.values(data.config.whitelist).length],
-            ];
-
-            const html = counts.map(count => `<p>${count[0]}: ${count[1]()}</p>`).join("\n");
-            document.getElementById("statistics").innerHTML = html;
         }
 
         main().then(x => console.log("Done"));
