@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Callionica's Hue App</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll } from "./hue-callionica.js";
+
+        async function main() {
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
+            const data = await getAll(connection);
+
+            const o = {};
+            ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
+
+            const counts = [
+                ["Sensors", () => o.sensors.length],
+                ["Components", () => o.components.length],
+                ["Rules", () => o.rules.length],
+                ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0)],
+                ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0)],
+                ["Schedules", () => o.schedules.length],
+                ["Groups", () => o.groups.length],
+                ["Lights", () => o.lights.length],
+                ["Scenes", () => o.scenes.length],
+                ["Tokens", () => Object.values(data.config.whitelist).length],
+            ];
+
+            const html = counts.map(count => `<p>${count[0]}: ${count[1]()}</p>`).join("\n");
+            document.getElementById("statistics").innerHTML = html;
+        }
+
+        main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Callionica's Hue App</h1>
+    <p>Here you can see the major sections of this app.</p>
+    <hr/>
+    <!--<h2>Sections</h2>-->
+    <h3>Bridges</h3>
+    <p><a href="hue-callionica-connect.html">Bridges - Connect</a></p>
+    <p><a href="hue-callionica-bridges.html">Bridges - Manage</a></p>
+    <p><a href="hue-callionica-statistics.html">Statistics</a></p>
+    <h3>Components</h3>
+    <p><a href="hue-callionica-components.html">Components</a></p>
+    <p><a href="hue-callionica-power-managed-zone.html">Power managed zone</a></p>
+    <p><a href="hue-callionica-power-managed-dimmer.html">Power managed dimmer</a></p>
+</body>
+</html>
