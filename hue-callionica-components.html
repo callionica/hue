@@ -13,6 +13,9 @@
         // Creates the HTML for adding a scheduled change to a component property:
         // select the time, select the property, select the value, hit Add
         function createAddScheduleElement(connection, component) {
+            if (component.sensors.length <= 0) {
+                return;
+            }
             const root = document.createElement("tr");
             root.className = "add-schedule";
             const basics = `<td><input type="time" data-role="time" value="08:00"></td><td><select data-role="property"></select></td><td><select data-role="value"></select></td><td><button data-action="add-schedule">Add</button></td>`;
@@ -105,13 +108,15 @@
             
             var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => propertyHTML(sensor)).join("\n");
             var agenda = "";
-            agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div>`;
-            agenda += `<table class="agenda">`;
-            if (component.agenda && component.agenda.length > 0) {
-                // Columns: time, property, value, controls
-                agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", "), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
+            if (properties.length > 0) {
+                agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div>`;
+                agenda += `<table class="agenda">`;
+                if (component.agenda && component.agenda.length > 0) {
+                    // Columns: time, property, value, controls
+                    agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", "), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
+                }
+                agenda += "</table>";
             }
-            agenda += "</table>";
             var daylightAgenda = "";
             if (component.daylightAgenda && component.daylightAgenda.length > 0) {
                 daylightAgenda = `<div style="font-weight: bold; margin-top: 12pt;">Daylight Schedule</div><table>` + component.daylightAgenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
@@ -130,7 +135,12 @@
             root.innerHTML = html;
 
             const agendaElement = root.querySelector(".agenda");
-            agendaElement.appendChild(createAddScheduleElement(connection, component));
+            if (agendaElement) {
+                const addToScheduleElement = createAddScheduleElement(connection, component);
+                if (addToScheduleElement) {
+                    agendaElement.appendChild(addToScheduleElement);
+                }
+            }
 
             return root;
         }
