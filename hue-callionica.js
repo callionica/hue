@@ -1363,8 +1363,12 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
 
 export async function createPowerManagedMotionSensor(connection, name, motionID, pmz) {
     
-    const powerLevelID = pmz.powerLevel;
-    const powerManagementID = pmz.powerManagement;
+    function sensorID(name) {
+        return pmz.sensors.filter(sensor => sensor.modelid === name)[0].id;
+    }
+    
+    const powerLevelID = sensorID("PM.Zone.PowerLevel");
+    const powerManagementID = sensorID("PM.Zone.PowerManagement");
 
     const activation = await createStatusSensor(connection, "Motion Activation", "PM.Motion.Activation", PMM_TURN_ON);
     const actionID = await createStatusSensor(connection, "Motion Action", "PM.Motion.Action", 0);

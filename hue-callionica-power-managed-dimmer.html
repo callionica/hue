@@ -43,7 +43,7 @@
             const pmzE = document.getElementById("pmz").querySelector("select");
             const pmz = data.components[pmzE.value];
 
-            const dimmerE = document.getElementById("dimmer").querySelector("select");
+            const dimmerE = document.getElementById("hardware").querySelector("select");
             const dimmer = data.sensors[dimmerE.value];
 
             return { pmz, dimmer };
@@ -58,7 +58,7 @@
 
             const html = `
             <div><label>Dimmer:</label></div>
-            <div id="dimmer">${dimmerSelector(data)}</div>
+            <div id="hardware">${dimmerSelector(data)}</div>
             <div><label>Power Managed Zone:</label></div>
             <div id="pmz">${pmzSelector(data)}</div>
             <div><button class="create">Create</button></div>

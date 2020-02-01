@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Power Managed Motion Sensor by Callionica</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll, createPowerManagedMotionSensor } from "./hue-callionica.js";
+
+        function isConnected(component, item) {
+            return component.connections.some(cn => (cn.item === item));
+        }
+
+        function isConnectedItem(components, item) {
+            return components.some(c => isConnected(c, item));
+        }
+
+        function hardwareSelector(data) {
+            const pmds = Object.values(data.components).filter(c => c.metadata.name === "Power Managed Motion Sensor");
+            const dimmers = Object.values(data.sensors).filter(sensor => (sensor.productname === "Hue motion sensor") && !isConnectedItem(pmds, sensor));
+            if (dimmers.length === 0) {
+                return `(None available)`;
+            }
+            return `<select>\n` + 
+                    dimmers.map(g => `<option value="${g.id}">${g.name}</option>`) +
+                    `</select>\n`;
+        }
+
+        function pmzSelector(data) {
+            const pmzs = Object.values(data.components).filter(c => c.metadata.name === "Power Managed Zone");
+            if (pmzs.length === 0) {
+                return `(None available)`;
+            }
+            return `<select>\n` + 
+                    pmzs.map(pmz => `<option value="${pmz.id}">${pmz.name}</option>`) +
+                    `</select>\n`;
+        }
+
+        function settings(data) {
+            const pmzE = document.getElementById("pmz").querySelector("select");
+            const pmz = data.components[pmzE.value];
+
+            const hardwareE = document.getElementById("hardware").querySelector("select");
+            const hardware = data.sensors[hardwareE.value];
+
+            return { pmz, hardware };
+        }
+
+        async function main() {
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
+
+            const data = await getAll(connection);
+            const components = Object.values(data);
+
+            const html = `
+            <div><label>Motion sensor:</label></div>
+            <div id="hardware">${hardwareSelector(data)}</div>
+            <div><label>Power Managed Zone:</label></div>
+            <div id="pmz">${pmzSelector(data)}</div>
+            <div><button class="create">Create</button></div>
+            `;
+            document.getElementById("data").innerHTML = html;
+
+            function onCreate(evt) {
+                const setts = settings(data);
+                console.log(setts);
+                const hardware = setts.hardware;
+                const pmz = setts.pmz;
+                createPowerManagedMotionSensor(connection, hardware.name, hardware.id, pmz).then(x => { console.log(x); alert("Power Managed Motion Sensor created"); });
+            }
+            [...document.querySelectorAll("button.create")].forEach(s => s.onclick = onCreate);
+        }
+
+        main().then(x => console.log("Initial"));
+        
+    </script>
+</head>
+<body>
+    <h1>Power Managed Motion Sensor by Callionica</h1>
+    <p>Here you can set up and install a new Power Managed Motion Sensor.</p>
+    <p>Before installing this component, we recommend clearing any existing settings from the Hue motion sensor you intend to use.</p>
+    <hr/>
+    <h2>New Power Managed Motion Sensor Settings</h2>
+    <div id="data"></div>
+    <hr/>
+    <p>A Power Managed Motion Sensor is a Hue motion sensor that has been configured to work with a <a href="hue-callionica-power-managed-zone.html">Power Managed Zone</a>. Choose the hardware Hue motion sensor and the Power Managed Zone you want it to control and the motion sensor will be set up for controlling the zone.</p>
+    <p style="padding: 4pt; background-color: gray; color: whitesmoke;">Power Managed Motion Sensor is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
+    
+</body>
+</html>
