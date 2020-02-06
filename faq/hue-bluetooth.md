@@ -33,9 +33,9 @@ Depends on the size of the room and what the walls are made of, but Yes. The Ver
 No. (Hue Bluetooth iOS app Version 1.13) The Hue BT iOS app is limited compared to the full-featured Hue iOS app that works with the Hue bridge. Google Home and Alexa can control Hue BT lights over Bluetooth and allow you to assign them to rooms.
 
 ### Does the Hue BT iOS app allow you to create schedules to change lights at specific times?
-Yes. (Hue Bluetooth iOS app Version 1.13, but not earlier)
+Not exactly, but almost. You can create routines that run at a particular time or with a particular delay, but each routine runs only once then has to be re-enabled in the Hue Bluetooth app. It's not a full scheduling system with recurring timed events. (Hue Bluetooth iOS app Version 1.13, but not earlier)
 
-The Hue Bluetooth app version 1.13 released Feb 3rd 2020 introduces *scheduling* to Bluetooth-controlled lights using the Hue Bluetooth app. There is also an associated bulb firmware update to support the new features. Based on initial experiments the firmware update is required because the schedule is stored in the bulb itself. (Tested by setting a countdown timer then turning off the phone used to set the timer).
+The Hue Bluetooth app version 1.13 released Feb 3rd 2020 introduces *routines* to Bluetooth-controlled lights using the Hue Bluetooth app. There is also an associated bulb firmware update to support the new features. Based on initial experiments the firmware update is required because the routine is stored in the bulb itself. (Tested by setting a countdown timer then turning off the phone used to set the timer).
 
 You can now click a clock button in the toolbar to access "Routines".
 
@@ -54,6 +54,11 @@ When creating a new routine, you have a choice of 3 kinds: "Wake up", "Go to sle
 2. When timer runs out: Flash, On, Off, Custom (specific colour/brightness)
 
 If you create a "Go to sleep" routine that is triggered by a button press or a "Timer" that uses a countdown, you get a routine added to your list that has a PLAY button. If you create other routines that are triggered at particuar times, you get a routine added to your list that has an ON/OFF button.
+
+When routines start to run, the entry for the routine in the app says "Started at 7:15" or whatever time it started at.
+Watch out for times when experimenting: if the "Wake up" routine has a headline time of "7:25" and a fade in time of 10 minutes, the action actually starts at 7:15. If the bulb is off at 7:15 or the schedule has not been created by 7:15, it's not going to run.
+
+When a routine starts running, it disables itself, so you need to click again to get it to run again. The Hue Bluetooth app doesn't yet appear to provide recurring scheduled events.
 
 ### Can a single bulb be controlled by multiple iOS devices?
 Yes. You can connect any iOS device to the bulb and multiple devices can control the bulb without re-pairing. Apparently there is a 15 device limit per bulb. I don't know what happens when that limit is reached.
