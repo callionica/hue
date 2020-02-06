@@ -49,11 +49,11 @@ When creating a new routine, you have a choice of 3 kinds: "Wake up", "Go to sle
 1. Go to sleep at: Button press or Time
 2. Fade out for: 10, 20, or 30 minutes
 
-If you create a "Go to sleep" routine that is triggered by a button press or a "Timer" that uses a countdown, you get a routine added to your list that has a PLAY button. If you create other routines that are triggered at particuar times, you get a routine added to your list that has an ON/OFF button.
-
 #### Timer
-Set timer for: Countdown or Specific time
-When timer runs out: Flash, On, Off, Custom (specific colour/brightness)
+1. Set timer for: Countdown or Specific time
+2. When timer runs out: Flash, On, Off, Custom (specific colour/brightness)
+
+If you create a "Go to sleep" routine that is triggered by a button press or a "Timer" that uses a countdown, you get a routine added to your list that has a PLAY button. If you create other routines that are triggered at particuar times, you get a routine added to your list that has an ON/OFF button.
 
 ### Can a single bulb be controlled by multiple iOS devices?
 Yes. You can connect any iOS device to the bulb and multiple devices can control the bulb without re-pairing. Apparently there is a 15 device limit per bulb. I don't know what happens when that limit is reached.
