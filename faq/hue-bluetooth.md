@@ -21,7 +21,7 @@ Yes. It requires the device to go through Bluetooth pairing using the Hue BT app
 Yes. It requires the device to be added to the Hue bridge. The control mechanisms are separate.
 
 ### Can the Hue BT iOS app be used without providing an email address?
-No. There's no way to skip the page that asks for an email address. In addition, if you transfer your Bluetooth lights to a Hue bridge, it will remove from the app the lights that were registered and the fact that you registered an email address so you'll have to provide it again. (Hue Bluetooth iOS app Version 1.12).
+No. There's no way to skip the page that asks for an email address. In addition, if you transfer your Bluetooth lights to a Hue bridge, it will remove from the app the lights that were registered and the fact that you registered an email address so you'll have to provide it again. (Hue Bluetooth iOS app Version 1.13).
 
 ### Can a BT bulb be paired/added to the Hue BT iOS app using the Serial No printed on the bulb?
 No. The Hue BT iOS app has no way to provide the serial number or other information to target a particular bulb.
@@ -30,10 +30,30 @@ No. The Hue BT iOS app has no way to provide the serial number or other informat
 Depends on the size of the room and what the walls are made of, but Yes. The Verge said "within 30 feet".
 
 ### Does the Hue BT iOS app allow you to assign lights to rooms or otherwise create groups of lights?
-No. (Hue Bluetooth iOS app Version 1.12) The Hue BT iOS app is limited compared to the full-featured Hue iOS app that works with the Hue bridge. Google Home and Alexa can control Hue BT lights over Bluetooth and allow you to assign them to rooms.
+No. (Hue Bluetooth iOS app Version 1.13) The Hue BT iOS app is limited compared to the full-featured Hue iOS app that works with the Hue bridge. Google Home and Alexa can control Hue BT lights over Bluetooth and allow you to assign them to rooms.
 
 ### Does the Hue BT iOS app allow you to create schedules to change lights at specific times?
-No. (Hue Bluetooth iOS app Version 1.12)
+Yes. (Hue Bluetooth iOS app Version 1.13, but not earlier)
+
+The Hue Bluetooth app version 1.13 released Feb 3rd 2020 introduces *scheduling* to Bluetooth-controlled lights using the Hue Bluetooth app. There is also an associated bulb firmware update to support the new features. Based on initial experiments the firmware update is required because the schedule is stored in the bulb itself. (Tested by setting a countdown timer then turning off the phone used to set the timer).
+
+You can now click a clock button in the toolbar to access "Routines".
+
+When creating a new routine, you have a choice of 3 kinds: "Wake up", "Go to sleep", and "Timer". For all kinds of routine, you pick a single light then configure the remaining settings. 
+
+#### Wake up
+1. Fade in for: 10, 20, or 30 minutes
+2. Until: a clock time
+
+#### Go to sleep
+1. Go to sleep at: Button press or Time
+2. Fade out for: 10, 20, or 30 minutes
+
+If you create a "Go to sleep" routine that is triggered by a button press or a "Timer" that uses a countdown, you get a routine added to your list that has a PLAY button. If you create other routines that are triggered at particuar times, you get a routine added to your list that has an ON/OFF button.
+
+#### Timer
+Set timer for: Countdown or Specific time
+When timer runs out: Flash, On, Off, Custom (specific colour/brightness)
 
 ### Can a single bulb be controlled by multiple iOS devices?
 Yes. You can connect any iOS device to the bulb and multiple devices can control the bulb without re-pairing. Apparently there is a 15 device limit per bulb. I don't know what happens when that limit is reached.
