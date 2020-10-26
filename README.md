@@ -125,3 +125,20 @@ Lights have boolean properties `on` and `reachable`. Groups have boolean propert
 ## Can CLIPGenericStatus sensors store custom data on the bridge?
 Doesn't look like you can store arbitrary custom data in the `config` section.
 You don't get an error if you attempt to store a value from `0` to `255` in `config.battery`, but the returned result from the API is `config.battery: null`, so doesn't work for storing data.
+
+## Patterns of Control
+Using the Hue Dimmer switch with four buttons, we can see a pattern that can make a complex control system easier to understand:
+1. The ON switch handles multiple presses where each press turns on a wider area of lights
+2. The OFF switch handles multiple presses where each press turns off a wider area of lights
+3. The DIMMER switch turns off lights, but not in the current room
+4. The BRIGHTER switch controls mood/scenes in the current room
+
+The ON/OFF/DIMMER switches should control the same set of lights/rooms/zones, but not necessarily with the same number of button presses.
+
+For example, for a switch in the Living Room, ON/OFF controls:
+1. The living room lights
+2. The kitchen lights (adjacent room)
+3. The hall and outdoor lights (adjacent rooms)
+and DIMMER controls:
+1. The kitchen lights and hall
+2. The outdoor lights
