@@ -129,13 +129,25 @@ export async function register(bridge: Bridge, app: App): Promise<Connection> {
     return { bridge, app, token: (bridgeResult[0].success.username) as Token };
 }
 
+export async function bridgeByHost(host: HostName): Promise<Bridge> {
+    const connection = { bridge: { host } as Bridge, token: TOKEN_UNAUTHENTICATED };
+    const config = await getCategory(connection, "config");
+    return { id: config.bridgeid.toLowerCase(), host, name: config.name } as Bridge;
+}
+
+export async function bridgeByIP(ip: IPAddress): Promise<Bridge> {
+    const connection = { bridge: { ip } as Bridge, token: TOKEN_UNAUTHENTICATED };
+    const config = await getCategory(connection, "config");
+    return { id: config.bridgeid.toLowerCase(), ip, name: config.name } as Bridge;
+}
+
 export async function touchlink(connection: Connection) {
     const address = Address(connection, "config");
     const body = { touchlink: true };
     return put(address, body);
 }
 
-export async function getAllCategories(connection: Connection) {
+export async function getAll(connection: Connection) {
     const address = AddressOfRoot(connection);
     return await send("GET", address);
 }
