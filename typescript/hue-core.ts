@@ -144,3 +144,10 @@ export async function getCategory(connection: Connection, category: CategoryAPI)
     const address = Address(connection, category);
     return await send("GET", address);
 }
+
+export async function setSensorValue(connection: Connection, id: SensorID, value: boolean | number) {
+    const store = (typeof value === "boolean") ? "flag" : "status";
+    const address = Address(connection, id.category, `${id.id}/state`);
+    const body = { [store]: `${value}` };
+    return put(address, body);
+}
