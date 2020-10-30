@@ -118,6 +118,34 @@ async function put(address: Address, content: string | unknown): Promise<any> {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+export async function bridgeByName(name: string): Promise<Bridge> {
+    const host = name.trim().toLowerCase().replace(" ", "-") + ".local";
+    return bridgeByHost(host as HostName);
+}
+
+export async function bridgeByHost(host: HostName): Promise<Bridge> {
+    const connection = { bridge: { host } as Bridge, token: TOKEN_UNAUTHENTICATED };
+    const config = await getCategory(connection, "config");
+    return { id: config.bridgeid.toLowerCase(), host, name: config.name, ip: config.ipaddress } as Bridge;
+}
+
+export async function bridgeByIP(ip: IPAddress): Promise<Bridge> {
+    const connection = { bridge: { ip } as Bridge, token: TOKEN_UNAUTHENTICATED };
+    const config = await getCategory(connection, "config");
+    return { id: config.bridgeid.toLowerCase(), ip, name: config.name } as Bridge;
+}
+
+/** 
+ * Philips Hue bridges report their internal IP addresses to meethue.com.
+ * The server will send you back the internal IP addresses of any bridges whose
+ * public IP address matches the public IP address of your request.
+ */
+export async function bridgesByRemoteDiscovery() {
+    const response = await fetch("https://discovery.meethue.com");
+    const result: { id: string, internalipaddress: IPAddress }[] = await response.json();
+    return result.map(item => ({ id: item.id, ip: item.internalipaddress }));
+}
+
 /**
  * Register an app and receive a connection containing a new token
  */
@@ -127,18 +155,6 @@ export async function register(bridge: Bridge, app: App): Promise<Connection> {
     const method = "POST";
     let bridgeResult = await send(method, address, body);
     return { bridge, app, token: (bridgeResult[0].success.username) as Token };
-}
-
-export async function bridgeByHost(host: HostName): Promise<Bridge> {
-    const connection = { bridge: { host } as Bridge, token: TOKEN_UNAUTHENTICATED };
-    const config = await getCategory(connection, "config");
-    return { id: config.bridgeid.toLowerCase(), host, name: config.name } as Bridge;
-}
-
-export async function bridgeByIP(ip: IPAddress): Promise<Bridge> {
-    const connection = { bridge: { ip } as Bridge, token: TOKEN_UNAUTHENTICATED };
-    const config = await getCategory(connection, "config");
-    return { id: config.bridgeid.toLowerCase(), ip, name: config.name } as Bridge;
 }
 
 export async function touchlink(connection: Connection) {
