@@ -2,7 +2,7 @@
 type Token = (string | "unauthenticated") & { kind_: "Token" };
 
 /** A token that can be used to gain access to parts of the API open to unregistered apps */
-const TOKEN_UNAUTHENTICATED = "unauthenticated" as Token;
+export const TOKEN_UNAUTHENTICATED = "unauthenticated" as Token;
 
 /** A string that uniquely identifies your app */
 type App = string & { kind_: "App" };
@@ -34,16 +34,16 @@ type CategoryCreatable = Exclude<Category, "light">;
 
 type ID<T extends Category> = { id: string, category: T };
 
-type LightID = ID<"light">;
-type SensorID = ID<"sensor">;
-type ScheduleID = ID<"schedule">;
-type RuleID = ID<"rule">;
-type ResourceLink = ID<"resourcelink">;
-type GroupID = ID<"group">;
-type SceneID = ID<"scene">;
+export type LightID = ID<"light">;
+export type SensorID = ID<"sensor">;
+export type ScheduleID = ID<"schedule">;
+export type RuleID = ID<"rule">;
+export type ResourceLink = ID<"resourcelink">;
+export type GroupID = ID<"group">;
+export type SceneID = ID<"scene">;
 
 /** An error thrown by Callionica's Hue API */
-class HueError extends Error {
+export class HueError extends Error {
     method: Method;
     address: Address;
     body: string;
@@ -57,19 +57,8 @@ class HueError extends Error {
     }
 }
 
-/**
- * Register an app and receive a connection containing a new token
- */
-export async function register(bridge: Bridge, app: App): Promise<Connection> {
-    const address = AddressOfBridge(bridge);
-    const body = { devicetype: app };
-    const method = "POST";
-    let bridgeResult = await send(method, address, body);
-    return { bridge, app, token: (bridgeResult[0].success.username) as Token };
-}
-
 function Address(connection: Connection, category: CategoryAPI, suffix: string = ""): Address {
-    const section = (category === "config") ? category : category + "s"; 
+    const section = (category === "config") ? category : category + "s";
     return new URL(`https://${connection.bridge.host || connection.bridge.ip}/api/${connection.token}/${section}/` + suffix) as Address;
 }
 
@@ -77,7 +66,11 @@ function AddressOfBridge(bridge: Bridge): Address {
     return new URL(`https://${bridge.host || bridge.ip}/api/`) as Address;
 }
 
-async function send(method: Method, address: Address, content: string | unknown): Promise<any> {
+function AddressOfRoot(connection: Connection): Address {
+    return new URL(`https://${connection.bridge.host || connection.bridge.ip}/api/${connection.token}/`) as Address;
+}
+
+async function send(method: Method, address: Address, content: string | unknown = ""): Promise<any> {
     const body = (typeof content !== "string") ? JSON.stringify(content, null, "  ") : content;
 
     let bridgeResult: any;
@@ -91,18 +84,23 @@ async function send(method: Method, address: Address, content: string | unknown)
     return bridgeResult;
 }
 
-export async function create<T extends CategoryCreatable>(connection: Connection, category: T, content: string | unknown): Promise<ID<T>> {
-    const address = Address(connection, category);
-    const method = "POST";
+async function send2(method: Method, address: Address, content: string | unknown = ""): Promise<any> {
     const body = (typeof content !== "string") ? JSON.stringify(content, null, "  ") : content;
-
     const bridgeResult = await send(method, address, body);
-    
+
     if (Array.isArray(bridgeResult) && (bridgeResult.length === 1) && bridgeResult[0].success) {
-        return { id: bridgeResult[0].success.id as string, category: category };
+        return bridgeResult[0].success;
     }
 
     throw new HueError(method, address, body, bridgeResult);
+}
+
+export async function create<T extends CategoryCreatable>(connection: Connection, category: T, content: string | unknown): Promise<ID<T>> {
+    const address = Address(connection, category);
+    const method = "POST";
+
+    const success = await send2(method, address, content);
+    return { id: success.id as string, category: category };
 }
 
 export async function destroy<T extends CategoryCreatable>(connection: Connection, id: ID<T>) {
@@ -113,25 +111,36 @@ export async function destroy<T extends CategoryCreatable>(connection: Connectio
     return bridgeResult;
 }
 
-async function put(address: Address, content: string | unknown) : Promise<any> {
+async function put(address: Address, content: string | unknown): Promise<any> {
     const method = "PUT";
-    const body = (typeof content !== "string") ? JSON.stringify(content, null, "  ") : content;
+    return await send2(method, address, content);
+}
 
-    const bridgeResult = await send(method, address, body);
+////////////////////////////////////////////////////////////////////////////////////////
 
-    if (Array.isArray(bridgeResult) && (bridgeResult.length === 1) && bridgeResult[0].success) {
-        return bridgeResult[0].success;
-    }
-
-    throw new HueError(method, address, body, bridgeResult);
+/**
+ * Register an app and receive a connection containing a new token
+ */
+export async function register(bridge: Bridge, app: App): Promise<Connection> {
+    const address = AddressOfBridge(bridge);
+    const body = { devicetype: app };
+    const method = "POST";
+    let bridgeResult = await send(method, address, body);
+    return { bridge, app, token: (bridgeResult[0].success.username) as Token };
 }
 
 export async function touchlink(connection: Connection) {
     const address = Address(connection, "config");
-    const body = { touchlink : true };
+    const body = { touchlink: true };
     return put(address, body);
 }
 
+export async function getAllCategories(connection: Connection) {
+    const address = AddressOfRoot(connection);
+    return await send("GET", address);
+}
 
-
-
+export async function getCategory(connection: Connection, category: CategoryAPI) {
+    const address = Address(connection, category);
+    return await send("GET", address);
+}
