@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 /** A secret that allows an app to access a Hue bridge */
 type Token = (string | "unauthenticated") & { kind_: "Token" };
 
@@ -32,7 +33,7 @@ type Category = "light" | "sensor" | "schedule" | "rule" | "resourcelink" | "gro
 type CategoryAPI = Category | "config";
 type CategoryCreatable = Exclude<Category, "light">;
 
-type ID<T extends Category> = { id: string, category: T };
+type ID<CategoryT extends Category> = { id: string, category: CategoryT };
 
 export type LightID = ID<"light">;
 export type SensorID = ID<"sensor">;
@@ -49,7 +50,7 @@ export class HueError extends Error {
     body: string;
     error: any;
     constructor(method: Method, address: Address, body: string, error: any) {
-        super(JSON.stringify({ method, address, body, error }, null, "  "));
+        super(`${error.message || "Error"} ` + JSON.stringify({ method, address, body, error }, null, "  "));
         this.method = method;
         this.address = address;
         this.body = body;
@@ -118,9 +119,14 @@ async function put(address: Address, content: string | unknown): Promise<any> {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-export async function bridgeByName(name: string): Promise<Bridge> {
+function nameToHostName(name: string) : HostName {
     const host = name.trim().toLowerCase().replace(" ", "-") + ".local";
-    return bridgeByHost(host as HostName);
+    return host as HostName;
+}
+
+export async function bridgeByName(name: string): Promise<Bridge> {
+    const host = nameToHostName(name);
+    return bridgeByHost(host);
 }
 
 export async function bridgeByHost(host: HostName): Promise<Bridge> {
@@ -135,14 +141,24 @@ export async function bridgeByIP(ip: IPAddress): Promise<Bridge> {
     return { id: config.bridgeid.toLowerCase(), ip, name: config.name } as Bridge;
 }
 
+export async function isLiveConnection(connection: Connection): Promise<boolean> {
+    try {
+        const config = await getCategory(connection, "config");
+        return (config.whitelist !== undefined) && (config.bridgeid.toLowerCase() === connection.bridge.id);
+    } catch (e) {
+        // Do nothing
+    }
+    return false;
+}
+
 /** 
  * Philips Hue bridges report their internal IP addresses to meethue.com.
  * The server will send you back the internal IP addresses of any bridges whose
  * public IP address matches the public IP address of your request.
  */
-export async function bridgesByRemoteDiscovery() {
+export async function remoteDiscovery() {
     const response = await fetch("https://discovery.meethue.com");
-    const result: { id: string, internalipaddress: IPAddress }[] = await response.json();
+    const result: { id: BridgeID, internalipaddress: IPAddress }[] = await response.json();
     return result.map(item => ({ id: item.id, ip: item.internalipaddress }));
 }
 
@@ -153,7 +169,7 @@ export async function register(bridge: Bridge, app: App): Promise<Connection> {
     const address = AddressOfBridge(bridge);
     const body = { devicetype: app };
     const method = "POST";
-    let bridgeResult = await send(method, address, body);
+    const bridgeResult = await send(method, address, body);
     return { bridge, app, token: (bridgeResult[0].success.username) as Token };
 }
 
