@@ -1,4 +1,4 @@
-## hsb_cacert.pem
+# hsb_cacert.pem - Hue Sync Box CA Certificate
 
 `hsb_cacert.pem` is the CA certificate for the Hue Sync Box.
 
