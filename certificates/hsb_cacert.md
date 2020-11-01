@@ -6,6 +6,13 @@ The file was downloaded from  https://developers.meethue.com/wp-content/uploads/
 
 Its use is described at https://developers.meethue.com/develop/hue-entertainment/hue-hdmi-sync-box-api/.
 
+## Making a CURL Request to a Hue Sync Box with Certificate Checks
+```
+curl --cacert hsb_cacert.pem -H "Authorization: Bearer ${token}" -X GET https://${id}/api/v1 --resolve "${id}:443:${ip}"
+```
+
+## The Hue Sync Box Signing Certificate
+
 ```
 openssl x509 -in certificates/hsb_cacert.pem -text
 ```
