@@ -1,37 +1,40 @@
 // deno-lint-ignore-file
+
+import { fetch } from "../../denophile/src/fetch-curl.ts";
+
 /** A secret that allows an app to access a Hue bridge */
-type Token = (string | "unauthenticated") & { kind_: "Token" };
+export type Token = (string | "unauthenticated") & { kind_: "Token" };
 
 /** A token that can be used to gain access to parts of the API open to unregistered apps */
 export const TOKEN_UNAUTHENTICATED = "unauthenticated" as Token;
 
 /** A string that uniquely identifies your app */
-type App = string & { kind_: "App" };
+export type App = string & { kind_: "App" };
 
 /** A URL on a Hue bridge that identifies a resource or action */
-type Address = URL & { kind_: "Address" };
+export type Address = URL & { kind_: "Address" };
 
 /** An HTTP method */
-type Method = "POST" | "GET" | "PUT" | "DELETE";
+export type Method = "POST" | "GET" | "PUT" | "DELETE";
 
 /** The ID of a bridge (an opaque numeric identifier) */
-type BridgeID = string & { kind_: "BridgeID" };
+export type BridgeID = string & { kind_: "BridgeID" };
 
 /** The IP address of a bridge */
-type IPAddress = string & { kind_: "IPAddress" };
+export type IPAddress = string & { kind_: "IPAddress" };
 
 /** The host name of a bridge */
-type HostName = string & { kind_: "HostName" };
+export type HostName = string & { kind_: "HostName" };
 
 /** The available info about a bridge */
-type Bridge = { id?: BridgeID, host?: HostName, ip?: IPAddress, name?: string } & { kind_: "Bridge" };
+export type Bridge = { id?: BridgeID, host?: HostName, ip?: IPAddress, name?: string } & { kind_: "Bridge" };
 
 /** A connection to a Hue bridge including the identity of the bridge and the secret token */
-type Connection = { bridge: Bridge, token: Token, app?: App };
+export type Connection = { bridge: Bridge, token: Token, app?: App };
 
-type Category = "light" | "sensor" | "schedule" | "rule" | "resourcelink" | "group" | "scene";
-type CategoryAPI = Category | "config";
-type CategoryCreatable = Exclude<Category, "light">;
+export type Category = "light" | "sensor" | "schedule" | "rule" | "resourcelink" | "group" | "scene";
+export type CategoryAPI = Category | "config";
+export type CategoryCreatable = Exclude<Category, "light">;
 
 type ID<CategoryT extends Category> = { id: string, category: CategoryT };
 
@@ -119,7 +122,7 @@ async function put(address: Address, content: string | unknown): Promise<any> {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-function nameToHostName(name: string) : HostName {
+function nameToHostName(name: string): HostName {
     const host = name.trim().toLowerCase().replace(" ", "-") + ".local";
     return host as HostName;
 }
@@ -177,6 +180,12 @@ export async function touchlink(connection: Connection) {
     const address = Address(connection, "config");
     const body = { touchlink: true };
     return put(address, body);
+}
+
+export async function getDescriptionXML(bridge: Bridge): Promise<string> {
+    const url = new URL("description.xml", `https://${bridge.host || bridge.ip}/`);
+    const response = await fetch(url);
+    return await response.text();
 }
 
 export async function getAll(connection: Connection) {
