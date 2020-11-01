@@ -7,6 +7,13 @@ The file was downloaded from  https://developers.meethue.com/wp-content/uploads/
 Its use is described at https://developers.meethue.com/develop/hue-entertainment/hue-hdmi-sync-box-api/.
 
 ## Making a CURL Request to a Hue Sync Box with Certificate Checks
+To make a CURL request to a Hue Sync Box without using `-k` or `--insecure`, you need to pass
+the CA certificate using `--cacert` and you need to provide a mapping from the Sync Box ID to its IP address using `--resolve`.
+
+`--cacert` is so that CURL has access to the certificate authority used to issue the Sync Box's HTTPS certificate.
+
+`--resolve` is so that the HTTPS certificate can be verified because the HTTPS certificate of the sync box uses the Sync Box ID as the Common Name (CN) in the certificate.
+
 ```
 curl --cacert hsb_cacert.pem -H "Authorization: Bearer ${token}" -X GET https://${id}/api/v1 --resolve "${id}:443:${ip}"
 ```
