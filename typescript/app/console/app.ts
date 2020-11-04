@@ -3,31 +3,19 @@ import { bridgeByName, getDescriptionXML, remoteDiscovery, IPAddress, Bridge } f
 
 import { FilePath } from "../../../../denophile/src/file.ts";
 import { fetch } from "../../../../denophile/src/fetch-curl.ts";
-import { CertificateLibrary } from "../../../../denophile/src/ssl.ts";
+import { CertificateLibrary, NameResolver } from "../../../../denophile/src/ssl.ts";
 
 // const response = await fetch("https://main-hub.local");
 
-class HueCertificateLibrary extends CertificateLibrary {
-    constructor(folder: FilePath) {
-        super(folder);
-    }
+const nameResolver = {
+    "ecb5fafffe091e61": "10.0.1.185" as IPAddress
+} as NameResolver;
 
-    async toFetchableURL(url: URL): Promise<URL> {
-        const fu = new URL(url.toString());
-        if (fu.hostname === "ecb5fafffe091e61") {
-            fu.hostname = "10.0.1.185";
-        }
-        return fu;
-    }
-}
-
-const lib = new HueCertificateLibrary("/Users/user/Desktop/__current/--lib-1/");
+const lib = new CertificateLibrary("/Users/user/Desktop/__current/--lib-1/", nameResolver);
 
 const client = {
     caFile: "/Users/user/Documents/github/hue/certificates/hsb_cacert.pem",
-    nameResolver: {
-            "ecb5fafffe091e61": "10.0.1.185"
-    },
+    nameResolver,
     skipVerifyingCertificateChain: true,
     pinningLibrary: lib,
 };
