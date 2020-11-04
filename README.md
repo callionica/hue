@@ -5,6 +5,20 @@ This URL is likely to be able to find info on a Hue bridge from Safari on a Mac 
 
 https://philips-hue.local/api/unauthenticated/config
 
+Also try either of these:
+
+https://philips-hue.local/description.xml
+
+http://philips-hue.local/description.xml
+
+You might be able to find IP addresses or MAC addresses of bridges like this:
+
+```
+arp -a | grep -F "ec:b5:fa:"
+```
+
+This dumps recent routes to devices that begin with Philips' MAC address prefix.
+
 The Hue Bridge uses [mDNS](https://developers.meethue.com/develop/application-design-guidance/hue-bridge-discovery/#mDNS).
 
 Command to list Hue bridges: `dns-sd -B _hue._tcp .`
