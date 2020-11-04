@@ -29,7 +29,7 @@ const client = {
             "ecb5fafffe091e61": "10.0.1.185"
     },
     skipVerifyingCertificateChain: true,
-    certificateLibrary: lib,
+    pinningLibrary: lib,
 };
 
 // console.log(await getDescriptionXML({ip: "10.0.1.185" as IPAddress} as Bridge));
