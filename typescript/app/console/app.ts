@@ -2,7 +2,7 @@
 import { bridgeByName, getDescriptionXML, remoteDiscovery, IPAddress, Bridge } from "../../hue-core.ts";
 
 import { FilePath } from "../../../../denophile/src/file.ts";
-import { fetch } from "../../../../denophile/src/fetch-curl.ts";
+import { fetch, HttpClient } from "../../../../denophile/src/fetch-curl.ts";
 import { CertificateLibrary, NameResolver } from "../../../../denophile/src/ssl.ts";
 
 // const response = await fetch("https://main-hub.local");
@@ -13,11 +13,11 @@ const nameResolver = {
 
 const lib = new CertificateLibrary("/Users/user/Desktop/__current/--lib-1/", nameResolver);
 
-const client = {
+const client: HttpClient = {
     caFile: "/Users/user/Documents/github/hue/certificates/hsb_cacert.pem",
     nameResolver,
     skipVerifyingCertificateChain: true,
-    pinningLibrary: lib,
+    publicKeyHashProvider: lib,
 };
 
 // console.log(await getDescriptionXML({ip: "10.0.1.185" as IPAddress} as Bridge));
