@@ -11,6 +11,14 @@ https://philips-hue.local/description.xml
 
 http://philips-hue.local/description.xml
 
+You might be able to find IP addresses or MAC addresses of bridges like this:
+
+```
+arp -a | grep -F "ec:b5:fa:"
+```
+
+This dumps recent routes to devices that begin with Philips' MAC address prefix.
+
 The Hue Bridge uses [mDNS](https://developers.meethue.com/develop/application-design-guidance/hue-bridge-discovery/#mDNS).
 
 Command to list Hue bridges: `dns-sd -B _hue._tcp .`
