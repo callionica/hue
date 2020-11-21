@@ -27,16 +27,22 @@ export type IPAddress = string & { kind_: "IPAddress" };
 export type HostName = string & { kind_: "HostName" };
 
 /** The available info about a bridge */
-export type Bridge = { id?: BridgeID, host?: HostName, ip?: IPAddress, name?: string } & { kind_: "Bridge" };
+export type Bridge = { id: BridgeID, name?: string } & ({ hostName: HostName, ip?: IPAddress } | { ip: IPAddress, hostName?: HostName });
 
 /** A connection to a Hue bridge including the identity of the bridge and the secret token */
 export type Connection = { bridge: Bridge, token: Token, app?: App };
 
-export type Category = "light" | "sensor" | "schedule" | "rule" | "resourcelink" | "group" | "scene";
-export type CategoryAPI = Category | "config";
-export type CategoryCreatable = Exclude<Category, "light">;
+/** Entities in the Hue API */
+export type Entity = "light" | "sensor" | "schedule" | "rule" | "resourcelink" | "group" | "scene";
 
-type ID<CategoryT extends Category> = { id: string, category: CategoryT };
+/** Entities that can be created using the Hue API */
+export type EntityCreatable = Exclude<Entity, "light">;
+
+/** A section within the Hue API */
+export type Section = Entity | "config";
+
+/** An ID representing a specific entity */
+type ID<EntityType extends Entity> = { id: string, entity: EntityType };
 
 export type LightID = ID<"light">;
 export type SensorID = ID<"sensor">;
@@ -61,17 +67,17 @@ export class HueError extends Error {
     }
 }
 
-function Address(connection: Connection, category: CategoryAPI, suffix: string = ""): Address {
-    const section = (category === "config") ? category : category + "s";
-    return new URL(`https://${connection.bridge.host || connection.bridge.ip}/api/${connection.token}/${section}/` + suffix) as Address;
-}
-
 function AddressOfBridge(bridge: Bridge): Address {
-    return new URL(`https://${bridge.host || bridge.ip}/api/`) as Address;
+    return new URL(`https://${bridge.hostName || bridge.ip}/api/`) as Address;
 }
 
-function AddressOfRoot(connection: Connection): Address {
-    return new URL(`https://${connection.bridge.host || connection.bridge.ip}/api/${connection.token}/`) as Address;
+function AddressOfConnection(connection: Connection): Address {
+    return new URL(`https://${connection.bridge.hostName || connection.bridge.ip}/api/${connection.token}/`) as Address;
+}
+
+function Address(connection: Connection, section: Section, suffix: string = ""): Address {
+    const sectionKey = (section === "config") ? section : section + "s";
+    return new URL(`${sectionKey}/` + suffix, AddressOfConnection(connection)) as Address;
 }
 
 async function send(method: Method, address: Address, content: string | unknown = ""): Promise<any> {
@@ -99,16 +105,16 @@ async function send2(method: Method, address: Address, content: string | unknown
     throw new HueError(method, address, body, bridgeResult);
 }
 
-export async function create<T extends CategoryCreatable>(connection: Connection, category: T, content: string | unknown): Promise<ID<T>> {
-    const address = Address(connection, category);
+export async function create<EntityType extends EntityCreatable>(connection: Connection, entity: EntityType, content: string | unknown): Promise<ID<EntityType>> {
+    const address = Address(connection, entity);
     const method = "POST";
 
     const success = await send2(method, address, content);
-    return { id: success.id as string, category: category };
+    return { id: success.id as string, entity };
 }
 
-export async function destroy<T extends CategoryCreatable>(connection: Connection, id: ID<T>) {
-    const address = Address(connection, id.category, `${id}`);
+export async function destroy<EntityType extends EntityCreatable>(connection: Connection, id: ID<EntityType>) {
+    const address = Address(connection, id.entity, `${id}`);
     const method = "DELETE";
     const body = "";
     const bridgeResult = await send(method, address, body);
@@ -129,24 +135,24 @@ function nameToHostName(name: string): HostName {
 
 export async function bridgeByName(name: string): Promise<Bridge> {
     const host = nameToHostName(name);
-    return bridgeByHost(host);
+    return bridgeByHostName(host);
 }
 
-export async function bridgeByHost(host: HostName): Promise<Bridge> {
-    const connection = { bridge: { host } as Bridge, token: TOKEN_UNAUTHENTICATED };
-    const config = await getCategory(connection, "config");
-    return { id: config.bridgeid.toLowerCase(), host, name: config.name, ip: config.ipaddress } as Bridge;
+export async function bridgeByHostName(hostName: HostName): Promise<Bridge> {
+    const connection = { bridge: { hostName } as Bridge, token: TOKEN_UNAUTHENTICATED };
+    const config = await getSection(connection, "config");
+    return { id: config.bridgeid.toLowerCase() as BridgeID, hostName: hostName, name: config.name, ip: config.ipaddress as IPAddress };
 }
 
 export async function bridgeByIP(ip: IPAddress): Promise<Bridge> {
     const connection = { bridge: { ip } as Bridge, token: TOKEN_UNAUTHENTICATED };
-    const config = await getCategory(connection, "config");
-    return { id: config.bridgeid.toLowerCase(), ip, name: config.name } as Bridge;
+    const config = await getSection(connection, "config");
+    return { id: config.bridgeid.toLowerCase() as BridgeID, ip, name: config.name };
 }
 
 export async function isLiveConnection(connection: Connection): Promise<boolean> {
     try {
-        const config = await getCategory(connection, "config");
+        const config = await getSection(connection, "config");
         return (config.whitelist !== undefined) && (config.bridgeid.toLowerCase() === connection.bridge.id);
     } catch (e) {
         // Do nothing
@@ -183,24 +189,28 @@ export async function touchlink(connection: Connection) {
 }
 
 export async function getDescriptionXML(bridge: Bridge): Promise<string> {
-    const url = new URL("description.xml", `https://${bridge.host || bridge.ip}/`);
+    const url = new URL("description.xml", `https://${bridge.hostName || bridge.ip}/`);
     const response = await fetch(url);
     return await response.text();
 }
 
 export async function getAll(connection: Connection) {
-    const address = AddressOfRoot(connection);
+    const address = AddressOfConnection(connection);
     return await send("GET", address);
 }
 
-export async function getCategory(connection: Connection, category: CategoryAPI) {
-    const address = Address(connection, category);
+export async function getSection(connection: Connection, section: Section) {
+    const address = Address(connection, section);
     return await send("GET", address);
 }
 
+/**
+ * Sets the value of a sensor which may be stored in the `flag` property for boolean values
+ * or the `status` property for numbers.
+ */
 export async function setSensorValue(connection: Connection, id: SensorID, value: boolean | number) {
     const store = (typeof value === "boolean") ? "flag" : "status";
-    const address = Address(connection, id.category, `${id.id}/state`);
+    const address = Address(connection, id.entity, `${id.id}/state`);
     const body = { [store]: `${value}` };
     return put(address, body);
 }
