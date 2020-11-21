@@ -204,6 +204,8 @@ export async function getSection(connection: Connection, section: Section) {
     return await send("GET", address);
 }
 
+//////////////////////////////////////////////////////////////
+
 /**
  * Sets the value of a sensor which may be stored in the `flag` property for boolean values
  * or the `status` property for numbers.
@@ -214,3 +216,4 @@ export async function setSensorValue(connection: Connection, id: SensorID, value
     const body = { [store]: `${value}` };
     return put(address, body);
 }
+
