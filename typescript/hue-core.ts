@@ -42,7 +42,9 @@ export type EntityCreatable = Exclude<Entity, "light">;
 export type Section = Entity | "config";
 
 /** An ID representing a specific entity */
-type ID<EntityType extends Entity> = { id: string, entity: EntityType };
+export type ID<EntityType extends Entity> = { id: string, entity: EntityType };
+
+export type EntityID = ID<Entity>;
 
 export type LightID = ID<"light">;
 export type SensorID = ID<"sensor">;
