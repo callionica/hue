@@ -2,6 +2,34 @@
 
 export function hueToHtml(data) {
 
+    function sortConditions(conditions) {
+        return conditions.sort((a, b) => {
+            const aa = a.address.replace(/[/]lastupdated$/i, "/zzz-lastupdated");
+            const ba = b.address.replace(/[/]lastupdated$/i, "/zzz-lastupdated");
+            const n = aa.localeCompare(ba);
+            if (n !== 0) {
+                return n;
+            }
+
+            const ops = ["eq", "lt", "gt", "ddx", "stable", "not stable", "in", "not in", "dx"];
+            const ao = ops.findIndex(o => o === a.operator);
+            const bo = ops.findIndex(o => o === b.operator);
+            if (ao < bo) {
+                return -1;
+            }
+
+            if (ao > bo) {
+                return +1;
+            }
+
+            return 0;
+        });
+    }
+
+    for (const [key, rule] of Object.entries(data.rules)) {
+        sortConditions(rule.conditions);
+    }
+
     function hueJsonToHtml(value, stack, indent) {
         stack = stack || [];
         indent = indent || 0;
@@ -91,6 +119,7 @@ export function hueToHtml(data) {
             "lights", "groups", "sensors", "rules", "schedules", "scenes", "resourcelinks", "config",
             "productname", "modelid", "productid", "manufacturername",
             "swconfigid", "swversion", "swupdate",
+            "conditions", "actions"
         ];
 
         function getOrder(v) {
