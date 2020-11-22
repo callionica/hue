@@ -1821,7 +1821,7 @@ function rearrangeProperties(values, data) {
         }
 
         if (p.kind === "scene") {
-            return data.scenes[p.value]?.name || p.value;
+            return data.scenes[p.value]?.name || `(Scene: ${p.value})`;
         }
 
         return "" + p.value;
