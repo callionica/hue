@@ -105,7 +105,7 @@
                     status: document.getElementById("status"),
                     help: document.getElementById("help"),
                 };
-                this.tokens = {};
+                this.tokens = [];
                 this.ips = [];
                 this.unavailable = [];
                 this.bridges = [];
@@ -147,7 +147,7 @@
 
             addIP(ip, id, name, token) {
                 if (token) {
-                    this.tokens[ip] = token;
+                    this.tokens.push(token);
                 }
 
                 if (this.ips.find(i => i === ip)) { // TODO
@@ -249,8 +249,7 @@
                     }
                 }
 
-                const token = this.tokens[bridge.ip];
-                if (token) {
+                for (const token of this.tokens) {
                     let currentConnection = { bridge, app, token };
                     if (await test(this, currentConnection)) {
                         return;
