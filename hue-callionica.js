@@ -263,11 +263,18 @@ export async function getCategory(connection, category) {
 }
 
 export async function getAllCategories(connection) {
-    return getCategory(connection, "");
+    const result = await getCategory(connection, "");
+    // const capabilities = await getCapabilities(connection);
+    // result.capabilities = capabilities;
+    return result;
 }
 
 export async function getConfig(connection) {
     return getCategory(connection, "config");
+}
+
+export async function getCapabilities(connection) {
+    return getCategory(connection, "capabilities");
 }
 
 // More useful to have an array of objects

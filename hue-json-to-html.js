@@ -85,7 +85,7 @@ export function hueToHtml(data) {
                         pieces = pieces.slice(1, 3);
                     }
 
-                    const o = pieces.reduce((p, c) => p[c], data);
+                    const o = pieces.reduce((p, c) => p?.[c], data);
                     const m = (o && o.modelid) || "";
                     const n = (o && o.name) || "";
                     const n1 = m ? (n + ": " + m) : n;
