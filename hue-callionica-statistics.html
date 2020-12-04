@@ -8,31 +8,32 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll } from "./hue-callionica.js";
+        import { getAll, getCapabilities } from "./hue-callionica.js";
 
         async function main() {
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAll(connection);
+            const capabilities = await getCapabilities(connection);
 
             const o = {};
             ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
 
             const counts = [
-                ["Sensors", () => o.sensors.length],
                 ["Components", () => o.components.length],
-                ["Rules", () => o.rules.length],
-                ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0)],
-                ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0)],
-                ["Schedules", () => o.schedules.length],
-                ["Groups", () => o.groups.length],
-                ["Lights", () => o.lights.length],
-                ["Scenes", () => o.scenes.length],
+                ["Sensors", () => o.sensors.length, capabilities.sensors.total],            
+                ["Rules", () => o.rules.length, capabilities.rules.total],
+                ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0), capabilities.rules.conditions.total],
+                ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0), capabilities.rules.actions.total],
+                ["Schedules", () => o.schedules.length, capabilities.schedules.total],
+                ["Groups", () => o.groups.length, capabilities.groups.total],
+                ["Lights", () => o.lights.length, capabilities.lights.total],
+                ["Scenes", () => o.scenes.length, capabilities.scenes.total],
                 ["Tokens", () => Object.values(data.config.whitelist).length],
             ];
 
             const html = `<p>Name: ${connection.bridge.name}</p>` 
-            + counts.map(count => `<p>${count[0]}: ${count[1]()}</p>`).join("\n");
+            + counts.map(count => `<p>${count[0]}: ${count[1]()}${count[2] ? " of " + count[2] : ""}</p>`).join("\n");
             document.getElementById("statistics").innerHTML = html;
         }
 
