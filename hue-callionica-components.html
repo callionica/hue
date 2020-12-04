@@ -232,9 +232,15 @@
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAll(connection);
             const components = Object.values(data.components);
-            //await deleteComponent(connection, components[0]);
-            const componentElements = components.map(component => createComponentElement(connection, component, data));
             const d = document.getElementById("data");
+
+            if (components.length === 0) {
+                d.innerHTML = `<p>There are currently no components installed on bridge ${bridge.name}.</p><p>If you install any components, this page will show your components and allow you to control them.</p><p>Why not start by creating a <a href="hue-callionica-power-managed-zone.html">Power Managed Zone</a>?</p>`;
+            }
+
+
+            const componentElements = components.map(component => createComponentElement(connection, component, data));
+            
             componentElements.map(componentElement => d.appendChild(componentElement));
 
             function onSensorChange(evt) {
@@ -300,6 +306,8 @@
 </head>
 <body>
     <h1>Hue Components</h1>
+    <p>Here you can control the components installed on your Hue bridge.</p>
+    <hr/>
     <div id="data"></div>
 </body>
 </html>
