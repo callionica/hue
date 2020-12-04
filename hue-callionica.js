@@ -190,6 +190,12 @@ export async function setSensorValue(connection, id, value) {
     return put(address, body);
 }
 
+export async function setRuleActions(connection, id, actions) {
+    const address = Address(connection, `rules/${id}`);
+    const body = { actions };
+    return put(address, body);
+}
+
 export async function createSchedule(connection, body) {
     const address = Address(connection, `schedules`);
     return create(address, body);
@@ -1760,7 +1766,7 @@ function extractProperty(sensor, schedules, rules, propertyMetadata) {
             } else if (propertyMetadata.kind === "scene") {
                 // TODO error handling
                 let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
-                values.push({ value, propertyValue });
+                values.push({ value, propertyValue, rule });
                 continue;
             }
 
@@ -1807,7 +1813,7 @@ function rearrangeProperties(values, data) {
                 result.push(existing);
             }
 
-            existing.properties.push({ name: v.metadata.property, value: d.propertyValue, kind: v.metadata.kind });
+            existing.properties.push({ name: v.metadata.property, value: d.propertyValue, kind: v.metadata.kind, rule: d.rule });
         }
     }
 

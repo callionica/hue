@@ -8,7 +8,32 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, setSensorValue, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { getAll, setSensorValue, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+
+        // Changes the action used by the rule from one scene to another
+        async function setSceneRule(connection, data, ruleID, sceneID) {
+            console.log(ruleID, sceneID);
+
+            // Get the rule
+            const rule = data.rules[ruleID];
+
+            // Copy the actions
+            const actions = rule.actions.map(a => ({ ...a }));
+
+            // Find the action to edit
+            const action = actions.find(action => action.body.scene !== undefined);
+            if (action) {
+                // Change the action
+                action.body.scene = sceneID;
+
+                // Update the rule
+                try {
+                    await setRuleActions(connection, ruleID, actions);
+                } catch (e) {
+                    console.log("XGXGXG", e);
+                }
+            }
+        }
 
         // Creates the HTML for adding a scheduled change to a component property:
         // select the time, select the property, select the value, hit Add
@@ -87,12 +112,69 @@
                     `</select>\n`;
         }
 
-        function propertyHTML(sensor) {
-            var v = sensor.values ? valuesHTML(sensor) : "";
-            return `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
+        function sceneSelector(group, data, sceneName) {
+            return `<select>\n` + 
+                    Object.values(data.scenes).filter(s => s.group === group.id).map(s => `<option value="${s.id}" ${sceneName === s.name ? "selected" : ""}>${s.name}</option>`) +
+                    `</select>\n`;
         }
 
-        function createComponentElement(connection, component) {
+        function propertyHTML(sensor, data) {
+            let v = sensor.values ? valuesHTML(sensor) : "";
+            let result = `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
+
+            let list = "";
+            if (sensor.metadata.list) {
+                if (sensor.values.find(v => v.properties.find(p => p.kind === "scene"))) {
+                    // Create a table of items where each column is a property
+                    // and where scenes can be changed to any other scene in the same group
+
+                    const name = sensor.metadata.property.replace(/^(?<name>.*)s > Current \k<name>$/, "$1");
+                    list += `<div>`;
+                    list += `<div style="font-weight: bold;">${name}s</div>`;
+                    list += `<table class="property">`;
+
+                    let first = true;
+                    for (let value of sensor.values) {
+                        if (first) {
+                            list += `<tr>`;
+                            for (let property of value.properties) {
+                                list += `<td>${property.name}</td>`;
+                            }
+                            list += `</tr>`;
+                        }
+                        first = false;
+
+                        list += `<tr ${(value === sensor.value) ? "class='highlight'" : ""}>`;
+                        
+                        for (let property of value.properties) {
+                            let done = false;
+
+                            if (property.kind === "scene") {
+                                const scene = data.scenes[property.value];
+                                if (scene) {
+                                    const scenes = Object.values(data.scenes).filter(s => s.group === scene.group);
+                                    list += `<td><select data-rule="${property.rule.id}">\n` +
+                                        scenes.map(s => `<option value="${s.id}" ${scene.id === s.id ? "selected" : ""}>${s.name}</option>`) +
+                                        `</select></td>`;
+                                    done = true;
+                                }
+                            }
+
+                            if (!done) {
+                                list += `<td>${property.displayValue}</td>`;
+                            }
+                        }
+                        list += `</tr>`;
+                    }
+                    list += `</table>`;
+                    list += `</div>`;
+                }
+            }
+
+            return list + result;
+        }
+
+        function createComponentElement(connection, component, data) {
 
             var tiedToHTML = component.connections.map(connection => {
                 let category = connection.category;
@@ -106,7 +188,7 @@
                 return `<div class="connected">${item.name} (${description})</div>\n`;
             }).join("\n");
             
-            var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => propertyHTML(sensor)).join("\n");
+            var properties = component.sensors.filter(sensor => sensor.metadata).map(sensor => propertyHTML(sensor, data)).join("\n");
             var agenda = "";
             if (properties.length > 0) {
                 agenda = `<div style="font-weight: bold; margin-top: 12pt;">Schedule</div>`;
@@ -151,7 +233,7 @@
             const data = await getAll(connection);
             const components = Object.values(data.components);
             //await deleteComponent(connection, components[0]);
-            const componentElements = components.map(component => createComponentElement(connection, component));
+            const componentElements = components.map(component => createComponentElement(connection, component, data));
             const d = document.getElementById("data");
             componentElements.map(componentElement => d.appendChild(componentElement));
 
@@ -161,6 +243,13 @@
                 setSensorValue(connection, sensor, value).then(x => document.location = document.location);
             }
             [...document.querySelectorAll("select[data-sensor]")].forEach(s => s.onchange = onSensorChange);
+
+            function onSceneRuleChange(evt) {
+                const ruleID = evt.srcElement.getAttribute("data-rule");
+                const sceneID = evt.srcElement.value;
+                setSceneRule(connection, data, ruleID, sceneID).then(x => document.location = document.location);
+            }
+            [...document.querySelectorAll("select[data-rule]")].forEach(s => s.onchange = onSceneRuleChange);
 
             function onDelete(evt) {
                 const componentID = evt.srcElement.getAttribute("data-component");
