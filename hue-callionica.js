@@ -1230,7 +1230,8 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
                 }
             ],
             "actions": [
-                ${setValue(powerLevelID, PMZ_FULL_POWER)}
+                ${setValue(powerLevelID, PMZ_FULL_POWER)},
+                ${setValue(powerManagementID, PMZ_ENABLED)}
             ]
         }`;
         return createRule(connection, body);
