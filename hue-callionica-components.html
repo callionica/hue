@@ -108,7 +108,7 @@
         function valuesHTML(sensor) {
             return `<select data-sensor="${sensor.id}">\n` + 
                     `<option value="${sensor.value}" "selected"}>${sensor.value.name}</option>` +
-                    sensor.values.map(s => `<option value="${s.value}">${s.name}</option>`) +
+                    sensor.values.map(s => `<option value="${s.value}" title="${s.description || ""}">${s.name}</option>`) +
                     `</select>\n`;
         }
 
