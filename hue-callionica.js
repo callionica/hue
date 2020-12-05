@@ -726,7 +726,7 @@ export async function createLinks(connection, name, description, links) {
     return createResourceLink(connection, body);
 }
 
-export async function createSceneCycle(connection, groupID, zoneID, cycle) {
+export async function createSceneCycle(connection, groupID, zoneID, powerManagementID, cycle) {
     cycle = cycle || [
         { fullPower: "Bright"    , lowPower: "Dimmed"    , startTime: "08:00:00" },
         { fullPower: "Relax"     , lowPower: "Dimmed"                       },
@@ -744,6 +744,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         "name": "SC: Next",
         "conditions": [
             ${isUpdatedTo(actionID, SC_NEXT)},
+            ${isEqual(powerManagementID, PMZ_ENABLED)},
             ${isEqual(cycleID, index)}
         ],
         "actions": [
@@ -868,6 +869,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         "name": "SC: Activate",
         "conditions": [
             ${isUpdatedTo(actionID, SC_ACTIVATE)},
+            ${isEqual(powerManagementID, PMZ_ENABLED)},
             ${isEqual(zoneID, PMZ_FULL_POWER)}
         ],
         "actions": [
@@ -882,6 +884,7 @@ export async function createSceneCycle(connection, groupID, zoneID, cycle) {
         "name": "SC: Activate",
         "conditions": [
             ${isUpdatedTo(actionID, SC_ACTIVATE)},
+            ${isEqual(powerManagementID, PMZ_ENABLED)},
             ${isEqual(zoneID, PMZ_LOW_POWER)}
         ],
         "actions": [
@@ -1165,7 +1168,7 @@ export async function createPowerManagedZone(connection, zone) {
     }
 
     // Create a scene cycle
-    const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, zone.scenes);
+    const sceneCycle = await createSceneCycle(connection, zone.id, powerLevelID, powerManagementID, zone.scenes);
 
     // Visualize power states
     const fullPowerRule = await createFullPowerRule(powerLevelID, sceneCycle);
