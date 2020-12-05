@@ -115,11 +115,12 @@ export function hueToHtml(data) {
         /* The order of properties within an object */
         const order = [
             "name", "type", "uniqueid", "lasttriggered",
-            "state", "capabilities",
+            "state", 
             "lights", "groups", "sensors", "rules", "schedules", "scenes", "resourcelinks", "config",
             "productname", "modelid", "productid", "manufacturername",
             "swconfigid", "swversion", "swupdate",
-            "conditions", "actions"
+            "conditions", "actions",
+            "capabilities"
         ];
 
         function getOrder(v) {

@@ -8,7 +8,7 @@
     <script type="module">
         import { hueToHtml } from "./hue-json-to-html.js";
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAllCategories } from "./hue-callionica.js";
+        import { getAllCategories, getCapabilities } from "./hue-callionica.js";
 
         const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
@@ -16,6 +16,7 @@
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAllCategories(connection);
+            data.capabilities = await getCapabilities(connection);
             const html = hueToHtml(data);
             document.getElementById("data").innerHTML = html;
         }
