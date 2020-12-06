@@ -88,12 +88,11 @@
     <div id="data"></div>
     <hr/>
     <p>A Power Managed Dimmer is a Hue dimmer switch that has been configured to work with a <a href="hue-callionica-power-managed-zone.html">Power Managed Zone</a>. Choose the hardware Hue dimmer switch and the Power Managed Zone you want it to control and all the dimmer buttons will be mapped automatically for controlling the zone.</p>
-    <p>All actions using the dimmer (except the Off button) will turn on the Power Managed Zone or increase it to Full Power extending the timeout before the zone turns itself off. The On button will (A) Turn on the zone at Full Power if it's off (B) Increase the zone to Full Power if it's at Low Power (C) Switch the lights to the next scene in the scene list managed by the zone if the zone is at Full Power. Note that there is one scene list per zone (and one current scene in the list), not a separate scene list and current scene for each dimmer. Power management can be disabled (temporarily) by using the Off button when the lights are off: this will turn the lights on and keep them on until the zone automatically enables power management again after an extended period of time (configured by the zone). Using the Off button to turn off the lights also immediately re-enables power management.</p>
+    <p>All actions using the dimmer (except the Off button) will turn on the Power Managed Zone or increase it to Full Power extending the timeout before the zone turns itself off. The On button will (A) Turn on the zone at Full Power if it's off (B) Increase the zone to Full Power if it's at Low Power (C) Switch the lights to the next scene in the scene list managed by the zone if the zone is at Full Power. Note that there is one scene list per zone (and one current scene in the list), not a separate scene list and current scene for each dimmer.</p> <p>Power management can be disabled (temporarily) without turning the lights on or off by holding down the Off button. The zone automatically enables power management again after an extended period of time (configured by the zone). Using either the On or Off button on the dimmer immediately re-enables power management.</p>
     <p>Off button behaviour:</p>
     <ol>
-        <li><p>Short press when zone is on: Turns zone off and enables power management.</p></li>
-        <li><p>Short press when zone is off: Turns zone on and disables power management.</p></li>
-        <li><p>Long press: Turns zone off and disables power management.</p></li>
+        <li><p>Short press: Turns lights off and enables power management.</p></li>
+        <li><p>Long press: Disables power management.</p></li>
     </ol>
     <p style="padding: 4pt; background-color: gray; color: whitesmoke;">Power Managed Dimmer is a Hue Component developed by Callionica. Hue Components run on the Hue bridge.</p>
     <!--<h2>Instructions</h2>

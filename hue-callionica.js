@@ -1269,6 +1269,21 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         return createRule(connection, body);
     }
 
+    async function onDownWhenDisabled() {
+        const body = `{
+            "name": "DMR: Zone on full power",
+            "conditions": [
+                ${isButton(dimmerID, BTN_ON + BTN_initial_press)},
+                ${isEqual(powerManagementID, PMZ_DISABLED)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)},
+                ${setValue(powerLevelID, PMZ_FULL_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
     async function onDownWhenOn() {
         const body = `{
             "name": "DMR: Next scene",
@@ -1375,11 +1390,12 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         return createRule(connection, body);
     }
 
-    async function longOff() {
+    async function longOffWhenOff() {
         const body = `{
             "name": "DMR: Zone off; mngmnt disabled",
             "conditions": [
-                ${isButton(dimmerID, BTN_OFF + BTN_long_release)}
+                ${isButton(dimmerID, BTN_OFF + BTN_long_release)},
+                ${isEqual(powerLevelID, PMZ_OFF)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_OFF)},
@@ -1390,12 +1406,42 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         return createRule(connection, body);
     }
 
+    async function longOff() {
+        const body = `{
+            "name": "DMR: Management disabled",
+            "conditions": [
+                ${isButton(dimmerID, BTN_OFF + BTN_long_release)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_DISABLED)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function shortOff() {
+        const body = `{
+            "name": "DMR: Zone off; mngmnt enabled",
+            "conditions": [
+                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)},
+                ${setValue(powerLevelID, PMZ_OFF)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
     const rules = [
         await onDownWhenOff(),    // Zone on  and management on
+        await onDownWhenDisabled(),    // Zone on  and management on
         await onDownWhenOn(),     // Next scene
-        await shortOffWhenOn(),   // Zone off and management on
-        await shortOffWhenOff(),  // Zone on  and management off
-        await longOff(),          // Zone off and management off
+        await shortOff(), // Zone off and management on
+        await longOff(), // Management off
+        // await shortOffWhenOn(),   // Zone off and management on
+        // await shortOffWhenOff(),  // Zone on  and management off
+        // await longOffWhenOff(),          // Zone off and management off
         await bigStarDown(),      // Brighter
         await bigStarRepeat(),    // Brighter
         await littleStarDown(),   // Dimmer
