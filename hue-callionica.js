@@ -1171,7 +1171,7 @@ export async function createPowerManagedZone(connection, zone) {
         const body = `{
             "name": "LGT: Zone enabled",
             "conditions": [
-                ${isUpdatedTo(id, PMZ_ENABLED)}
+                ${isChangedTo(id, PMZ_ENABLED)}
             ],
             "actions": [
                 ${setValue(sceneCycle.action, SC_ACTIVATE)}
