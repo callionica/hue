@@ -894,6 +894,21 @@ export async function createSceneCycle(connection, groupID, zoneID, powerManagem
         return createRule(connection, body);
     }
 
+    async function createActivateOff() {
+        const body = `{
+        "name": "SC: Activate",
+        "conditions": [
+            ${isUpdatedTo(actionID, SC_ACTIVATE)},
+            ${isEqual(powerManagementID, PMZ_ENABLED)},
+            ${isEqual(zoneID, PMZ_OFF)}
+        ],
+        "actions": [
+            ${setValue(actionID, SC_OFF)}
+        ]
+        } `;
+        return createRule(connection, body);
+    }
+
     async function createOff() {
         const body = `{
         "name": "SC: Off",
@@ -929,6 +944,7 @@ export async function createSceneCycle(connection, groupID, zoneID, powerManagem
     rules = rules.concat([
         await createActivateFull(),
         await createActivateLow(),
+        await createActivateOff(),
         await createOff(),
         await createUpdate(),
         await createBrighter(),
@@ -1115,7 +1131,7 @@ export async function createPowerManagedZone(connection, zone) {
                 ${isEqual(id, PMZ_FULL_POWER)}
             ],
             "actions": [
-                ${setValue(sceneCycle.action, SC_FULL_POWER)}
+                ${setValue(sceneCycle.action, SC_ACTIVATE)}
             ]
         }`;
         return createRule(connection, body);
@@ -1132,7 +1148,7 @@ export async function createPowerManagedZone(connection, zone) {
                 ${wasChangedTo(id, PMZ_LOW_POWER, "00:00:01")}
             ],
             "actions": [
-                ${setValue(sceneCycle.action, SC_LOW_POWER)}
+                ${setValue(sceneCycle.action, SC_ACTIVATE)}
             ]
         }`;
         return createRule(connection, body);
@@ -1145,7 +1161,20 @@ export async function createPowerManagedZone(connection, zone) {
                 ${isUpdatedTo(id, PMZ_OFF)}
             ],
             "actions": [
-                ${setValue(sceneCycle.action, SC_OFF)}
+                ${setValue(sceneCycle.action, SC_ACTIVATE)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function createEnabledRule(id, sceneCycle) {
+        const body = `{
+            "name": "LGT: Zone enabled",
+            "conditions": [
+                ${isUpdatedTo(id, PMZ_ENABLED)}
+            ],
+            "actions": [
+                ${setValue(sceneCycle.action, SC_ACTIVATE)}
             ]
         }`;
         return createRule(connection, body);
@@ -1175,6 +1204,8 @@ export async function createPowerManagedZone(connection, zone) {
     const lowPowerRule = await createLowPowerRule(powerLevelID, sceneCycle);
     const offRule = await createOffRule(powerLevelID, sceneCycle);
 
+    const enabledRule = await createEnabledRule(powerManagementID, sceneCycle);
+
     const rl = await createLinks(connection, zone.name, "Power Managed Zone", [
         `/groups/${zone.id}`,
         `/groups/0`,
@@ -1189,6 +1220,7 @@ export async function createPowerManagedZone(connection, zone) {
         `/rules/${fullPowerRule}`,
         `/rules/${lowPowerRule}`,
         `/rules/${offRule}`,
+        `/rules/${enabledRule}`,
 
         ...configs.flatMap(c => c.schedules).map(r => `/schedules/${r}`),
         ...sceneCycle.schedules.map(r => `/schedules/${r}`),
@@ -1230,8 +1262,8 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
                 }
             ],
             "actions": [
-                ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(powerManagementID, PMZ_ENABLED)}
+                ${setValue(powerManagementID, PMZ_ENABLED)},
+                ${setValue(powerLevelID, PMZ_FULL_POWER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1335,8 +1367,9 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
                 ${isEqual(powerLevelID, PMZ_OFF)}
             ],
             "actions": [
-                ${setValue(powerManagementID, PMZ_DISABLED)},
-                ${setValue(powerLevelID, PMZ_FULL_POWER)}
+                ${setValue(powerLevelID, PMZ_FULL_POWER)},
+                ${setValue(sceneCycle.action, SC_ACTIVATE)},
+                ${setValue(powerManagementID, PMZ_DISABLED)}
             ]
         }`;
         return createRule(connection, body);
@@ -1349,8 +1382,9 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
                 ${isButton(dimmerID, BTN_OFF + BTN_long_release)}
             ],
             "actions": [
-                ${setValue(powerManagementID, PMZ_DISABLED)},
-                ${setValue(powerLevelID, PMZ_OFF)}
+                ${setValue(powerLevelID, PMZ_OFF)},
+                ${setValue(sceneCycle.action, SC_ACTIVATE)},
+                ${setValue(powerManagementID, PMZ_DISABLED)}
             ]
         }`;
         return createRule(connection, body);
