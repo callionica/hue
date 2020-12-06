@@ -1368,7 +1368,7 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_ACTIVATE)},
+                ${setValue(sceneCycle.action, SC_FULL_POWER)},
                 ${setValue(powerManagementID, PMZ_DISABLED)}
             ]
         }`;
@@ -1383,7 +1383,7 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_OFF)},
-                ${setValue(sceneCycle.action, SC_ACTIVATE)},
+                ${setValue(sceneCycle.action, SC_OFF)},
                 ${setValue(powerManagementID, PMZ_DISABLED)}
             ]
         }`;
@@ -1613,8 +1613,8 @@ const componentSensors = [
             { value: SC_NEXT, name: "Next", description: "Move to the next scene and activate it. (Disabled when power management is disabled)." },
             { value: SC_BRIGHTER, name: "Brighter", description: "Make the lighting brighter" },
             { value: SC_DIMMER, name: "Dimmer", description: "Make the lighting dimmer" },
-            { value: SC_FULL_POWER, name: "Full power", description: "Activate the full power version of the current scene" },
-            { value: SC_LOW_POWER, name: "Low power", description: "Activate the low power version of the current scene" },
+            { value: SC_FULL_POWER, name: "Full power", description: "Turn on the lights using the full power version of the current scene" },
+            { value: SC_LOW_POWER, name: "Low power", description: "Turn on the lights using the low power version of the current scene" },
             { value: SC_OFF, name: "Off", description: "Turn off the lights" },
         ]
     },
