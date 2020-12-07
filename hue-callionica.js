@@ -561,6 +561,16 @@ function setValue(id, value) {
     }`;
 }
 
+function setButton(id, value) {
+    return `{
+        "address": "/sensors/${id}/state",
+        "method": "PUT",
+        "body": {
+            "buttonevent": ${value}
+        }
+    }`;
+}
+
 function setScene(groupID, sceneID) {
     return `{
         "address": "/groups/${groupID}/action",
@@ -1448,11 +1458,67 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         return createRule(connection, body);
     }
 
+    async function shortOff1() {
+        const body = `{
+            "name": "DMR: Zone off; mngmnt enabled",
+            "conditions": [
+                ${isEqual(modeID, MODE_ENABLED)},
+                {
+                    "address": "/sensors/${powerLevelID}/state/status",
+                    "operator": "gt",
+                    "value": "0"
+                },
+                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)},
+                ${setValue(powerLevelID, PMZ_OFF)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function shortOff2() {
+        const body = `{
+            "name": "DMR: Zone off; mngmnt enabled",
+            "conditions": [
+                ${isEqual(modeID, MODE_ENABLED)},
+                ${isEqual(powerManagementID, PMZ_DISABLED)},
+                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)},
+                ${setValue(powerLevelID, PMZ_OFF)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
+    async function shortOff3() {
+        const body = `{
+            "name": "DMR: Same as ON",
+            "conditions": [
+                ${isEqual(modeID, MODE_ENABLED)},
+                ${isEqual(powerManagementID, PMZ_ENABLED)},
+                ${isEqual(powerLevelID, PMZ_OFF)},
+                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+            ],
+            "actions": [
+                ${setValue(powerManagementID, PMZ_ENABLED)},
+                ${setValue(powerLevelID, PMZ_FULL_POWER)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+
     const rules = [
         await onDownWhenOff(),    // Zone on  and management on
         await onDownWhenDisabled(),    // Zone on  and management on
         await onDownWhenOn(),     // Next scene
-        await shortOff(), // Zone off and management on
+        // await shortOff(), // Zone off and management on
+        await shortOff1(), // Zone off and management on
+        await shortOff2(), // Zone off and management on
+        await shortOff3(), // Zone on and management on
         await longOff(), // Management off
         // await shortOffWhenOn(),   // Zone off and management on
         // await shortOffWhenOff(),  // Zone on  and management off
