@@ -561,15 +561,15 @@ function setValue(id, value) {
     }`;
 }
 
-function setButton(id, value) {
-    return `{
-        "address": "/sensors/${id}/state",
-        "method": "PUT",
-        "body": {
-            "buttonevent": ${value}
-        }
-    }`;
-}
+// function setButton(id, value) {
+//     return `{
+//         "address": "/sensors/${id}/state",
+//         "method": "PUT",
+//         "body": {
+//             "buttonevent": ${value}
+//         }
+//     }`;
+// }
 
 function setScene(groupID, sceneID) {
     return `{
