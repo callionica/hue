@@ -1810,21 +1810,21 @@ const components = [
         name: "Power Managed Zone",
         comment: "A room or zone that turns itself off after a period of time",
         description: "A room or zone that turns itself off after a period of time and that has a list of scenes that can be triggered manually or automatically at a certain time. Power managed zones have three power levels: Full Power, Low Power, and Off. The Low Power level gives you a warning that the lights will be turning off, allowing you to take an action to keep the lights on if necessary. Power Managed Zones have custom integrations with dimmers and motion sensors to ensure that all devices work well together in a standard way. Power management can be disabled (temporarily). The timings are all configurable, but examples might be 10 minutes before the zone switches from Full Power to Low Power, 1 minute before the zone switches from Low Power to Off, and 8 hours before the zone re-enables power management automatically.",
-        url: "https://github.com/callionica/hue/power-managed-zone.md",
+        url: "https://github.com/callionica/hue/blob/master/power-managed-zone.md",
     },
     {
         manufacturer: "Callionica",
         name: "Power Managed Dimmer",
         comment: "A dimmer that has been configured to work with a Power Managed Zone",
         description: "A dimmer that has been configured to work with a Power Managed Zone. All actions using the dimmer (except the Off button) will turn on the Power Managed Zone or increase it to Full Power extending the timeout before the zone turns itself off. The On button will (A) Turn on the zone at Full Power if it's off (B) Increase the zone to Full Power if it's at Low Power (C) Switch the lights to the next scene in the scene list managed by the zone if the zone is at Full Power. Note that there is one scene list per zone (and one current scene in the list), not a separate scene list and current scene for each dimmer. Power management can be disabled (temporarily) by using the Off button when the lights are off: this will turn the lights on and keep them on until the zone automatically enables power management again after an extended period of time (configured by the zone). Using the Off button to turn off the lights also immediately re-enables power management.",
-        url: "https://github.com/callionica/hue/power-managed-dimmer.md",
+        url: "https://github.com/callionica/hue/blob/master/power-managed-zone.md",
     },
     {
         manufacturer: "Callionica",
         name: "Power Managed Motion Sensor",
         comment: "A motion sensor that has been configured to work with a Power Managed Zone",
         description: "A motion sensor that has been configured to work with a Power Managed Zone. Power Managed Motion Sensors are designed to work well together with other Power Managed Motion Sensors and with Power Managed Dimmers controlling the same zone. Power Managed Motion Sensors do not turn off the lights, Power Managed Zones do that themselves. Power Managed Motion Sensors can either turn on the lights, keep the lights on, or do nothing. The option to keep the lights on, but not turn them on, can be useful where the motion sensor can not be positioned to avoid unwanted motion (such as pets). It can also be helpful where people are used to turning lights on and off manually.",
-        url: "https://github.com/callionica/hue/power-managed-motion-sensor.md",
+        url: "https://github.com/callionica/hue/blob/master/power-managed-zone.md",
     }
 ];
 
