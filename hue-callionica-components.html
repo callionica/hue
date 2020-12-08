@@ -58,7 +58,7 @@
             function populateValues() {
                 const sensorID = p.value;
                 const sensor = component.sensors.find(sensor => sensor.id === sensorID);
-                v.innerHTML = sensor.values.map(s => `<option value="${s.value}">${s.name}</option>`).join("\n");
+                v.innerHTML = sensor.values.map(s => `<option value="${s.value}">${s.name.replaceAll(">", "›")}</option>`).join("\n");
             }
 
             function toHMS(value) {
@@ -195,7 +195,7 @@
                 agenda += `<table class="agenda">`;
                 if (component.agenda && component.agenda.length > 0) {
                     // Columns: time, property, value, controls
-                    agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replaceAll(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", "), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
+                    agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replaceAll(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ").replaceAll(">", "›"), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
                 }
                 agenda += "</table>";
             }
