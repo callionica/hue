@@ -21,7 +21,8 @@
 
             const counts = [
                 ["Components", () => o.components.length],
-                ["Sensors", () => o.sensors.length, capabilities.sensors.total],            
+                ["Sensors", () => o.sensors.length, capabilities.sensors.total],
+                // ["CLIP Sensors", () => (capabilities.sensors.clip.total - capabilities.sensors.clip.available), capabilities.sensors.clip.total],
                 ["Rules", () => o.rules.length, capabilities.rules.total],
                 ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0), capabilities.rules.conditions.total],
                 ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0), capabilities.rules.actions.total],
