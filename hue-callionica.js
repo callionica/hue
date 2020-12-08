@@ -77,14 +77,17 @@ const PMZ_FULL_POWER = 2;
 const PMZ_DISABLED = 0;
 const PMZ_ENABLED = 1;
 
+const ACTION_BASE = 0;
+
 // Scene Cycle constants
-const SC_NEXT = 1001;        // Move to the next scene and activate it
-const SC_BRIGHTER = 1011;    // Make the scene brighter
-const SC_DIMMER = 1021;      // Make the scene dimmer
-const SC_OFF = 2000 + PMZ_OFF;              // Turn off the lights
-const SC_LOW_POWER = 2000 + PMZ_LOW_POWER;  // Activate the low power version of the current scene
-const SC_FULL_POWER = 2000 + PMZ_FULL_POWER;// Activate the full power version of the current scene
-const SC_ACTIVATE = 2000 + 100;             // Activate the appropriate version of the current scene for the zone's power state
+const SC_OFF = ACTION_BASE + PMZ_OFF;              // Turn off the lights
+const SC_LOW_POWER = ACTION_BASE + PMZ_LOW_POWER;  // Activate the low power version of the current scene
+const SC_FULL_POWER = ACTION_BASE + PMZ_FULL_POWER; // Activate the full power version of the current scene
+
+const SC_BRIGHTER = SC_FULL_POWER + 1;    // Make the scene brighter
+const SC_DIMMER = SC_FULL_POWER + 2;      // Make the scene dimmer
+const SC_ACTIVATE = SC_FULL_POWER + 3;    // Activate the appropriate version of the current scene for the zone's power state
+const SC_NEXT = SC_FULL_POWER + 4;        // Move to the next scene and activate it
 
 // Motion sensor constants
 const PMM_DO_NOTHING = 0;
@@ -746,7 +749,7 @@ export async function createSceneCycle(connection, groupID, zoneID, powerManagem
     const bri_inc = 56;
 
     const cycleID = await createStatusSensor(connection, "Scene Cycle Current", "PM.Zone.Scenes.Current", 0);
-    const actionID = await createStatusSensor(connection, "Scene Cycle Action", "PM.Zone.Scenes.Action", 0);
+    const actionID = await createStatusSensor(connection, "PMZ Action", "PM.Zone.Action", 0);
 
     async function createNext(index) {
         const last = (index === cycle.length - 1);
@@ -1216,6 +1219,8 @@ export async function createPowerManagedZone(connection, zone) {
 
     const enabledRule = await createEnabledRule(powerManagementID, sceneCycle);
 
+    const buttonRules = await createButtonRules(connection, powerLevelID, powerManagementID, sceneCycle)
+
     const rl = await createLinks(connection, zone.name, "Power Managed Zone", [
         `/groups/${zone.id}`,
         `/groups/0`,
@@ -1231,6 +1236,7 @@ export async function createPowerManagedZone(connection, zone) {
         `/rules/${lowPowerRule}`,
         `/rules/${offRule}`,
         `/rules/${enabledRule}`,
+        ...buttonRules.map(r => `/rules/${r}`),
 
         ...configs.flatMap(c => c.schedules).map(r => `/schedules/${r}`),
         ...sceneCycle.schedules.map(r => `/schedules/${r}`),
@@ -1247,28 +1253,14 @@ export async function createPowerManagedZone(connection, zone) {
     };
 }
 
-export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) {
+export async function createButtonRules(connection, powerLevelID, powerManagementID, sceneCycle) {
+    const actionID = sceneCycle.action;
 
-    const MODE_ENABLED = 1;
-    const modeID = await createStatusSensor(connection, name, "PM.Dimmer.Mode", MODE_ENABLED);
-
-    function sensorID(name) {
-        return pmz.sensors.filter(sensor => sensor.modelid === name)[0].id;
-    }
-    
-    const powerLevelID = sensorID("PM.Zone.PowerLevel");
-    const powerManagementID = sensorID("PM.Zone.PowerManagement");
-    const sceneCycle = {
-        current: sensorID("PM.Zone.Scenes.Current"),
-        action: sensorID("PM.Zone.Scenes.Action"),
-    }
-    
     async function onDownWhenOff() {
         const body = `{
             "name": "DMR: Zone on full power",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_ON + BTN_initial_press)},
+                ${isUpdatedTo(actionID, BTN_ON + BTN_initial_press)},
                 {
                     "address": "/sensors/${powerLevelID}/state/status",
                     "operator": "lt",
@@ -1287,8 +1279,7 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone on full power",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_ON + BTN_initial_press)},
+                ${isUpdatedTo(actionID, BTN_ON + BTN_initial_press)},
                 ${isEqual(powerManagementID, PMZ_DISABLED)}
             ],
             "actions": [
@@ -1303,13 +1294,12 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Next scene",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_ON + BTN_initial_press)},
+                ${isUpdatedTo(actionID, BTN_ON + BTN_initial_press)},
                 ${isEqual(powerLevelID, PMZ_FULL_POWER)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_NEXT)}
+                ${setValue(actionID, SC_NEXT)}
             ]
         }`;
         return createRule(connection, body);
@@ -1319,12 +1309,11 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Brighter",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_STAR_UP + BTN_initial_press)}
+                ${isUpdatedTo(actionID, BTN_STAR_UP + BTN_initial_press)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_BRIGHTER)}
+                ${setValue(actionID, SC_BRIGHTER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1334,12 +1323,11 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Brighter",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_STAR_UP + BTN_repeat)}
+                ${isUpdatedTo(actionID, BTN_STAR_UP + BTN_repeat)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_BRIGHTER)}
+                ${setValue(actionID, SC_BRIGHTER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1349,12 +1337,11 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Dimmer",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_STAR_DOWN + BTN_initial_press)}
+                ${isUpdatedTo(actionID, BTN_STAR_DOWN + BTN_initial_press)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_DIMMER)}
+                ${setValue(actionID, SC_DIMMER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1364,12 +1351,11 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Dimmer",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_STAR_DOWN + BTN_repeat)}
+                ${isUpdatedTo(actionID, BTN_STAR_DOWN + BTN_repeat)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_DIMMER)}
+                ${setValue(actionID, SC_DIMMER)}
             ]
         }`;
         return createRule(connection, body);
@@ -1379,8 +1365,7 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone off; mngmnt enabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_OFF + BTN_short_release)},
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_short_release)},
                 {
                     "address": "/sensors/${powerLevelID}/state/status",
                     "operator": "gt",
@@ -1399,13 +1384,12 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone on; mngmnt disabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_OFF + BTN_short_release)},
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_short_release)},
                 ${isEqual(powerLevelID, PMZ_OFF)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_FULL_POWER)},
-                ${setValue(sceneCycle.action, SC_FULL_POWER)},
+                ${setValue(actionID, SC_FULL_POWER)},
                 ${setValue(powerManagementID, PMZ_DISABLED)}
             ]
         }`;
@@ -1416,13 +1400,12 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone off; mngmnt disabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_OFF + BTN_long_release)},
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_long_release)},
                 ${isEqual(powerLevelID, PMZ_OFF)}
             ],
             "actions": [
                 ${setValue(powerLevelID, PMZ_OFF)},
-                ${setValue(sceneCycle.action, SC_OFF)},
+                ${setValue(actionID, SC_OFF)},
                 ${setValue(powerManagementID, PMZ_DISABLED)}
             ]
         }`;
@@ -1433,8 +1416,7 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Management disabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_OFF + BTN_long_release)}
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_long_release)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_DISABLED)}
@@ -1447,8 +1429,7 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone off; mngmnt enabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
-                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_short_release)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_ENABLED)},
@@ -1462,13 +1443,12 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone off; mngmnt enabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
                 {
                     "address": "/sensors/${powerLevelID}/state/status",
                     "operator": "gt",
                     "value": "0"
                 },
-                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_short_release)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_ENABLED)},
@@ -1482,9 +1462,8 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Zone off; mngmnt enabled",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
                 ${isEqual(powerManagementID, PMZ_DISABLED)},
-                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_short_release)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_ENABLED)},
@@ -1498,10 +1477,9 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
         const body = `{
             "name": "DMR: Same as ON",
             "conditions": [
-                ${isEqual(modeID, MODE_ENABLED)},
                 ${isEqual(powerManagementID, PMZ_ENABLED)},
                 ${isEqual(powerLevelID, PMZ_OFF)},
-                ${isButton(dimmerID, BTN_OFF + BTN_short_release)}
+                ${isUpdatedTo(actionID, BTN_OFF + BTN_short_release)}
             ],
             "actions": [
                 ${setValue(powerManagementID, PMZ_ENABLED)},
@@ -1512,21 +1490,58 @@ export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) 
     }
 
     const rules = [
-        await onDownWhenOff(),    // Zone on  and management on
-        await onDownWhenDisabled(),    // Zone on  and management on
-        await onDownWhenOn(),     // Next scene
-        // await shortOff(), // Zone off and management on
+        await onDownWhenOff(),      // Zone on  and management on
+        await onDownWhenDisabled(), // Zone on  and management on
+        await onDownWhenOn(),       // Next scene
+        
         await shortOff1(), // Zone off and management on
         await shortOff2(), // Zone off and management on
         await shortOff3(), // Zone on and management on
         await longOff(), // Management off
-        // await shortOffWhenOn(),   // Zone off and management on
-        // await shortOffWhenOff(),  // Zone on  and management off
-        // await longOffWhenOff(),          // Zone off and management off
+
         await bigStarDown(),      // Brighter
         await bigStarRepeat(),    // Brighter
+
         await littleStarDown(),   // Dimmer
         await littleStarRepeat(), // Dimmer
+    ];
+
+    return rules;
+}
+
+export async function createPowerManagedDimmer(connection, name, dimmerID, pmz) {
+
+    const MODE_ENABLED = 1;
+    const modeID = await createStatusSensor(connection, name, "PM.Dimmer.Mode", MODE_ENABLED);
+
+    function sensorID(name) {
+        return pmz.sensors.filter(sensor => sensor.modelid === name)[0].id;
+    }
+    
+    const actionID = sensorID("PM.Zone.Action");
+
+    function delegateToZone(value) {
+        const body = `{
+            "name": "DMR to Zone",
+            "conditions": [
+                ${isEqual(modeID, MODE_ENABLED)},
+                ${isButton(dimmerID, value)}
+            ],
+            "actions": [
+                ${setValue(actionID, value)}
+            ]
+        }`;
+        return createRule(connection, body);
+    }
+    
+    const rules = [
+        await delegateToZone(BTN_ON + BTN_initial_press),
+        await delegateToZone(BTN_OFF + BTN_short_release),
+        await delegateToZone(BTN_OFF + BTN_long_release),
+        await delegateToZone(BTN_STAR_UP + BTN_initial_press),
+        await delegateToZone(BTN_STAR_UP + BTN_repeat),
+        await delegateToZone(BTN_STAR_DOWN + BTN_initial_press),
+        await delegateToZone(BTN_STAR_DOWN + BTN_repeat),
     ];
 
     const rl = await createLinks(connection, name, "Power Managed Dimmer", [
@@ -1732,7 +1747,7 @@ const componentSensors = [
             ]
     },
     {
-        modelid: "PM.Zone.Scenes.Action",
+        modelid: "PM.Zone.Action",
         manufacturername: "Callionica",
         component: "Power Managed Zone",
         property: "Action",
@@ -1744,6 +1759,17 @@ const componentSensors = [
             { value: SC_FULL_POWER, name: "Lights > Full power", description: "Turn on the lights using the full power version of the current scene" },
             { value: SC_LOW_POWER, name: "Lights > Low power", description: "Turn on the lights using the low power version of the current scene" },
             { value: SC_OFF, name: "Lights > Off", description: "Turn off the lights" },
+
+            { value: BTN_ON + BTN_initial_press, name: "Button > On > Down", description: "Press the button" },
+
+            { value: BTN_OFF + BTN_short_release, name: "Button > Off > Up (short)", description: "Release the button" },
+            { value: BTN_OFF + BTN_long_release, name: "Button > Off > Up (long)", description: "Release the button after a pause" },
+
+            { value: BTN_STAR_UP + BTN_initial_press, name: "Button > 🔆 > Down", description: "Press the button" },
+            { value: BTN_STAR_UP + BTN_repeat, name: "Button > 🔆 > Repeat", description: "Fires repeatedly while the button is down" },
+
+            { value: BTN_STAR_DOWN + BTN_initial_press, name: "Button > 🔅 > Down", description: "Press the button" },
+            { value: BTN_STAR_DOWN + BTN_repeat, name: "Button > 🔅 > Repeat", description: "Fires repeatedly while the button is down" },
         ]
     },
     {

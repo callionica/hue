@@ -52,7 +52,7 @@
             const b = root.querySelector("*[data-action='add-schedule']");
 
             function populateProperties() {
-                p.innerHTML = component.sensors.filter(sensor => sensor.metadata).map(sensor => `<option value="${sensor.id}">${sensor.metadata.property.replace(">", "›")}</option>`).join("\n");
+                p.innerHTML = component.sensors.filter(sensor => sensor.metadata).map(sensor => `<option value="${sensor.id}">${sensor.metadata.property.replaceAll(">", "›")}</option>`).join("\n");
             }
 
             function populateValues() {
@@ -107,8 +107,8 @@
 
         function valuesHTML(sensor) {
             return `<select data-sensor="${sensor.id}">\n` + 
-                    `<option value="${sensor.value}" "selected"}>${sensor.value?.name?.replace?.(">", "›") || "(Unknown)"}</option>` +
-                    sensor.values.map(s => `<option value="${s.value}" title="${s.description || ""}">${s.name.replace(">", "›")}</option>`) +
+                    `<option value="${sensor.value}" "selected"}>${sensor.value?.name?.replaceAll?.(">", "›") || "(Unknown)"}</option>` +
+                    sensor.values.map(s => `<option value="${s.value}" title="${s.description || ""}">${s.name.replaceAll(">", "›")}</option>`) +
                     `</select>\n`;
         }
 
@@ -120,7 +120,7 @@
 
         function propertyHTML(sensor, data) {
             let v = sensor.values ? valuesHTML(sensor) : "";
-            let result = `<div><span class="property">${sensor.metadata.property.replace(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
+            let result = `<div><span class="property">${sensor.metadata.property.replaceAll(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
 
             let list = "";
             if (sensor.metadata.list) {
@@ -195,13 +195,13 @@
                 agenda += `<table class="agenda">`;
                 if (component.agenda && component.agenda.length > 0) {
                     // Columns: time, property, value, controls
-                    agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", "), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
+                    agenda += component.agenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replaceAll(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", "), `<button data-action="delete-schedule" data-id="${a.schedule.id}">Delete</button>`].join("</td><td>") + "</td></tr>").join("\n");
                 }
                 agenda += "</table>";
             }
             var daylightAgenda = "";
             if (component.daylightAgenda && component.daylightAgenda.length > 0) {
-                daylightAgenda = `<div style="font-weight: bold; margin-top: 12pt;">Daylight Schedule</div><table>` + component.daylightAgenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replace(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
+                daylightAgenda = `<div style="font-weight: bold; margin-top: 12pt;">Daylight Schedule</div><table>` + component.daylightAgenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replaceAll(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
             }
             const root = document.createElement("div");
             root.className = "component";
