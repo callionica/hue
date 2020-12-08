@@ -1735,15 +1735,15 @@ const componentSensors = [
         modelid: "PM.Zone.Scenes.Action",
         manufacturername: "Callionica",
         component: "Power Managed Zone",
-        property: "Scenes > Action",
+        property: "Action",
         status: [
-            { value: SC_ACTIVATE, name: "Activate", description: "Activate the appropriate version of the current scene for the zone's power state. (Disabled when power management is disabled)." },
-            { value: SC_NEXT, name: "Next", description: "Move to the next scene and activate it. (Disabled when power management is disabled)." },
-            { value: SC_BRIGHTER, name: "Brighter", description: "Make the lighting brighter" },
-            { value: SC_DIMMER, name: "Dimmer", description: "Make the lighting dimmer" },
-            { value: SC_FULL_POWER, name: "Full power", description: "Turn on the lights using the full power version of the current scene" },
-            { value: SC_LOW_POWER, name: "Low power", description: "Turn on the lights using the low power version of the current scene" },
-            { value: SC_OFF, name: "Off", description: "Turn off the lights" },
+            { value: SC_ACTIVATE, name: "Scene > Activate", description: "Activate the appropriate version of the current scene for the zone's power state. (Disabled when power management is disabled)." },
+            { value: SC_NEXT, name: "Scene > Next", description: "Move to the next scene and activate it. (Disabled when power management is disabled)." },
+            { value: SC_BRIGHTER, name: "Lights > Brighter", description: "Make the lighting brighter" },
+            { value: SC_DIMMER, name: "Lights > Dimmer", description: "Make the lighting dimmer" },
+            { value: SC_FULL_POWER, name: "Lights > Full power", description: "Turn on the lights using the full power version of the current scene" },
+            { value: SC_LOW_POWER, name: "Lights > Low power", description: "Turn on the lights using the low power version of the current scene" },
+            { value: SC_OFF, name: "Lights > Off", description: "Turn off the lights" },
         ]
     },
     {
