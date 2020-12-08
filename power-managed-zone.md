@@ -20,6 +20,8 @@ Every property and setting of the power managed zone can be easily scheduled to 
 
 The full power scene and low power scene can be scheduled too, so your lights will come on with exactly the scene you want for a particular time of day.
 
+And scheduled changes never get in your way. You might schedule a scene change for night time use to set the lights to a low level. If the lights aren't on, your scheduled change won't turn them on, and if you decide to stay up later and don't want the lights dimming at a particular time, just disable power management on the zone to keep the lighting just how you want it. 
+
 Works with multiple dimmers and motion sensors without any complicated setup. Any of the sensors can turn on the lights and any of them can keep on the lights. Turning off the lights is handled by the zone, not the sensor, so there's no possibility for one of the motion sensors to turn off the lights while they're still in use. Any button press, just like any motion, extends the timeout to keep the lights on.
 
 Configuring a new dimmer or motion sensor to work with a power managed zone is a snap: pick the sensor, pick the zone, and you're done.
