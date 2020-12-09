@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hue Rooms & Zones</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll, setSensorValue, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+
+        async function main() {
+            const bridge = loadCurrentBridge();
+            const connection = await loadConnection("Callionica", bridge);
+            const data = await getAll(connection);
+            const d = document.getElementById("data");
+
+            const groups = Object.values(data.groups);
+            const components = Object.values(data.components);
+
+            const elements = groups.map(group => {
+                const connections = getConnectedComponents(group, data);
+
+                console.log(group);
+                // console.log(connections);
+                const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
+
+                console.log(powerManagedZone);
+
+                function anyOn(group, data) {
+                    return group.lights.find(lightID => {
+                        const light = data.lights[lightID];
+                        return (light.state.on && light.state.reachable);
+                    }) !== undefined;
+                }
+
+                function anyUnreachable(group, data) {
+                    return group.lights.find(lightID => {
+                        const light = data.lights[lightID];
+                        return (!light.state.reachable);
+                    }) !== undefined;
+                }
+
+                function getPowerLevel(pmz) {
+                    return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
+                }
+
+                function getPowerManagement(pmz) {
+                    return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
+                }
+
+                const on = anyOn(group, data);
+                const unreachable = anyUnreachable(group, data);
+
+                const powerLevel = getPowerLevel(powerManagedZone);
+                const powerManagement = getPowerManagement(powerManagedZone);
+
+                const e = document.createElement("div");
+                const ds = e.dataset;
+
+                ds.group = group.id;
+                ds.type = group.type;
+                ds.on = on;
+                ds.unreachable = unreachable;
+                if (powerLevel) {
+                    ds.powerLevel = powerLevel.value;
+                }
+                if (powerManagement) {
+                    ds.powerManagement = powerManagement.value;
+                }
+
+                ds.action = "toggle";
+
+                e.innerText = group.name;
+
+                return e;
+            });
+
+            for (const e of elements) {
+                d.appendChild(e);
+            }
+
+            async function toggle(groupID, turnOn) {
+                const group = data.groups[groupID];
+                console.log("TOGG", group, turnOn);
+                const connections = getConnectedComponents(group, data);
+                console.log(connections);
+                const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
+
+                if (powerManagedZone) {
+                    console.log("powerManagedZone");
+                    const powerLevelSensor = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.PowerLevel")?.id;
+
+                    console.log(powerLevelSensor);
+
+                    if (turnOn) {
+                        await setSensorValue(connection, powerLevelSensor, 2);
+                    } else {
+                        await setSensorValue(connection, powerLevelSensor, 0);
+                    }
+                }
+            }
+
+            document.onclick = (evt) => {
+                const src = evt.srcElement;
+                const action = src.dataset.action;
+                if (action) {
+                    if (action === "toggle") {
+                        const id = src.dataset.group;
+                        let turnOn = src.dataset.on === "false";
+                        if (src.dataset.powerLevel) {
+                            turnOn = src.dataset.powerLevel === "0";
+                        }
+                        toggle(id, turnOn).then(x => document.location = document.location);
+                        return;
+                    }
+                }
+            };
+
+            // const rooms = groups.filter(g => g.type === "Room");
+            // const zones = groups.filter(g => g.type === "Zone");
+        }
+
+        // const oneSecond = 1.0 * 1000;
+        // window.setInterval(() => {
+        //     main().then(x => console.log("Update"));
+        // }, oneSecond);
+
+        main().then(x => console.log("Initial"));
+        
+    </script>
+</head>
+<body>
+    <h1>Hue Rooms & Zones</h1>
+    <hr/>
+    <div id="data"></div>
+</body>
+</html>

@@ -1816,7 +1816,7 @@ const components = [
         manufacturer: "Callionica",
         name: "Power Managed Dimmer",
         comment: "A dimmer that has been configured to work with a Power Managed Zone",
-        description: "A dimmer that has been configured to work with a Power Managed Zone. All actions using the dimmer (except the Off button) will turn on the Power Managed Zone or increase it to Full Power extending the timeout before the zone turns itself off. The On button will (A) Turn on the zone at Full Power if it's off (B) Increase the zone to Full Power if it's at Low Power (C) Switch the lights to the next scene in the scene list managed by the zone if the zone is at Full Power. Note that there is one scene list per zone (and one current scene in the list), not a separate scene list and current scene for each dimmer. Power management can be disabled (temporarily) by using the Off button when the lights are off: this will turn the lights on and keep them on until the zone automatically enables power management again after an extended period of time (configured by the zone). Using the Off button to turn off the lights also immediately re-enables power management.",
+        description: "A dimmer that has been configured to work with a Power Managed Zone.",
         url: "https://github.com/callionica/hue/blob/master/power-managed-zone.md",
     },
     {
@@ -2170,6 +2170,7 @@ export function rearrangeForHueComponents(data) {
     });
 }
 
+/** Returns a cyclic graph of Hue data including Hue components */
 export async function getAll(connection) {
     const data = await getAllCategories(connection);
     rearrangeForHueComponents(data);
