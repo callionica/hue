@@ -193,6 +193,12 @@ export async function setSensorValue(connection, id, value) {
     return put(address, body);
 }
 
+export async function setGroupOn(connection, id, value) {
+    const address = Address(connection, `groups/${id}/action`);
+    const body = { on: value };
+    return put(address, body);
+}
+
 export async function setRuleActions(connection, id, actions) {
     const address = Address(connection, `rules/${id}`);
     const body = { actions };

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, setSensorValue, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
 
         async function main() {
             const bridge = loadCurrentBridge();
@@ -99,6 +99,8 @@
                     } else {
                         await setSensorValue(connection, powerLevelSensor, 0);
                     }
+                } else {
+                    await setGroupOn(connection, groupID, turnOn);
                 }
             }
 
