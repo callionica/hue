@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { sortBy, getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
 
         async function main() {
             const bridge = loadCurrentBridge();
@@ -16,7 +16,28 @@
             const data = await getAll(connection);
             const d = document.getElementById("data");
 
-            const groups = Object.values(data.groups);
+            let groups = Object.values(data.groups);
+
+            groups.sort(sortBy(g => g.name));
+
+            const params = new URLSearchParams(document.location.search);
+            const sortParams = params.get("sort");
+            if (sortParams) {
+                const preferred = sortParams.split(",").map(x => x.trim().toLowerCase());
+                const x = new Array(preferred.length);
+                const y = [];
+                for (const group of groups) {
+                    const index = preferred.indexOf(group.name.toLowerCase());
+                    if (index >= 0) {
+                        x[index] = group;
+                    } else {
+                        y.push(group);
+                    }
+                }
+                
+                groups = [...x.filter(x=>x), ...y];
+            }
+
             const components = Object.values(data.components);
 
             const elements = groups.map(group => {

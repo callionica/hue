@@ -1896,7 +1896,7 @@ function expandResourceLink(id, data) {
     return resourceLink;
 }
 
-function sortBy(keyFn) {
+export function sortBy(keyFn) {
     return function sorter(a, b) {
         var keyA = keyFn(a);
         var keyB = keyFn(b);

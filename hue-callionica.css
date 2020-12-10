@@ -190,7 +190,6 @@ button {
 
 .group[data-unreachable='true']::before {
     color: hsla(253, 81%, 16%, 0.25);
-    margin-right: 4em;
 }
 
 .group[data-on='true'] {
