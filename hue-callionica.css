@@ -154,6 +154,49 @@ button {
     margin: 8pt;
     background-color: whitesmoke;
 }
+
+.group {
+    cursor: pointer;
+    position: relative;
+    border-radius: 8pt;
+    padding: 8pt;
+    margin: 8pt;
+    background-color: whitesmoke;
+}
+
+.group[data-type='Room']::before {
+    content: 'RM';
+    color: hsla(253, 81%, 16%, 0.5);
+    margin-right: 4em;
+}
+
+.group[data-type='Zone']::before {
+    content: 'ZN';
+    color: hsla(253, 81%, 16%, 0.5);
+    margin-right: 4em;
+}
+
+.group[data-power-level]::before {
+    content: 'PM';
+    color: hsla(253, 81%, 16%, 0.5);
+    margin-right: 4em;
+}
+
+.group[data-power-management='0']::before {
+    content: 'PM';
+    color: hsla(253, 81%, 16%, 0.25);
+    margin-right: 4em;
+}
+
+.group[data-unreachable='true']::before {
+    color: hsla(253, 81%, 16%, 0.25);
+    margin-right: 4em;
+}
+
+.group[data-on='true'] {
+    background-color: antiquewhite;
+}
+
 .metadata {
     color: whitesmoke;
 }

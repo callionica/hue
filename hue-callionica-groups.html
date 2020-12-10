@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Hue Rooms & Zones</title>
+    <title>Rooms & Zones</title>
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -73,6 +73,7 @@
                 ds.action = "toggle";
 
                 e.innerText = group.name;
+                e.className = "group";
 
                 return e;
             });
@@ -83,22 +84,17 @@
 
             async function toggle(groupID, turnOn) {
                 const group = data.groups[groupID];
-                console.log("TOGG", group, turnOn);
                 const connections = getConnectedComponents(group, data);
-                console.log(connections);
                 const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
 
                 if (powerManagedZone) {
-                    console.log("powerManagedZone");
-                    const powerLevelSensor = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.PowerLevel")?.id;
+                    // const powerLevelSensor = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.PowerLevel")?.id;
 
-                    console.log(powerLevelSensor);
+                    // await setSensorValue(connection, powerLevelSensor, turnOn ? 2 : 0);
 
-                    if (turnOn) {
-                        await setSensorValue(connection, powerLevelSensor, 2);
-                    } else {
-                        await setSensorValue(connection, powerLevelSensor, 0);
-                    }
+                    const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
+
+                    await setSensorValue(connection, action, 4002);
                 } else {
                     await setGroupOn(connection, groupID, turnOn);
                 }
@@ -114,7 +110,9 @@
                         if (src.dataset.powerLevel) {
                             turnOn = src.dataset.powerLevel === "0";
                         }
-                        toggle(id, turnOn).then(x => document.location = document.location);
+                        toggle(id, turnOn).then(x => { 
+                            setTimeout(()=> document.location = document.location, 0.5 * 1000);
+                        });
                         return;
                     }
                 }
@@ -134,7 +132,7 @@
     </script>
 </head>
 <body>
-    <h1>Hue Rooms & Zones</h1>
+    <h1>Rooms & Zones</h1>
     <hr/>
     <div id="data"></div>
 </body>
