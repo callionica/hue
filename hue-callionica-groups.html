@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Rooms & Zones</title>
     <link rel="stylesheet" href="hue-callionica.css">
@@ -151,6 +152,7 @@
 
                     const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
 
+                    // Use the OFF button to toggle the lights
                     await setSensorValue(connection, action, 4002);
                 } else {
                     await setGroupOn(connection, groupID, turnOn);
