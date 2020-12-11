@@ -156,6 +156,8 @@ button {
 }
 
 .group {
+    -moz-user-select: none;
+    -webkit-user-select: none;
     cursor: pointer;
     position: relative;
     border-radius: 8pt;
@@ -164,7 +166,12 @@ button {
     background-color: whitesmoke;
 }
 
-.group[data-type='Room']::before {
+/*.group div:first-of-type {
+    display: flex;
+    justify-content: space-between;
+}*/
+
+/*.group[data-type='Room']::before {
     content: 'RM';
     color: hsla(253, 81%, 16%, 0.5);
     margin-right: 4em;
@@ -176,7 +183,7 @@ button {
     margin-right: 4em;
 }
 
-.group[data-power-level]::before {
+.group[data-power-level] .group-name::before {
     content: '⚡️';
     color: hsla(253, 81%, 16%, 0.5);
     margin-right: 4em;
@@ -190,10 +197,35 @@ button {
 
 .group[data-unreachable='true']::before {
     color: hsla(253, 81%, 16%, 0.25);
-}
+}*/
 
 .group[data-on='true'] {
     background-color: antiquewhite;
+}
+
+.controls {
+    height: 0;
+    overflow: hidden;
+}
+
+.group[data-selected='true'] .controls {
+    height: 8rem;
+    overflow-x: scroll;
+}
+
+.group div:first-of-type {
+    height: 2rem;
+}
+
+.group-name {
+    position: absolute;
+    height: 2rem;
+}
+
+.group-toggle {
+    position: absolute;
+    right: 0.5rem;
+    height: 2rem;
 }
 
 .metadata {

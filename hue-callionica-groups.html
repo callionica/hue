@@ -119,6 +119,7 @@
                 function create() {
                     const e = document.createElement("div");
                     e.id = "group-" + group.id;
+                    e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle">TOGGLE</button></div><div class="controls"></div>`;
                     return e;
                 }
 
@@ -141,9 +142,9 @@
                     delete ds.powerManagement;
                 }
 
-                ds.action = "toggle";
+                ds.action = "select";
 
-                e.innerText = group.name;
+                e.querySelector(".group-name").innerText = group.name;
                 e.className = "group";
 
                 return e;
@@ -185,21 +186,73 @@
                 }
             }
 
-            document.onclick = (evt) => {
-                const src = evt.srcElement;
-                const action = src.dataset.action;
-                if (action) {
-                    if (action === "toggle") {
-                        const id = src.dataset.group;
-                        let turnOn = src.dataset.on === "false";
-                        if (src.dataset.powerLevel) {
-                            turnOn = src.dataset.powerLevel !== "2";
-                        }
-                        toggle(id, turnOn).then(x => { 
-                            setTimeout(()=> update().then(x => console.log(x)), 0.2 * 1000);
-                        });
-                        return;
+            function selectAction(e) {
+                const removeSelection = (e.dataset.selected === "true");
+
+                let container = e.parentNode;
+                while (container) {
+                    if (container.dataset.selectGroup === "true") {
+                        break;
                     }
+                    container = container.parentNode;
+                }
+
+                if (container == undefined) {
+                    return;
+                }
+
+                const selected = container.querySelectorAll("[data-selected='true']");
+                for (const s of selected) {
+                    delete s.dataset.selected;
+                }
+
+                if (!removeSelection) {
+                    e.dataset.selected = true;
+                } else {
+                    delete e.dataset.selected;
+                }
+            }
+
+            function toggleAction(src) {
+                while (src && src.dataset.group == undefined) {
+                    src = src.parentNode;
+                }
+
+                if (src == undefined) {
+                    return;
+                }
+
+                const id = src.dataset.group;
+                let turnOn = src.dataset.on === "false";
+                if (src.dataset.powerLevel) {
+                    turnOn = src.dataset.powerLevel !== "2";
+                }
+                toggle(id, turnOn).then(x => {
+                    setTimeout(() => update().then(x => console.log(x)), 0.2 * 1000);
+                });
+            }
+
+            document.onclick = (evt) => {
+                let src = evt.srcElement;
+                
+                while (src && src.dataset.action == undefined) {
+                    src = src.parentNode;
+                }
+                
+                if (src == undefined) {
+                    return;
+                }
+
+                const action = src.dataset.action;
+
+                if (action === "toggle") {
+                    toggleAction(src);
+                    return;
+                }
+
+                if (action === "select") {
+                    selectAction(src);
+                    return;
                 }
             };
         }
@@ -216,7 +269,7 @@
 <body>
     <h1>Rooms & Zones</h1>
     <hr/>
-    <div id="data"></div>
+    <div id="data" data-select-group="true"></div>
     <!--<iframe src=""></iframe>-->
 </body>
 </html>
