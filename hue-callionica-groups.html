@@ -10,12 +10,23 @@
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
 
-        async function main() {
-            const bridge = loadCurrentBridge();
-            const connection = await loadConnection("Callionica", bridge);
-            const data = await getAll(connection);
+        let bridge;
+        let connection;
+        let data;
+
+        async function update() {
+            if (bridge === undefined) {
+                bridge = loadCurrentBridge();
+            }
+
+            if (connection === undefined) {
+                connection = await loadConnection("Callionica", bridge);
+            }
+
             const d = document.getElementById("data");
 
+            data = await getAll(connection);
+            
             let groups = Object.values(data.groups);
 
             groups.sort(sortBy(g => g.name));
@@ -43,11 +54,12 @@
             const elements = groups.map(group => {
                 const connections = getConnectedComponents(group, data);
 
-                console.log(group);
+                // console.log(group);
                 // console.log(connections);
+
                 const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
 
-                console.log(powerManagedZone);
+                // console.log(powerManagedZone);
 
                 function anyOn(group, data) {
                     return group.lights.find(lightID => {
@@ -77,7 +89,14 @@
                 const powerLevel = getPowerLevel(powerManagedZone);
                 const powerManagement = getPowerManagement(powerManagedZone);
 
-                const e = document.createElement("div");
+                function create() {
+                    const e = document.createElement("div");
+                    e.id = "group-" + group.id;
+                    return e;
+                }
+
+                const e = document.getElementById("group-" + group.id) || create();
+
                 const ds = e.dataset;
 
                 ds.group = group.id;
@@ -86,9 +105,13 @@
                 ds.unreachable = unreachable;
                 if (powerLevel) {
                     ds.powerLevel = powerLevel.value;
+                } else if (ds.powerLevel) {
+                    delete ds.powerLevel;
                 }
                 if (powerManagement) {
                     ds.powerManagement = powerManagement.value;
+                } else if (ds.powerManagement) {
+                    delete ds.powerManagement;
                 }
 
                 ds.action = "toggle";
@@ -99,9 +122,22 @@
                 return e;
             });
 
+            let previous = undefined;
             for (const e of elements) {
-                d.appendChild(e);
+                // console.log(e);
+                if (e.parentNode == undefined) {
+                    if (previous === undefined) {
+                        d.appendChild(e);
+                    } else {
+                        previous.after(e);
+                    }
+                }
+                previous = e;
             }
+        }
+
+        async function main() {
+            await update();
 
             async function toggle(groupID, turnOn) {
                 const group = data.groups[groupID];
@@ -132,15 +168,12 @@
                             turnOn = src.dataset.powerLevel === "0";
                         }
                         toggle(id, turnOn).then(x => { 
-                            setTimeout(()=> document.location = document.location, 0.5 * 1000);
+                            setTimeout(()=> update().then(x => console.log(x)), 0.2 * 1000);
                         });
                         return;
                     }
                 }
             };
-
-            // const rooms = groups.filter(g => g.type === "Room");
-            // const zones = groups.filter(g => g.type === "Zone");
         }
 
         // const oneSecond = 1.0 * 1000;

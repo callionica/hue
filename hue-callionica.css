@@ -177,7 +177,7 @@ button {
 }
 
 .group[data-power-level]::before {
-    content: 'PM';
+    content: '⚡️';
     color: hsla(253, 81%, 16%, 0.5);
     margin-right: 4em;
 }
