@@ -21,7 +21,14 @@
             }
 
             if (connection === undefined) {
-                connection = await loadConnection("Callionica", bridge);
+                try {
+                    connection = await loadConnection("Callionica", bridge);
+                } catch (e) {
+                    console.log(bridge, e);
+                    throw e;
+                    // document.querySelector("iframe").src = `https://${bridge.ip}/api/unauthenticated/config`;
+                    // connection = await loadConnection("Callionica", bridge);
+                }
             }
 
             const d = document.getElementById("data");
@@ -33,9 +40,28 @@
             groups.sort(sortBy(g => g.name));
 
             const params = new URLSearchParams(document.location.search);
-            const sortParams = params.get("sort");
-            if (sortParams) {
-                const preferred = sortParams.split(",").map(x => x.trim().toLowerCase());
+
+            function getList(name) {
+                const p = params.get(name);
+                return p?.split(",").map(x => x.trim().toLowerCase());
+            }
+
+            const include = getList("include");
+            if (include) {
+                // Keep name sorting, but only for the listed items
+                groups = groups.filter(g => include.includes(g.name.toLowerCase()));
+
+                // If we wanted to use the sort order from include as well, we'd do this:
+                // groups = include.map(n => groups.find(g => n === g.name.toLowerCase())).filter(x=>x);
+            }
+
+            const exclude = getList("exclude");
+            if (exclude) {
+                groups = groups.filter(g => !exclude.includes(g.name.toLowerCase()));
+            }
+
+            let preferred = getList("sort");
+            if (preferred) {
                 const x = new Array(preferred.length);
                 const y = [];
                 for (const group of groups) {
@@ -152,8 +178,8 @@
 
                     const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
 
-                    // Use the OFF button to toggle the lights
-                    await setSensorValue(connection, action, 4002);
+                    // Use the dimmer button actions to toggle the lights
+                    await setSensorValue(connection, action, turnOn ? 1000 : 4002);
                 } else {
                     await setGroupOn(connection, groupID, turnOn);
                 }
@@ -167,7 +193,7 @@
                         const id = src.dataset.group;
                         let turnOn = src.dataset.on === "false";
                         if (src.dataset.powerLevel) {
-                            turnOn = src.dataset.powerLevel === "0";
+                            turnOn = src.dataset.powerLevel !== "2";
                         }
                         toggle(id, turnOn).then(x => { 
                             setTimeout(()=> update().then(x => console.log(x)), 0.2 * 1000);
@@ -191,5 +217,6 @@
     <h1>Rooms & Zones</h1>
     <hr/>
     <div id="data"></div>
+    <!--<iframe src=""></iframe>-->
 </body>
 </html>
