@@ -142,6 +142,11 @@
                     delete ds.powerManagement;
                 }
 
+                ds.turnOn = !on;
+                if (powerLevel) {
+                    ds.turnOn = powerLevel.value < 2;
+                }
+
                 ds.action = "select";
 
                 e.querySelector(".group-name").innerText = group.name;
@@ -223,10 +228,11 @@
                 }
 
                 const id = src.dataset.group;
-                let turnOn = src.dataset.on === "false";
-                if (src.dataset.powerLevel) {
-                    turnOn = src.dataset.powerLevel !== "2";
-                }
+                const turnOn = src.dataset.turnOn === "true";
+                // let turnOn = src.dataset.on === "false";
+                // if (src.dataset.powerLevel != undefined) {
+                //     turnOn = src.dataset.powerLevel !== "2";
+                // }
                 toggle(id, turnOn).then(x => {
                     setTimeout(() => update().then(x => console.log(x)), 0.2 * 1000);
                 });
