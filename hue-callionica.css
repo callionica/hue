@@ -194,12 +194,17 @@ button {
     color: hsla(253, 81%, 16%, 0.25);
     margin-right: 4em;
 }
+*/
 
-.group[data-unreachable='true']::before {
-    color: hsla(253, 81%, 16%, 0.25);
-}*/
+.group[data-any-unreachable='true'] button {
+    color: whitesmoke;
+}
 
-.group[data-on='true'] {
+.group[data-turn-on='true'] button {
+    background-color: antiquewhite;
+}
+
+.group[data-any-on='true'] {
     background-color: antiquewhite;
 }
 

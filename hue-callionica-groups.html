@@ -120,20 +120,6 @@
                     return { anyOn, allOn, anyUnreachable, allUnreachable };
                 }
 
-                // function anyOn(group, data) {
-                //     return group.lights.find(lightID => {
-                //         const light = data.lights[lightID];
-                //         return (light.state.on && light.state.reachable);
-                //     }) !== undefined;
-                // }
-
-                // function anyUnreachable(group, data) {
-                //     return group.lights.find(lightID => {
-                //         const light = data.lights[lightID];
-                //         return (!light.state.reachable);
-                //     }) !== undefined;
-                // }
-
                 function getPowerLevel(pmz) {
                     return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
                 }
@@ -141,9 +127,6 @@
                 function getPowerManagement(pmz) {
                     return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
                 }
-
-                // const on = anyOn(group, data);
-                // const unreachable = anyUnreachable(group, data);
 
                 const lights = summarizeLights(group, data);
 
@@ -163,13 +146,18 @@
 
                 ds.group = group.id;
                 ds.type = group.type;
-                ds.on = lights.anyOn;
-                ds.unreachable = lights.anyUnreachable;
+                
+                ds.anyOn = lights.anyOn;
+                ds.allOn = lights.allOn;
+                ds.anyUnreachable = lights.anyUnreachable;
+                ds.allUnreachable = lights.allUnreachable;
+
                 if (powerLevel) {
                     ds.powerLevel = powerLevel.value;
                 } else if (ds.powerLevel) {
                     delete ds.powerLevel;
                 }
+
                 if (powerManagement) {
                     ds.powerManagement = powerManagement.value;
                 } else if (ds.powerManagement) {
