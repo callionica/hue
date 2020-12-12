@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!--<meta name="apple-mobile-web-app-capable" content="yes" />-->
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Rooms & Zones</title>
     <link rel="stylesheet" href="hue-callionica.css">
@@ -88,19 +88,51 @@
 
                 // console.log(powerManagedZone);
 
-                function anyOn(group, data) {
-                    return group.lights.find(lightID => {
+                function summarizeLights(group, data) {
+                    if (group.lights.length === 0) {
+                        return { anyOn: false, allOn: false, anyUnreachable: true, allUnreachable: true };
+                    }
+
+                    let anyOn = false;
+                    let allOn = true;
+                    let anyUnreachable = false;
+                    let allUnreachable = true;
+
+                    for (const lightID of group.lights) {
                         const light = data.lights[lightID];
-                        return (light.state.on && light.state.reachable);
-                    }) !== undefined;
+
+                        const unreachable = !light.state.reachable;
+                        const on = (light.state.on && light.state.reachable);
+
+                        if (on) {
+                            anyOn = true;
+                        }
+
+                        allOn = allOn && on;
+
+                        if (unreachable) {
+                            anyUnreachable = true;
+                        }
+
+                        allUnreachable = allUnreachable && unreachable;
+                    }
+
+                    return { anyOn, allOn, anyUnreachable, allUnreachable };
                 }
 
-                function anyUnreachable(group, data) {
-                    return group.lights.find(lightID => {
-                        const light = data.lights[lightID];
-                        return (!light.state.reachable);
-                    }) !== undefined;
-                }
+                // function anyOn(group, data) {
+                //     return group.lights.find(lightID => {
+                //         const light = data.lights[lightID];
+                //         return (light.state.on && light.state.reachable);
+                //     }) !== undefined;
+                // }
+
+                // function anyUnreachable(group, data) {
+                //     return group.lights.find(lightID => {
+                //         const light = data.lights[lightID];
+                //         return (!light.state.reachable);
+                //     }) !== undefined;
+                // }
 
                 function getPowerLevel(pmz) {
                     return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
@@ -110,8 +142,10 @@
                     return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
                 }
 
-                const on = anyOn(group, data);
-                const unreachable = anyUnreachable(group, data);
+                // const on = anyOn(group, data);
+                // const unreachable = anyUnreachable(group, data);
+
+                const lights = summarizeLights(group, data);
 
                 const powerLevel = getPowerLevel(powerManagedZone);
                 const powerManagement = getPowerManagement(powerManagedZone);
@@ -129,8 +163,8 @@
 
                 ds.group = group.id;
                 ds.type = group.type;
-                ds.on = on;
-                ds.unreachable = unreachable;
+                ds.on = lights.anyOn;
+                ds.unreachable = lights.anyUnreachable;
                 if (powerLevel) {
                     ds.powerLevel = powerLevel.value;
                 } else if (ds.powerLevel) {
@@ -142,7 +176,7 @@
                     delete ds.powerManagement;
                 }
 
-                ds.turnOn = !on;
+                ds.turnOn = !lights.anyOn;
                 if (powerLevel) {
                     ds.turnOn = powerLevel.value < 2;
                 }
