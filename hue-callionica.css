@@ -23,9 +23,13 @@ body {
     -webkit-text-size-adjust: 100%;
     font-size: 14pt;
     padding: 8pt;
+}
+
+body[data-page='groups'] {
     background-color: rgb(var(--back-color));
     color: rgb(var(--text-color));
 }
+
 h1 {
     font-size: 18pt;
 }
