@@ -267,6 +267,8 @@ button {
 .controls {
     height: 0;
     overflow: hidden;
+
+    transition: height 0.6s ease;
 }
 
 .group[data-selected='true'] .controls {
