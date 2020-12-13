@@ -136,7 +136,7 @@
                 function create() {
                     const e = document.createElement("div");
                     e.id = "group-" + group.id;
-                    e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle">TOGGLE</button></div><div class="controls"></div>`;
+                    e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle"></button></div><div class="controls"></div>`;
                     return e;
                 }
 
@@ -169,7 +169,9 @@
                     ds.turnOn = powerLevel.value < 2;
                 }
 
-                ds.action = "select";
+                if (powerManagement) {
+                    ds.action = "select";
+                }
 
                 e.querySelector(".group-name").innerText = group.name;
                 e.className = "group";

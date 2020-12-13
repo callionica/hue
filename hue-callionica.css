@@ -1,3 +1,14 @@
+:root {
+    --back-color: 30,30,30;
+    --button-color: 45,45,45;
+
+    --text-color: 204,204,204;
+    
+    --lit-color: 240,213,78;
+    --ready-color: 160,220,251;
+    --unlit-color: var(--back-color);
+}
+
 * {
     box-sizing: border-box;
     border: 0;
@@ -6,9 +17,13 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: inherit;
 }
+
 body {
+    -webkit-text-size-adjust: 100%;
     font-size: 14pt;
     padding: 8pt;
+    background-color: rgb(var(--back-color));
+    color: rgb(var(--text-color));
 }
 h1 {
     font-size: 18pt;
@@ -161,9 +176,28 @@ button {
     cursor: pointer;
     position: relative;
     border-radius: 8pt;
-    padding: 8pt;
-    margin: 8pt;
-    background-color: whitesmoke;
+    padding: 0.25rem;
+    margin-bottom: 0.75rem;
+
+    border-width: 0.2rem;
+    border-style: solid;
+    border-color: rgb(var(--button-color));
+
+    background-color: rgb(var(--button-color));
+}
+
+.group button {
+    height: 4rem;
+    width: 4rem;
+    background-color: rgb(var(--button-color));
+    border-width: 0.2rem;
+    border-style: solid;
+    border-color: rgb(var(--ready-color));
+    color: rgb(var(--ready-color));
+}
+
+.group[data-power-level] button {
+    border-radius: 0.75rem;
 }
 
 /*.group div:first-of-type {
@@ -196,17 +230,31 @@ button {
 }
 */
 
-.group[data-any-unreachable='true'] button {
-    color: whitesmoke;
+.group[data-all-unreachable='true'] button {
+    border-color: rgb(var(--unlit-color));
+    color: rgb(var(--unlit-color));
 }
 
-.group[data-turn-on='true'] button {
-    background-color: antiquewhite;
+.group button::before {
+    content: 'OFF';
 }
 
-.group[data-any-on='true'] {
-    background-color: antiquewhite;
+.group[data-turn-on='true'] button::before {
+    content: 'ON';
 }
+
+/*.group[data-any-on='true'] {
+    border-color: rgb(var(--lit-color));
+}*/
+
+.group[data-any-on='true'] button {
+    border-color: rgb(var(--lit-color));
+    color: rgb(var(--lit-color));
+}
+
+/*.group[data-any-on='true'] {
+    background-color: antiquewhite;
+}*/
 
 .controls {
     height: 0;
@@ -216,15 +264,18 @@ button {
 .group[data-selected='true'] .controls {
     height: 8rem;
     overflow-x: scroll;
+    /*background-color: indigo;*/
 }
 
 .group div:first-of-type {
-    height: 2rem;
+    height: 4rem;
 }
 
 .group-name {
     position: absolute;
     height: 2rem;
+    left: 0.75rem;
+    top: 1.75rem;
 }
 
 .group-toggle {
