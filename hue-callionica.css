@@ -199,6 +199,8 @@ button {
     border-style: solid;
     border-color: rgb(var(--ready-color));
     color: rgb(var(--ready-color));
+
+    /*box-shadow: 0.05rem 0.05rem 0.2rem 0 rgb(var(--back-color));*/
 }
 
 .group[data-power-level] button {
