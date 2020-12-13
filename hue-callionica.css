@@ -5,6 +5,7 @@
     --text-color: 204,204,204;
     
     --lit-color: 240,213,78;
+    --low-color: 164,139,14;
     --ready-color: 160,220,251;
     --unlit-color: var(--back-color);
 }
@@ -243,18 +244,15 @@ button {
     content: 'ON';
 }
 
-/*.group[data-any-on='true'] {
-    border-color: rgb(var(--lit-color));
-}*/
-
 .group[data-any-on='true'] button {
     border-color: rgb(var(--lit-color));
     color: rgb(var(--lit-color));
 }
 
-/*.group[data-any-on='true'] {
-    background-color: antiquewhite;
-}*/
+.group[data-power-level='1'] button {
+    border-color: rgb(var(--low-color));
+    color: rgb(var(--low-color));
+}
 
 .controls {
     height: 0;
