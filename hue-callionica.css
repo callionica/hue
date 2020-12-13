@@ -205,6 +205,10 @@ button {
     border-radius: 0.75rem;
 }
 
+.group[data-power-management='0'] button {
+    border-radius: 0.75rem 0.25rem 0.75rem 0.25rem;
+}
+
 /*.group div:first-of-type {
     display: flex;
     justify-content: space-between;
