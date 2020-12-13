@@ -191,6 +191,14 @@
                 }
                 previous = e;
             }
+
+            if (params.has("group")) {
+                // Move unreachables to the end
+                const unreachable = d.querySelectorAll(".group[data-all-unreachable='true']");
+                for (const e of [...unreachable]) {
+                    d.appendChild(e);
+                }
+            }
         }
 
         async function main() {
