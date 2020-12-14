@@ -11,6 +11,8 @@
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
 
+        import { Switch } from "./hue-callionica-switch.js"
+
         let bridge;
         let connection;
         let data;
@@ -165,12 +167,26 @@
                 }
 
                 ds.turnOn = !lights.anyOn;
-                if (powerLevel) {
+                /*if (powerLevel) {
                     ds.turnOn = powerLevel.value < 2;
-                }
+                }*/
 
                 if (powerManagement) {
                     ds.action = "select";
+
+                    const c = e.querySelector(".controls");
+                    c.innerHTML = "";
+                    
+                    // const sw = new Switch(document, c);
+
+                    c.innerHTML = `POWER MANAGED ZONE`;
+
+                    // c.innerHTML = `
+                    // <button data-action="scene">SCNE</button>
+                    // <button data-action="switch">SWCH</button>
+                    // <button data-action="enable">ENBL</button>
+                    // <button data-action="control">CTRL</button>
+                    // `;
                 }
 
                 e.querySelector(".group-name").innerText = group.name;
@@ -193,6 +209,12 @@
             }
 
             if (params.has("group")) {
+                // Move off groups to end
+                // const off = d.querySelectorAll(".group[data-turn-on='true']");
+                // for (const e of [...off]) {
+                //     d.appendChild(e);
+                // }
+
                 // Move unreachables to the end
                 const unreachable = d.querySelectorAll(".group[data-all-unreachable='true']");
                 for (const e of [...unreachable]) {
@@ -250,6 +272,31 @@
                 }
             }
 
+            function enableAction(src) {
+                while (src && src.dataset.group == undefined) {
+                    src = src.parentNode;
+                }
+
+                if (src == undefined) {
+                    return;
+                }
+
+                const groupID = src.dataset.group;
+
+                const group = data.groups[groupID];
+                const connections = getConnectedComponents(group, data);
+                const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
+
+                if (powerManagedZone) {
+                    const sensor = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.PowerManagement")?.id;
+
+                    const value = (src.dataset.powerManagement === "0") ?  1 : 0;
+                    setSensorValue(connection, sensor, value).then(x => {
+                        setTimeout(() => update().then(x => console.log(x)), 0.2 * 1000);
+                    });
+                }
+            }
+
             function toggleAction(src) {
                 while (src && src.dataset.group == undefined) {
                     src = src.parentNode;
@@ -268,6 +315,19 @@
                 toggle(id, turnOn).then(x => {
                     setTimeout(() => update().then(x => console.log(x)), 0.2 * 1000);
                 });
+            }
+
+            function controlAction(src) {
+                while (src && src.dataset.group == undefined) {
+                    src = src.parentNode;
+                }
+
+                if (src == undefined) {
+                    return;
+                }
+
+                const id = src.dataset.group;
+                document.location = "hue-callionica-components.html"; // TODO
             }
 
             document.onclick = (evt) => {
@@ -290,6 +350,16 @@
 
                 if (action === "select") {
                     selectAction(src);
+                    return;
+                }
+
+                if (action === "control") {
+                    controlAction(src);
+                    return;
+                }
+
+                if (action === "enable") {
+                    enableAction(src);
                     return;
                 }
             };

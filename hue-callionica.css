@@ -203,63 +203,33 @@ button {
     /*box-shadow: 0.05rem 0.05rem 0.2rem 0 rgb(var(--back-color));*/
 }
 
-.group[data-power-level] button {
+.group[data-power-level] button[data-action='toggle'] {
     border-radius: 0.75rem;
 }
 
-.group[data-power-management='0'] button {
+.group[data-power-management='0'] button[data-action='toggle'] {
     border-radius: 0.75rem 0.25rem 0.75rem 0.25rem;
 }
 
-/*.group div:first-of-type {
-    display: flex;
-    justify-content: space-between;
-}*/
-
-/*.group[data-type='Room']::before {
-    content: 'RM';
-    color: hsla(253, 81%, 16%, 0.5);
-    margin-right: 4em;
-}
-
-.group[data-type='Zone']::before {
-    content: 'ZN';
-    color: hsla(253, 81%, 16%, 0.5);
-    margin-right: 4em;
-}
-
-.group[data-power-level] .group-name::before {
-    content: '⚡️';
-    color: hsla(253, 81%, 16%, 0.5);
-    margin-right: 4em;
-}
-
-.group[data-power-management='0']::before {
-    content: 'PM';
-    color: hsla(253, 81%, 16%, 0.25);
-    margin-right: 4em;
-}
-*/
-
-.group[data-all-unreachable='true'] button {
+.group[data-all-unreachable='true'] button[data-action='toggle'] {
     border-color: rgb(var(--unlit-color));
     color: rgb(var(--unlit-color));
 }
 
-.group button::before {
+.group button[data-action='toggle']::before {
     content: 'OFF';
 }
 
-.group[data-turn-on='true'] button::before {
+.group[data-turn-on='true'] button[data-action='toggle']::before {
     content: 'ON';
 }
 
-.group[data-any-on='true'] button {
+.group[data-any-on='true'] button[data-action='toggle'] {
     border-color: rgb(var(--lit-color));
     color: rgb(var(--lit-color));
 }
 
-.group[data-power-level='1'] button {
+.group[data-power-level='1'] button[data-action='toggle'] {
     border-color: rgb(var(--low-color));
     color: rgb(var(--low-color));
 }
@@ -272,7 +242,7 @@ button {
 }
 
 .group[data-selected='true'] .controls {
-    height: 8rem;
+    height: 4rem;
     overflow-x: scroll;
     /*background-color: indigo;*/
 }
