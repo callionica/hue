@@ -7,13 +7,20 @@ import { CertificateLibrary, NameResolver, Server } from "../../../../denophile/
 
 // const response = await fetch("https://main-hub.local");
 
+// async function jsonDescription(host) {
+//     const r = await fetch(`${document.location.protocol}//${host}/description.xml`);
+//     const x = await r.xml();
+//     return x;
+// }
+
 async function arp() {
     const results = await execute("arp", "-a");
-    const re = /\((?<ip>[^)]+)\) at (?<mac>\S+) on/ig;
+    const re = /[(](?<ip>[^)]+)[)] at (?<mac>\S+) on/ig;
     const m = results.matchAll(re);
     return [...m].map(m => m.groups!);
 }
 
+const FriendlyName = "Philips Hue";
 const PhilipsMACPrefix = "ec:b5:fa:";
 const dis = (await arp()).filter(a => a.mac.startsWith(PhilipsMACPrefix));
 console.log(dis);

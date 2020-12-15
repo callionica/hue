@@ -1,7 +1,7 @@
 import { Entity, Method, ID, EntityID, SensorID } from "./hue-core.ts";
 
-type Time = string;
-type ButtonEvent = number;
+type TimeDuration = string;
+type TimeInterval = string;
 
 type Rule = {
     name: string,
@@ -15,20 +15,25 @@ type Action = {
     body: Record<string, unknown>
 };
 
-type ConditionValue = boolean | number | string;
-
 type Condition = {
     address: string,
     operator: "eq" | "lt" | "gt",
-    value: string
+    value: string // Conditions have string values
 } | {
     address: string,
-    operator: "ddx" | "stable",
-    value: Time
+    operator: "ddx" | "stable" | "not stable",
+    value: TimeDuration
+} | {
+    address: string,
+    operator: "in" | "not in",
+    value: TimeInterval
 } | {
     address: string,
     operator: "dx"
 };
+
+type ButtonEvent = number;
+type ConditionValue = boolean | number | string;
 
 class Conditions {
     static isEqual(id: EntityID, value: ConditionValue, property = "status"): Condition {
@@ -61,7 +66,7 @@ class Conditions {
         return [this.isEqual(id, value, property), this.isUpdated(id)];
     }
 
-    static wasChangedTo(id: EntityID, value: ConditionValue, time: Time, property = "status"): Condition[] {
+    static wasChangedTo(id: EntityID, value: ConditionValue, time: TimeDuration, property = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -72,7 +77,7 @@ class Conditions {
         ];
     }
 
-    static wasUpdatedTo(id: EntityID, value: ConditionValue, time: Time, property = "status"): Condition[] {
+    static wasUpdatedTo(id: EntityID, value: ConditionValue, time: TimeDuration, property = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -83,7 +88,7 @@ class Conditions {
         ];
     }
 
-    static notChangedSince(id: EntityID, value: ConditionValue, time: Time, property = "status"): Condition[] {
+    static notChangedSince(id: EntityID, value: ConditionValue, time: TimeDuration, property = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -94,7 +99,7 @@ class Conditions {
         ];
     }
 
-    static notUpdatedSince(id: EntityID, value: ConditionValue, time: Time, property = "status"): Condition[] {
+    static notUpdatedSince(id: EntityID, value: ConditionValue, time: TimeDuration, property = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -112,11 +117,44 @@ class Conditions {
     static isButtonEvent(id: SensorID, value: ButtonEvent): Condition[] {
         return this.isUpdatedTo(id, value, "buttonevent");
     }
+
+    static sort(conditions: Condition[]): Condition[] {
+        return conditions.sort((a, b) => {
+            const aa = a.address.replace(/[/]lastupdated$/i, "/zzz-lastupdated");
+            const ba = b.address.replace(/[/]lastupdated$/i, "/zzz-lastupdated");
+            const n = aa.localeCompare(ba);
+            if (n !== 0) {
+                return n;
+            }
+
+            const ops = ["eq", "lt", "gt", "ddx", "stable", "not stable", "in", "not in", "dx"];
+            const ao = ops.findIndex(o => o === a.operator);
+            const bo = ops.findIndex(o => o === b.operator);
+            if (ao < bo) {
+                return -1;
+            }
+
+            if (ao > bo) {
+                return +1;
+            }
+
+            return 0;
+        });
+    }
 }
 
 class Actions {
 
 }
+
+// function parseConditions(conditions: Condition[]) {
+
+//     for (const condition of conditions) {
+//         if (done.includes(condition)) {
+//             continue;
+//         }
+//     }
+// }
 
 // function actionSetValue<Value extends boolean | number>(id: ID<"sensor">, value: Value) {
 //     type Body<T> = T extends boolean ? { flag: boolean } : { status: number };
