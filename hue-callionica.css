@@ -242,11 +242,14 @@ button {
     height: 0;
     overflow: hidden;
 
+    vertical-align: middle;
+    text-align: center;
+
     transition: height 0.6s ease;
 }
 
 .group[data-selected='true'] .controls {
-    height: 4rem;
+    height: 2rem;
     overflow-x: scroll;
     /*background-color: indigo;*/
 }
