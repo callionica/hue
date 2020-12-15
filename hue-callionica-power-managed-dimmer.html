@@ -70,7 +70,7 @@
                 console.log(setts);
                 const dimmer = setts.dimmer;
                 const pmz = setts.pmz;
-                createPowerManagedDimmer(connection, dimmer.name, dimmer.id, pmz).then(x => { console.log(x); alert("Power Managed Dimmer created"); });
+                createPowerManagedDimmer(connection, pmz.name, dimmer.id, pmz).then(x => { console.log(x); alert("Power Managed Dimmer created"); });
             }
             [...document.querySelectorAll("button.create")].forEach(s => s.onclick = onCreate);
         }
