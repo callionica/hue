@@ -25,11 +25,14 @@
             if (connection === undefined) {
                 try {
                     connection = await loadConnection("Callionica", bridge);
-                } catch (e) {
-                    console.log(bridge, e);
-                    throw e;
-                    // document.querySelector("iframe").src = `https://${bridge.ip}/api/unauthenticated/config`;
-                    // connection = await loadConnection("Callionica", bridge);
+                } catch (error) {
+                    document.body.dataset.showConnection = true;
+
+                    const e = document.querySelector("#connection");
+
+                    e.innerHTML = `<a href="https://${bridge.ip}/api/unauthenticated/config">Check bridge certificate</a>`;
+
+                    return;
                 }
             }
 
@@ -377,6 +380,7 @@
 <body data-page="groups">
     <h1>Rooms & Zones</h1>
     <hr/>
+    <div id="connection"></div>
     <div id="data" data-select-group="true"></div>
     <!--<iframe src=""></iframe>-->
 </body>

@@ -30,6 +30,10 @@ body[data-page='groups'] {
     color: rgb(var(--text-color));
 }
 
+body[data-page='groups'] a {
+    background-color: rgb(var(--button-color));
+}
+
 h1 {
     font-size: 18pt;
 }
@@ -272,4 +276,13 @@ button {
 }
 .highlight {
     background-color: white;
+}
+
+#connection {
+    height: 0;
+    transition: height 0.6s ease;
+}
+
+body[data-show-connection='true'] #connection {
+    height: 4rem;
 }
