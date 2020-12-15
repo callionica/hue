@@ -22,207 +22,210 @@
                 bridge = loadCurrentBridge();
             }
 
-            if (connection === undefined) {
-                try {
+            try {
+                if (connection === undefined) {
                     connection = await loadConnection("Callionica", bridge);
-                } catch (error) {
-                    document.body.dataset.showConnection = true;
-
-                    const e = document.querySelector("#connection");
-
-                    e.innerHTML = `<a href="https://${bridge.ip}/api/unauthenticated/config">Check bridge certificate</a>`;
-
-                    return;
                 }
-            }
 
-            const d = document.getElementById("data");
+                const d = document.getElementById("data");
 
-            data = await getAll(connection);
-            
-            let groups = Object.values(data.groups);
+                data = await getAll(connection);
 
-            groups.sort(sortBy(g => g.name));
+                let groups = Object.values(data.groups);
 
-            const params = new URLSearchParams(document.location.search);
+                groups.sort(sortBy(g => g.name));
 
-            function getList(name) {
-                const p = params.get(name);
-                return p?.split(",").map(x => x.trim().toLowerCase());
-            }
+                const params = new URLSearchParams(document.location.search);
 
-            const include = getList("include");
-            if (include) {
-                // Keep name sorting, but only for the listed items
-                groups = groups.filter(g => include.includes(g.name.toLowerCase()));
-
-                // If we wanted to use the sort order from include as well, we'd do this:
-                // groups = include.map(n => groups.find(g => n === g.name.toLowerCase())).filter(x=>x);
-            }
-
-            const exclude = getList("exclude");
-            if (exclude) {
-                groups = groups.filter(g => !exclude.includes(g.name.toLowerCase()));
-            }
-
-            let preferred = getList("sort");
-            if (preferred) {
-                const x = new Array(preferred.length);
-                const y = [];
-                for (const group of groups) {
-                    const index = preferred.indexOf(group.name.toLowerCase());
-                    if (index >= 0) {
-                        x[index] = group;
-                    } else {
-                        y.push(group);
-                    }
+                function getList(name) {
+                    const p = params.get(name);
+                    return p?.split(",").map(x => x.trim().toLowerCase());
                 }
-                
-                groups = [...x.filter(x=>x), ...y];
-            }
 
-            const components = Object.values(data.components);
+                const include = getList("include");
+                if (include) {
+                    // Keep name sorting, but only for the listed items
+                    groups = groups.filter(g => include.includes(g.name.toLowerCase()));
 
-            const elements = groups.map(group => {
-                const connections = getConnectedComponents(group, data);
+                    // If we wanted to use the sort order from include as well, we'd do this:
+                    // groups = include.map(n => groups.find(g => n === g.name.toLowerCase())).filter(x=>x);
+                }
 
-                // console.log(group);
-                // console.log(connections);
+                const exclude = getList("exclude");
+                if (exclude) {
+                    groups = groups.filter(g => !exclude.includes(g.name.toLowerCase()));
+                }
 
-                const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
-
-                // console.log(powerManagedZone);
-
-                function summarizeLights(group, data) {
-                    if (group.lights.length === 0) {
-                        return { anyOn: false, allOn: false, anyUnreachable: true, allUnreachable: true };
+                let preferred = getList("sort");
+                if (preferred) {
+                    const x = new Array(preferred.length);
+                    const y = [];
+                    for (const group of groups) {
+                        const index = preferred.indexOf(group.name.toLowerCase());
+                        if (index >= 0) {
+                            x[index] = group;
+                        } else {
+                            y.push(group);
+                        }
                     }
 
-                    let anyOn = false;
-                    let allOn = true;
-                    let anyUnreachable = false;
-                    let allUnreachable = true;
+                    groups = [...x.filter(x => x), ...y];
+                }
 
-                    for (const lightID of group.lights) {
-                        const light = data.lights[lightID];
+                const components = Object.values(data.components);
 
-                        const unreachable = !light.state.reachable;
-                        const on = (light.state.on && light.state.reachable);
+                const elements = groups.map(group => {
+                    const connections = getConnectedComponents(group, data);
 
-                        if (on) {
-                            anyOn = true;
+                    // console.log(group);
+                    // console.log(connections);
+
+                    const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
+
+                    // console.log(powerManagedZone);
+
+                    function summarizeLights(group, data) {
+                        if (group.lights.length === 0) {
+                            return { anyOn: false, allOn: false, anyUnreachable: true, allUnreachable: true };
                         }
 
-                        allOn = allOn && on;
+                        let anyOn = false;
+                        let allOn = true;
+                        let anyUnreachable = false;
+                        let allUnreachable = true;
 
-                        if (unreachable) {
-                            anyUnreachable = true;
+                        for (const lightID of group.lights) {
+                            const light = data.lights[lightID];
+
+                            const unreachable = !light.state.reachable;
+                            const on = (light.state.on && light.state.reachable);
+
+                            if (on) {
+                                anyOn = true;
+                            }
+
+                            allOn = allOn && on;
+
+                            if (unreachable) {
+                                anyUnreachable = true;
+                            }
+
+                            allUnreachable = allUnreachable && unreachable;
                         }
 
-                        allUnreachable = allUnreachable && unreachable;
+                        return { anyOn, allOn, anyUnreachable, allUnreachable };
                     }
 
-                    return { anyOn, allOn, anyUnreachable, allUnreachable };
-                }
+                    function getPowerLevel(pmz) {
+                        return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
+                    }
 
-                function getPowerLevel(pmz) {
-                    return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
-                }
+                    function getPowerManagement(pmz) {
+                        return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
+                    }
 
-                function getPowerManagement(pmz) {
-                    return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
-                }
+                    const lights = summarizeLights(group, data);
 
-                const lights = summarizeLights(group, data);
+                    const powerLevel = getPowerLevel(powerManagedZone);
+                    const powerManagement = getPowerManagement(powerManagedZone);
 
-                const powerLevel = getPowerLevel(powerManagedZone);
-                const powerManagement = getPowerManagement(powerManagedZone);
+                    function create() {
+                        const e = document.createElement("div");
+                        e.id = "group-" + group.id;
+                        e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle"></button></div><div class="controls"></div>`;
+                        return e;
+                    }
 
-                function create() {
-                    const e = document.createElement("div");
-                    e.id = "group-" + group.id;
-                    e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle"></button></div><div class="controls"></div>`;
+                    const e = document.getElementById("group-" + group.id) || create();
+
+                    const ds = e.dataset;
+
+                    ds.group = group.id;
+                    ds.type = group.type;
+
+                    ds.anyOn = lights.anyOn;
+                    ds.allOn = lights.allOn;
+                    ds.anyUnreachable = lights.anyUnreachable;
+                    ds.allUnreachable = lights.allUnreachable;
+
+                    if (powerLevel) {
+                        ds.powerLevel = powerLevel.value;
+                    } else if (ds.powerLevel) {
+                        delete ds.powerLevel;
+                    }
+
+                    if (powerManagement) {
+                        ds.powerManagement = powerManagement.value;
+                    } else if (ds.powerManagement) {
+                        delete ds.powerManagement;
+                    }
+
+                    ds.turnOn = !lights.anyOn;
+                    /*if (powerLevel) {
+                        ds.turnOn = powerLevel.value < 2;
+                    }*/
+
+                    if (powerManagement) {
+                        ds.action = "select";
+
+                        const c = e.querySelector(".controls");
+                        c.innerHTML = "";
+
+                        // const sw = new Switch(document, c);
+
+                        c.innerHTML = `POWER MANAGED ZONE`;
+
+                        // c.innerHTML = `
+                        // <button data-action="scene">SCNE</button>
+                        // <button data-action="switch">SWCH</button>
+                        // <button data-action="enable">ENBL</button>
+                        // <button data-action="control">CTRL</button>
+                        // `;
+                    }
+
+                    e.querySelector(".group-name").innerText = group.name;
+                    e.className = "group";
+
                     return e;
+                });
+
+                let previous = undefined;
+                for (const e of elements) {
+                    // console.log(e);
+                    if (e.parentNode == undefined) {
+                        if (previous === undefined) {
+                            d.appendChild(e);
+                        } else {
+                            previous.after(e);
+                        }
+                    }
+                    previous = e;
                 }
 
-                const e = document.getElementById("group-" + group.id) || create();
+                if (params.has("group")) {
+                    // Move off groups to end
+                    // const off = d.querySelectorAll(".group[data-turn-on='true']");
+                    // for (const e of [...off]) {
+                    //     d.appendChild(e);
+                    // }
 
-                const ds = e.dataset;
-
-                ds.group = group.id;
-                ds.type = group.type;
-                
-                ds.anyOn = lights.anyOn;
-                ds.allOn = lights.allOn;
-                ds.anyUnreachable = lights.anyUnreachable;
-                ds.allUnreachable = lights.allUnreachable;
-
-                if (powerLevel) {
-                    ds.powerLevel = powerLevel.value;
-                } else if (ds.powerLevel) {
-                    delete ds.powerLevel;
-                }
-
-                if (powerManagement) {
-                    ds.powerManagement = powerManagement.value;
-                } else if (ds.powerManagement) {
-                    delete ds.powerManagement;
-                }
-
-                ds.turnOn = !lights.anyOn;
-                /*if (powerLevel) {
-                    ds.turnOn = powerLevel.value < 2;
-                }*/
-
-                if (powerManagement) {
-                    ds.action = "select";
-
-                    const c = e.querySelector(".controls");
-                    c.innerHTML = "";
-                    
-                    // const sw = new Switch(document, c);
-
-                    c.innerHTML = `POWER MANAGED ZONE`;
-
-                    // c.innerHTML = `
-                    // <button data-action="scene">SCNE</button>
-                    // <button data-action="switch">SWCH</button>
-                    // <button data-action="enable">ENBL</button>
-                    // <button data-action="control">CTRL</button>
-                    // `;
-                }
-
-                e.querySelector(".group-name").innerText = group.name;
-                e.className = "group";
-
-                return e;
-            });
-
-            let previous = undefined;
-            for (const e of elements) {
-                // console.log(e);
-                if (e.parentNode == undefined) {
-                    if (previous === undefined) {
+                    // Move unreachables to the end
+                    const unreachable = d.querySelectorAll(".group[data-all-unreachable='true']");
+                    for (const e of [...unreachable]) {
                         d.appendChild(e);
-                    } else {
-                        previous.after(e);
                     }
                 }
-                previous = e;
-            }
+                
+                delete document.body.dataset.showConnection;
 
-            if (params.has("group")) {
-                // Move off groups to end
-                // const off = d.querySelectorAll(".group[data-turn-on='true']");
-                // for (const e of [...off]) {
-                //     d.appendChild(e);
-                // }
+            } catch (error) {
+                document.body.dataset.showConnection = true;
 
-                // Move unreachables to the end
-                const unreachable = d.querySelectorAll(".group[data-all-unreachable='true']");
-                for (const e of [...unreachable]) {
-                    d.appendChild(e);
-                }
+                const e = document.querySelector("#connection");
+
+                e.innerHTML = `<a href="https://${bridge.ip}/api/unauthenticated/config">Check bridge certificate</a>`;
+
+                return;
             }
         }
 
