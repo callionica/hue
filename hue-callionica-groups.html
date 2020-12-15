@@ -227,7 +227,11 @@
 
                 const e = document.querySelector("#connection");
 
-                e.innerHTML = `<a href="https://${bridge.ip}/api/unauthenticated/config">Check bridge certificate</a>`;
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
 
                 return;
             }
