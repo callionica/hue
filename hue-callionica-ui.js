@@ -21,18 +21,18 @@ export function paramsSort(params, items) {
 
     const preferred = getList("sort");
     if (preferred) {
-        const x = new Array(preferred.length);
+        const x = preferred.map(p => []);
         const y = [];
         for (const item of items) {
             const index = preferred.indexOf(item.name.toLowerCase());
             if (index >= 0) {
-                x[index] = item;
+                x[index].push(item);
             } else {
                 y.push(item);
             }
         }
 
-        items = [...x.filter(x => x), ...y];
+        items = [...x.flatMap(x => x), ...y];
     }
 
     return items;
