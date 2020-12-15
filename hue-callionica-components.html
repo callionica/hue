@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, setSensorValue, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { sortBy, getAll, setSensorValue, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { paramsSort } from "./hue-callionica-ui.js";
 
         // Changes the action used by the rule from one scene to another
         async function setSceneRule(connection, data, ruleID, sceneID) {
@@ -231,13 +232,17 @@
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAll(connection);
-            const components = Object.values(data.components);
+            let components = Object.values(data.components);
             const d = document.getElementById("data");
 
             if (components.length === 0) {
                 d.innerHTML = `<p>There are currently no components installed on bridge ${bridge.name}.</p><p>If you install any components, this page will show your components and allow you to control them.</p><p>Why not start by creating a <a href="hue-callionica-power-managed-zone.html">Power Managed Zone</a>?</p>`;
             }
 
+            components.sort(sortBy(g => g.name + "." + g.description));
+
+            const params = new URLSearchParams(document.location.search);
+            components = paramsSort(params, components);
 
             const componentElements = components.map(component => createComponentElement(connection, component, data));
             

@@ -10,6 +10,7 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { paramsSort } from "./hue-callionica-ui.js";
 
         import { Switch } from "./hue-callionica-switch.js"
 
@@ -36,41 +37,44 @@
                 groups.sort(sortBy(g => g.name));
 
                 const params = new URLSearchParams(document.location.search);
+                groups = paramsSort(params, groups);
 
-                function getList(name) {
-                    const p = params.get(name);
-                    return p?.split(",").map(x => x.trim().toLowerCase());
-                }
+                // const params = new URLSearchParams(document.location.search);
 
-                const include = getList("include");
-                if (include) {
-                    // Keep name sorting, but only for the listed items
-                    groups = groups.filter(g => include.includes(g.name.toLowerCase()));
+                // function getList(name) {
+                //     const p = params.get(name);
+                //     return p?.split(",").map(x => x.trim().toLowerCase());
+                // }
 
-                    // If we wanted to use the sort order from include as well, we'd do this:
-                    // groups = include.map(n => groups.find(g => n === g.name.toLowerCase())).filter(x=>x);
-                }
+                // const include = getList("include");
+                // if (include) {
+                //     // Keep name sorting, but only for the listed items
+                //     groups = groups.filter(g => include.includes(g.name.toLowerCase()));
 
-                const exclude = getList("exclude");
-                if (exclude) {
-                    groups = groups.filter(g => !exclude.includes(g.name.toLowerCase()));
-                }
+                //     // If we wanted to use the sort order from include as well, we'd do this:
+                //     // groups = include.map(n => groups.find(g => n === g.name.toLowerCase())).filter(x=>x);
+                // }
 
-                let preferred = getList("sort");
-                if (preferred) {
-                    const x = new Array(preferred.length);
-                    const y = [];
-                    for (const group of groups) {
-                        const index = preferred.indexOf(group.name.toLowerCase());
-                        if (index >= 0) {
-                            x[index] = group;
-                        } else {
-                            y.push(group);
-                        }
-                    }
+                // const exclude = getList("exclude");
+                // if (exclude) {
+                //     groups = groups.filter(g => !exclude.includes(g.name.toLowerCase()));
+                // }
 
-                    groups = [...x.filter(x => x), ...y];
-                }
+                // let preferred = getList("sort");
+                // if (preferred) {
+                //     const x = new Array(preferred.length);
+                //     const y = [];
+                //     for (const group of groups) {
+                //         const index = preferred.indexOf(group.name.toLowerCase());
+                //         if (index >= 0) {
+                //             x[index] = group;
+                //         } else {
+                //             y.push(group);
+                //         }
+                //     }
+
+                //     groups = [...x.filter(x => x), ...y];
+                // }
 
                 const components = Object.values(data.components);
 
