@@ -249,6 +249,7 @@ button {
 }
 
 .group[data-selected='true'] .controls {
+    line-height: 2rem;
     height: 2rem;
     overflow-x: scroll;
     /*background-color: indigo;*/
