@@ -185,7 +185,6 @@ button {
     cursor: pointer;
     position: relative;
     border-radius: 8pt;
-    padding: 0.25rem;
     margin-bottom: 0.75rem;
 
     border-width: 0.2rem;
@@ -193,6 +192,11 @@ button {
     border-color: rgb(var(--button-color));
 
     background-color: rgb(var(--button-color));
+}
+
+.group div {
+    position: relative;
+    margin-bottom: 0.5rem;
 }
 
 .group button {
@@ -228,6 +232,24 @@ button {
     content: 'ON';
 }
 
+.group button[data-action='toggleManagement']::before {
+    content: 'OFF';
+}
+
+.group[data-power-management='0'] button[data-action='toggleManagement']::before {
+    content: 'ON';
+}
+
+.group button[data-action='toggleManagement'] {
+    border-color: rgb(var(--lit-color));
+    color: rgb(var(--lit-color));
+}
+
+.group[data-power-management='0'] button[data-action='toggleManagement'] {
+    border-color: rgb(var(--ready-color));
+    color: rgb(var(--ready-color));
+}
+
 .group[data-any-on='true'] button[data-action='toggle'] {
     border-color: rgb(var(--lit-color));
     color: rgb(var(--lit-color));
@@ -241,18 +263,17 @@ button {
 .controls {
     height: 0;
     overflow: hidden;
-
-    vertical-align: middle;
-    text-align: center;
+    margin: 0;
+    padding: 0;
 
     transition: height 0.6s ease;
+
+    position: relative;
 }
 
 .group[data-selected='true'] .controls {
-    line-height: 2rem;
-    height: 2rem;
+    height: 4rem;
     overflow-x: scroll;
-    /*background-color: indigo;*/
 }
 
 .group div:first-of-type {

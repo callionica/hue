@@ -136,7 +136,10 @@
                     function create() {
                         const e = document.createElement("div");
                         e.id = "group-" + group.id;
-                        e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle"></button></div><div class="controls"></div>`;
+                        e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle"></button></div>
+                        <div class="controls">
+                            <span class="group-name">Power management</span><button class="group-toggle" data-action="toggleManagement"></button>
+                        </div>`;
                         return e;
                     }
 
@@ -171,20 +174,6 @@
 
                     if (powerManagement) {
                         ds.action = "select";
-
-                        const c = e.querySelector(".controls");
-                        c.innerHTML = "";
-
-                        // const sw = new Switch(document, c);
-
-                        c.innerHTML = `POWER MANAGED ZONE`;
-
-                        // c.innerHTML = `
-                        // <button data-action="scene">SCNE</button>
-                        // <button data-action="switch">SWCH</button>
-                        // <button data-action="enable">ENBL</button>
-                        // <button data-action="control">CTRL</button>
-                        // `;
                     }
 
                     e.querySelector(".group-name").innerText = group.name;
@@ -256,6 +245,19 @@
                     await setSensorValue(connection, action, turnOn ? 1000 : 4002);
                 } else {
                     await setGroupOn(connection, groupID, turnOn);
+                }
+            }
+
+            async function toggleManagement(groupID, turnOn) {
+                const group = data.groups[groupID];
+                const connections = getConnectedComponents(group, data);
+                const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
+
+                if (powerManagedZone) {
+
+                    const management = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.PowerManagement")?.id;
+
+                    await setSensorValue(connection, management, turnOn ? 1 : 0);
                 }
             }
 
@@ -331,6 +333,22 @@
                 });
             }
 
+            function toggleManagementAction(src) {
+                while (src && src.dataset.group == undefined) {
+                    src = src.parentNode;
+                }
+
+                if (src == undefined) {
+                    return;
+                }
+
+                const id = src.dataset.group;
+                const turnOn = src.dataset.powerManagement === "0";
+                toggleManagement(id, turnOn).then(x => {
+                    setTimeout(() => update().then(x => console.log(x)), 0.2 * 1000);
+                });
+            }
+
             function controlAction(src) {
                 while (src && src.dataset.group == undefined) {
                     src = src.parentNode;
@@ -359,6 +377,11 @@
 
                 if (action === "toggle") {
                     toggleAction(src);
+                    return;
+                }
+
+                if (action === "toggleManagement") {
+                    toggleManagementAction(src);
                     return;
                 }
 
