@@ -301,7 +301,7 @@ button {
     position: absolute;
     right: 0.5rem;
     top: 5rem;
-    /* height: 2rem; */
+    font-size: 1.6rem;
 }
 
 .metadata {

@@ -17,11 +17,18 @@ export class ActionHandler {
         this.repeater = undefined;
         
         document.addEventListener("mousedown", (e) => this.down_(e));
-        document.addEventListener("mouseup", (e) => this.up_(e) );
+        document.addEventListener("mouseup", (e) => this.up_(e));
+
+        document.addEventListener("touchstart", (e) => this.down_(e));
+        document.addEventListener("touchend", (e) => { this.up_(e); e.preventDefault(); });
     }
 
     down_(e) {
-        if (e.buttons !== 1) {
+        if ((e.buttons !== undefined) && e.buttons !== 1) {
+            return;
+        }
+
+        if ((e.touches !== undefined) && e.touches.length !== 1) {
             return;
         }
 
@@ -50,7 +57,11 @@ export class ActionHandler {
     }
 
     up_(e) {
-        if (e.buttons !== 0) {
+        if ((e.buttons !== undefined) && e.buttons !== 0) {
+            return;
+        }
+
+        if ((e.touches !== undefined) && e.touches.length !== 0) {
             return;
         }
 
