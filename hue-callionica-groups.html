@@ -12,11 +12,13 @@
         import { sortBy, getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
         import { paramsSort } from "./hue-callionica-ui.js";
 
-        import { Switch } from "./hue-callionica-switch.js"
+        import { ActionHandler } from "./hue-callionica-switch.js"
 
         let bridge;
         let connection;
         let data;
+
+        let actionHandler;
 
         async function update() {
             if (bridge === undefined) {
@@ -362,44 +364,73 @@
                 document.location = "hue-callionica-components.html"; // TODO
             }
 
-            document.onclick = (evt) => {
-                let src = evt.srcElement;
+            class AH extends ActionHandler {
+                up(src, id) {
+                    switch (id) {
+                        case "toggle": {
+                            toggleAction(src);
+                            break;
+                        }
+                        case "toggleManagement": {
+                            toggleManagementAction(src);
+                            break;
+                        }
+                        case "select": {
+                            selectAction(src);
+                            break;
+                        }
+                        case "control": {
+                            controlAction(src);
+                            break;
+                        }
+                        case "enable": {
+                            enableAction(src);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            actionHandler = new AH(document);
+
+            // document.onclick = (evt) => {
+            //     let src = evt.srcElement;
                 
-                while (src && src.dataset.action == undefined) {
-                    src = src.parentNode;
-                }
+            //     while (src && src.dataset.action == undefined) {
+            //         src = src.parentNode;
+            //     }
                 
-                if (src == undefined) {
-                    return;
-                }
+            //     if (src == undefined) {
+            //         return;
+            //     }
 
-                const action = src.dataset.action;
+            //     const action = src.dataset.action;
 
-                if (action === "toggle") {
-                    toggleAction(src);
-                    return;
-                }
+            //     if (action === "toggle") {
+            //         toggleAction(src);
+            //         return;
+            //     }
 
-                if (action === "toggleManagement") {
-                    toggleManagementAction(src);
-                    return;
-                }
+            //     if (action === "toggleManagement") {
+            //         toggleManagementAction(src);
+            //         return;
+            //     }
 
-                if (action === "select") {
-                    selectAction(src);
-                    return;
-                }
+            //     if (action === "select") {
+            //         selectAction(src);
+            //         return;
+            //     }
 
-                if (action === "control") {
-                    controlAction(src);
-                    return;
-                }
+            //     if (action === "control") {
+            //         controlAction(src);
+            //         return;
+            //     }
 
-                if (action === "enable") {
-                    enableAction(src);
-                    return;
-                }
-            };
+            //     if (action === "enable") {
+            //         enableAction(src);
+            //         return;
+            //     }
+            // };
 
             const updateInterval = 2.0 * 1000;
             window.setInterval(() => {
