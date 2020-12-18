@@ -141,7 +141,14 @@
                         e.innerHTML = `<div><span class="group-name"></span><button class="group-toggle" data-action="toggle"></button></div>
                         <div class="controls">
                             <span class="group-name">Power management</span><button class="group-toggle" data-action="toggleManagement"></button>
-                        </div>`;
+                            <span class="dimmer">
+                                <button data-action="dimmer" data-button="1000">I</button>
+                                <button data-action="dimmer" data-button="2000">+</button>
+                                <button data-action="dimmer" data-button="3000">-</button>
+                                <button data-action="dimmer" data-button="4000">O</button>
+                            </span>
+                        </div>
+                        `;
                         return e;
                     }
 
@@ -263,6 +270,19 @@
                 }
             }
 
+            async function sendActionValue(groupID, actionValue) {
+                const group = data.groups[groupID];
+                const connections = getConnectedComponents(group, data);
+                const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
+
+                if (powerManagedZone) {
+
+                    const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
+
+                    await setSensorValue(connection, action, actionValue);
+                }
+            }
+
             function selectAction(e) {
                 const removeSelection = (e.dataset.selected === "true");
 
@@ -351,6 +371,24 @@
                 });
             }
 
+            function dimmerAction(src, btnEvent) {
+                const btn = parseInt(src.dataset.button, 10);
+
+                while (src && src.dataset.group == undefined) {
+                    src = src.parentNode;
+                }
+
+                if (src == undefined) {
+                    return;
+                }
+
+                const id = src.dataset.group;
+                const value = btn + btnEvent;
+                sendActionValue(id, value).then(x => {
+                    setTimeout(() => update().then(x => console.log(x)), 0.2 * 1000);
+                });
+            }
+
             function controlAction(src) {
                 while (src && src.dataset.group == undefined) {
                     src = src.parentNode;
@@ -365,72 +403,71 @@
             }
 
             class AH extends ActionHandler {
+                down(src, id) {
+                    switch (id) {
+                        case "dimmer": {
+                            dimmerAction(src, 0);
+                            return;
+                        }
+                    }
+                }
+
+                repeat(src, id) {
+                    switch (id) {
+                        case "dimmer": {
+                            dimmerAction(src, 1);
+                            return;
+                        }
+                    }
+                }
+
                 up(src, id) {
                     switch (id) {
                         case "toggle": {
                             toggleAction(src);
-                            break;
+                            return;
                         }
                         case "toggleManagement": {
                             toggleManagementAction(src);
-                            break;
+                            return;
                         }
                         case "select": {
                             selectAction(src);
-                            break;
+                            return;
                         }
                         case "control": {
                             controlAction(src);
-                            break;
+                            return;
                         }
                         case "enable": {
                             enableAction(src);
-                            break;
+                            return;
+                        }
+                    }
+
+                    super.up(src, id);
+                }
+
+                upShort(src, id) {
+                    switch (id) {
+                        case "dimmer": {
+                            dimmerAction(src, 2);
+                            return;
+                        }
+                    }
+                }
+
+                upLong(src, id) {
+                    switch (id) {
+                        case "dimmer": {
+                            dimmerAction(src, 3);
+                            return;
                         }
                     }
                 }
             }
 
             actionHandler = new AH(document);
-
-            // document.onclick = (evt) => {
-            //     let src = evt.srcElement;
-                
-            //     while (src && src.dataset.action == undefined) {
-            //         src = src.parentNode;
-            //     }
-                
-            //     if (src == undefined) {
-            //         return;
-            //     }
-
-            //     const action = src.dataset.action;
-
-            //     if (action === "toggle") {
-            //         toggleAction(src);
-            //         return;
-            //     }
-
-            //     if (action === "toggleManagement") {
-            //         toggleManagementAction(src);
-            //         return;
-            //     }
-
-            //     if (action === "select") {
-            //         selectAction(src);
-            //         return;
-            //     }
-
-            //     if (action === "control") {
-            //         controlAction(src);
-            //         return;
-            //     }
-
-            //     if (action === "enable") {
-            //         enableAction(src);
-            //         return;
-            //     }
-            // };
 
             const updateInterval = 2.0 * 1000;
             window.setInterval(() => {
