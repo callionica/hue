@@ -306,6 +306,32 @@ button {
     font-size: 1.6rem;
 }
 
+.dimmer button {
+    padding: 0;
+    min-width: 3rem;
+}
+
+.dimmer button[data-button='1000'] {
+    border-radius: 0.4rem 0rem 0rem 0.4rem;
+}
+
+.dimmer button[data-button='2000'] {
+    border-radius: 0;
+    border-left: 0;
+    width: 3.6rem;
+}
+
+.dimmer button[data-button='3000'] {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    width: 3.4rem;
+}
+
+.dimmer button[data-button='4000'] {
+    border-radius: 0.0rem 0.4rem 0.4rem 0rem;
+}
+
 .metadata {
     color: whitesmoke;
 }
