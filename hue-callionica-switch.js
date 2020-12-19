@@ -81,14 +81,11 @@ export class ActionHandler {
             if (e.touches.length !== 0) {
                 return;
             }
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
         }
 
         clearInterval(this.repeater);
-
-        console.log(clientX, clientY);
-        console.log(this.clientX, this.clientY);
 
         const limit = 4;
         if ((Math.abs(clientX - this.clientX) > limit) || (Math.abs(clientY - this.clientY) > limit)) {
