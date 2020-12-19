@@ -26,6 +26,8 @@ body {
 }
 
 body[data-page='groups'] {
+    -moz-user-select: none;
+    -webkit-user-select: none;
     background-color: rgb(var(--back-color));
     color: rgb(var(--text-color));
 }
