@@ -20,6 +20,14 @@
 
         let actionHandler;
 
+        function getPowerLevel(pmz) {
+            return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
+        }
+
+        function getPowerManagement(pmz) {
+            return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
+        }
+
         async function update() {
             if (bridge === undefined) {
                 bridge = loadCurrentBridge();
@@ -122,13 +130,7 @@
                         return { anyOn, allOn, anyUnreachable, allUnreachable };
                     }
 
-                    function getPowerLevel(pmz) {
-                        return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerLevel")?.value;
-                    }
-
-                    function getPowerManagement(pmz) {
-                        return pmz?.sensors.find(sensor => sensor.metadata.modelid === "PM.Zone.PowerManagement")?.value;
-                    }
+                    
 
                     const lights = summarizeLights(group, data);
 
@@ -241,17 +243,16 @@
                 const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
 
                 if (powerManagedZone) {
-                    // const powerLevelSensor = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.PowerLevel")?.id;
+                    if (turnOn || (getPowerLevel(powerManagedZone).value !== 0)) {
+                        const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
 
-                    // await setSensorValue(connection, powerLevelSensor, turnOn ? 2 : 0);
-
-                    const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
-
-                    // Use the dimmer button actions to toggle the lights
-                    await setSensorValue(connection, action, turnOn ? 1000 : 4002);
-                } else {
-                    await setGroupOn(connection, groupID, turnOn);
+                        // Use the dimmer button actions to toggle the lights
+                        await setSensorValue(connection, action, turnOn ? 1000 : 4002);
+                        return;
+                    }
                 }
+
+                await setGroupOn(connection, groupID, turnOn);
             }
 
             async function toggleManagement(groupID, turnOn) {
