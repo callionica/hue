@@ -176,9 +176,9 @@
                     }
 
                     ds.turnOn = !lights.anyOn;
-                    /*if (powerLevel) {
-                        ds.turnOn = powerLevel.value < 2;
-                    }*/
+                    if (powerLevel) {
+                        ds.turnOn = (powerLevel.value === 1) || !lights.anyOn;
+                    }
 
                     if (powerManagement) {
                         ds.action = "select";
