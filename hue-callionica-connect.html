@@ -7,7 +7,7 @@
     <title>Hue Connect Bridges</title>
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
-        import { loadCurrentBridge, storeCurrentBridge, bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
+        import { loadCurrentBridge, storeCurrentBridge, bridgeByIP, bridgeIPsByDiscovery, bridgesByDiscovery, bridgesByLocalDiscovery, bridgesByRemoteDiscovery, loadConnection, storeConnection, testConnection, register } from "./hue-callionica-connect.js";
 
         const currentBridge = loadCurrentBridge();
 
@@ -351,8 +351,15 @@
 
         async function main() {
             document.onclick = onclick;
+            
+            const locals = await bridgesByLocalDiscovery();
+            const remotes = await bridgesByRemoteDiscovery();
 
-            let bridges = await bridgeIPsByDiscovery();
+            // Later addresses override earlier ones (if they still work)
+            // so put the locals after the remotes
+            const bridges = [...remotes, ...locals];
+
+            // let bridges = await bridgeIPsByDiscovery();
 
             connector.ui.status.innerText = "";
 
