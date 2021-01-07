@@ -11,6 +11,10 @@
         import { getAll } from "./hue-callionica.js";
 
         async function main() {
+            const bridge = loadCurrentBridge();
+            if (bridge === undefined) {
+                document.body.dataset.disconnected = true;
+            }
         }
 
         main().then(x => console.log("Done"));
@@ -21,21 +25,23 @@
     <p>Here you can see the major sections of this app.</p>
     <hr/>
     <!--<h2>Sections</h2>-->
-    <h3>Essentials</h3>
+    <h3>Control Panels</h3>
     <p><a href="hue-callionica-groups.html">Rooms & Zones</a></p>
+    <p><a href="hue-callionica-components.html">Components</a></p>
+
+    <h3>Overview</h3>
+    <p><a href="hue-callionica-statistics.html">Statistics</a></p>
 
     <h3>Bridges</h3>
     <p><a href="hue-callionica-connect.html">Bridges › Connect</a></p>
-    <p><a href="hue-callionica-bridges.html">Bridges › Manage</a></p>
+    <p><a href="hue-callionica-bridges.html">Bridges › Details</a></p>
     
     <h3>Components</h3>
-    <p><a href="hue-callionica-components.html">Components</a></p>
     <p><a href="hue-callionica-power-managed-zone.html">Power managed zone</a></p>
     <p><a href="hue-callionica-power-managed-dimmer.html">Power managed dimmer</a></p>
     <p><a href="hue-callionica-power-managed-motion-sensor.html">Power managed motion sensor</a></p>
 
     <h3>Advanced</h3>
-    <p><a href="hue-callionica-statistics.html">Statistics</a></p>
     <p><a href="hue-callionica-data.html">Data</a></p>
 </body>
 </html>

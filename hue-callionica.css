@@ -37,6 +37,10 @@ body[data-page='groups'] a {
     background-color: rgb(var(--button-color));
 }
 
+body[data-disconnected='true'] a[href='hue-callionica-connect.html'] {
+    background-color: yellow;
+}
+
 h1 {
     font-size: 18pt;
 }
