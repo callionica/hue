@@ -33,9 +33,9 @@
         }
 
         function timeSelector(s) {
-            const names = ["1 min", "5 mins", "15 mins", "30 mins", "1 hour", "2 hours", "4 hours", "8 hours"]
+            const names = ["1 min", "5 mins", "15 mins", "30 mins", "1 hour", "2 hours", "4 hours", "8 hours", "16 hours"];
             return `<select>\n` + 
-                    ["00:01:00", "00:05:00", "00:15:00", "00:30:00", "01:00:00", "02:00:00", "04:00:00", "08:00:00"].map((g, n) => `<option value="${g}" ${s === n ? "selected" : ""}>${names[n]}</option>`).join("\n") +
+                    ["00:01:00", "00:05:00", "00:15:00", "00:30:00", "01:00:00", "02:00:00", "04:00:00", "08:00:00", "16:00:00"].map((g, n) => `<option value="${g}" ${s === n ? "selected" : ""}>${names[n]}</option>`).join("\n") +
                     `</select>\n`;
         }
 
