@@ -20,7 +20,7 @@
                 this.name_ = name || "Bridge";
                 this.status_ = "";
 
-                this.root.innerHTML = `<div id="${ip}" class="connection"><p><span class="bridgename">${this.name_}</span></p><p>ID: <span class="bridgeid">${id}</p><p>IP address: <span class="bridgeip">${ip}</span></p><p>Status: <span class="bridgestatus">Not connected</span></p></div>`;
+                this.root.innerHTML = `<div id="${ip}" class="connection"><p><span class="bridgename">${this.name_}</span></p><p>ID: <span class="bridgeid">${id}</p><p>Address: <span class="bridgeip">${ip}</span></p><p>Status: <span class="bridgestatus">Not connected</span></p></div>`;
                 //`<span class="bridgename">${this.name_}</span>: <span class="bridgeip">${ip}</span> <span class="bridgestatus"></span>`;
 
                 this.rootName = this.root.querySelector(".bridgename");
