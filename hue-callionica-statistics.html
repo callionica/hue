@@ -30,7 +30,7 @@
                 ["Groups", () => o.groups.length, capabilities.groups.total],
                 ["Lights", () => o.lights.length, capabilities.lights.total],
                 ["Scenes", () => o.scenes.length, capabilities.scenes.total],
-                ["Tokens", () => Object.values(data.config.whitelist).length],
+                ["Passwords", () => Object.values(data.config.whitelist).length],
             ];
 
             const html = `<p>Name: ${connection.bridge.name}</p>` 

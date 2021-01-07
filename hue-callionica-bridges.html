@@ -40,7 +40,7 @@
 
             const html = connections.map(connection => {
                 const isDefault = connection.bridge.id === currentBridge.id;
-                return `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>IP address: <span class="bridgeip">${connection.bridge.ip}</span></p><p>Token: <span class="token">${connection.token}</span></p><p><button data-id="${connection.bridge.id}" data-op="set-default" ${isDefault ? "disabled" : ""}>Set as default</button></p></div>`
+                return `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>Address: <span class="bridgeip">${connection.bridge.ip}</span></p><p>Password: <span class="token">${connection.token}</span></p><p><button data-id="${connection.bridge.id}" data-op="set-default" ${isDefault ? "disabled" : ""}>Set as default</button></p></div>`
             }).join("\n");
             document.getElementById("connections").innerHTML = html;
         }
