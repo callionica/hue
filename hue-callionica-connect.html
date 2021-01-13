@@ -350,6 +350,11 @@
         }
 
         async function main() {
+            const accepted = localStorage.getItem("hue-callionica-disclaimer");
+            if (accepted !== "accepted") {
+                document.location = "hue-callionica-disclaimer.html";
+            }
+            
             document.onclick = onclick;
             
             const locals = await bridgesByLocalDiscovery();
