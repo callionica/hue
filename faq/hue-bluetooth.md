@@ -72,4 +72,11 @@ Yes. In addition, the name that you give the bulb appears to be stored externall
 ### Does the Hue BT app help you set up a Hue bridge?
 Yes. The Hue Bluetooth app is useful even if you never intend to use the Bluetooth functionality of the bulbs in normal use. When you add a light to a Hue bridge, you typically need to have the bridge and the bulb in close proximity to each other. This can be challenging since the bridge is tied by two wires: power and ethernet. The distance requirement is similar when setting up Bluetooth: you need the device running the Hue Bluetooth app to be close to the bulb. The difference is that the device is usually a phone with no wires so it can be easier to put it close to the bulb. Once you have done Bluetooth setup, you can transfer all the lights to the Hue bridge. This is particularly useful for existing setups where you need to factory reset the bridge, or replace a bridge, or add a new bridge using installed bulbs and where you don't have the serial numbers to hand. You can get your phone close to the bulbs without needing to pull them out, do the Bluetooth setup, then transfer all the lights to the Hue bridge using the Hue Bluetooth app.
 
+### Will I be plagued by loads of Hue Bluetooth bulbs appearing in my Bluetooth menus on my phone or computer?
+Not on Mac or iOS. The Bluetooth-enabled bulbs won't show up in the operating system's Bluetooth menus unless you have already paired to them using the Hue Bluetooth app. Even then, on iOS 14, while paired bulbs will show up in Settings > Bluetooth > My Devices, they don't show up in the Bluetooth menu commonly used for switching headphones.
+
+So if you don't use the Bluetooth feature of the bulbs, you will not see the Bluetooth bulbs on Mac or iOS at all.
+
+(Android and Windows have not been tested.)
+
 
