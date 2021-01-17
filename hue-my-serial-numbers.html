@@ -17,6 +17,7 @@
         // const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
 
         // Get detail for all the lights in a group with calculated properties: on, displayName, serialNumber
+        // TODO: THIS MUTATES THE LIGHT OBJECT TO ADD PROPERTIES
         function lightsInGroup(group, data) {
             return group.lights.map(lightID => {
                 const light = data.lights[lightID];
@@ -26,7 +27,8 @@
                     light.displayName = m.groups.displayName;
                     light.serialNumber = m.groups.serialNumber;
                 }
-                return { id: lightID, ...light, on: (light.state.on && light.state.reachable)};
+                light.on = (light.state.on && light.state.reachable);
+                return { id: lightID, ...light };
             });
         }
 
@@ -54,7 +56,7 @@
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAllCategories(connection);
             const gs = groups(data);
-            const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, light.manufacturername, prodmodel(light), light.productname, light.type, light.config.archetype].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
+            const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, light.manufacturername, prodmodel(light), light.productname, light.type, light.config.archetype, light.on ? "ON" : ""].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
             document.getElementById("data").innerHTML = html;
         }
 
