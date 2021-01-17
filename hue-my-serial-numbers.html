@@ -51,12 +51,24 @@
             return light.modelid;
         }
 
+        function mf(name) {
+            if (name.startsWith("Signify")) {
+                return "Signify";
+            }
+
+            if (name.startsWith("IKEA")) {
+                return "IKEA";
+            }
+
+            return name;
+        }
+
         async function main() {
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAllCategories(connection);
             const gs = groups(data);
-            const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, light.manufacturername, prodmodel(light), light.productname, light.type, light.config.archetype, light.on ? "ON" : ""].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
+            const html = "<table>" + Object.entries(data.lights).map(([id, light], n) => `<tr><td>${[n + 1, light.serialNumber, light.displayName, id, light.uniqueid, mf(light.manufacturername), prodmodel(light), light.productname, light.type, light.config.archetype, light.on ? "ON" : ""].join("</td><td>")}</td></tr>`).join("\n") + "</table>";
             document.getElementById("data").innerHTML = html;
         }
 
