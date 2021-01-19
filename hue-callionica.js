@@ -2300,7 +2300,7 @@ export async function copyButton(connection, data, oldSensorID, oldButton, newSe
     }
 }
 
-export async function copyDimmer(connection, data, oldSensorID, newSensorID) {
+export async function copyButtonAccessory(connection, data, oldSensorID, newSensorID) {
     for (const button of [1000, 2000, 3000, 4000]) {
         await copyButton(connection, data, oldSensorID, button, newSensorID, button);
     }
