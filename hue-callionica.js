@@ -2236,3 +2236,51 @@ export function displayLocalTime(value) {
 }
 
 // TODO - freeze/copy metadata
+
+/*
+Returns true if the condition matches the specified sensor/button combo.
+Otherwise returns false.
+ONLY DEALING WITH EQ OPERATOR
+*/
+export function isMatchingButtonCondition(condition, sensorID, buttonID) {
+    const sensorAddress = `/sensors/${sensorID}/state/buttonevent`;
+    if (condition.address === sensorAddress) {
+        if (condition.operator === "eq") {
+            const buttonValue = `${buttonID}`;
+            return condition.value === buttonValue;
+        }
+    }
+    return false;
+}
+
+/*
+Returns an array of rules using the specified button as a condition
+Rules is an array of rules
+*/
+export function getButtonRules(rules, sensorID, buttonID) {
+    return rules.filter(rule => rule.conditions.some(condition => isMatchingButtonCondition(condition, sensorID, buttonID)));
+}
+
+export function convertButtonRule(rule, oldSensorID, oldButtonID, newSensorID, newButtonID) {
+    const newRule = { name: rule.name, conditions: [...rule.conditions], actions: [...rule.actions] };
+
+    const oldSensorAddress = `/sensors/${oldSensorID}/state/buttonevent`;
+    const oldSensorLU = `/sensors/${oldSensorID}/state/lastupdated`;
+    const newSensorAddress = `/sensors/${newSensorID}/state/buttonevent`;
+    const newSensorLU = `/sensors/${newSensorID}/state/lastupdated`;
+    const oldButtonValue = `${oldButtonID}`;
+    const newButtonValue = `${newButtonID}`;
+
+    for (const condition of newRule.conditions) {
+        if (condition.address === oldSensorAddress) {
+            condition.address = newSensorAddress;
+            if (condition.value === oldButtonValue && condition.operator === "eq") {
+                condition.value = newButtonValue;
+            }
+        } else if (condition.address === oldSensorLU) {
+            condition.address = newSensorLU;
+        }
+    }
+
+    return newRule;
+}
