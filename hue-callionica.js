@@ -2242,11 +2242,11 @@ Returns true if the condition matches the specified sensor/button combo.
 Otherwise returns false.
 ONLY DEALING WITH EQ OPERATOR
 */
-export function isMatchingButtonCondition(condition, sensorID, buttonID) {
+export function isMatchingButtonCondition(condition, sensorID, buttonEvent) {
     const sensorAddress = `/sensors/${sensorID}/state/buttonevent`;
     if (condition.address === sensorAddress) {
         if (condition.operator === "eq") {
-            const buttonValue = `${buttonID}`;
+            const buttonValue = `${buttonEvent}`;
             return condition.value === buttonValue;
         }
     }
@@ -2257,23 +2257,23 @@ export function isMatchingButtonCondition(condition, sensorID, buttonID) {
 Returns an array of rules using the specified button as a condition
 Rules is an array of rules
 */
-export function getButtonRules(rules, sensorID, buttonID) {
-    return rules.filter(rule => rule.conditions.some(condition => isMatchingButtonCondition(condition, sensorID, buttonID)));
+export function getButtonRules(rules, sensorID, buttonEvent) {
+    return rules.filter(rule => rule.conditions.some(condition => isMatchingButtonCondition(condition, sensorID, buttonEvent)));
 }
 
-export function convertButtonRule(rule, oldSensorID, oldButtonID, newSensorID, newButtonID) {
+export function convertButtonRule(rule, oldSensorID, oldButtonEvent, newSensorID, newButtonEvent) {
     const newRule = { name: rule.name, conditions: [...rule.conditions], actions: [...rule.actions] };
 
-    const oldSensorAddress = `/sensors/${oldSensorID}/state/buttonevent`;
+    const oldSensorBE = `/sensors/${oldSensorID}/state/buttonevent`;
     const oldSensorLU = `/sensors/${oldSensorID}/state/lastupdated`;
-    const newSensorAddress = `/sensors/${newSensorID}/state/buttonevent`;
+    const newSensorBE = `/sensors/${newSensorID}/state/buttonevent`;
     const newSensorLU = `/sensors/${newSensorID}/state/lastupdated`;
-    const oldButtonValue = `${oldButtonID}`;
-    const newButtonValue = `${newButtonID}`;
+    const oldButtonValue = `${oldButtonEvent}`;
+    const newButtonValue = `${newButtonEvent}`;
 
     for (const condition of newRule.conditions) {
-        if (condition.address === oldSensorAddress) {
-            condition.address = newSensorAddress;
+        if (condition.address === oldSensorBE) {
+            condition.address = newSensorBE;
             if (condition.value === oldButtonValue && condition.operator === "eq") {
                 condition.value = newButtonValue;
             }
@@ -2283,4 +2283,25 @@ export function convertButtonRule(rule, oldSensorID, oldButtonID, newSensorID, n
     }
 
     return newRule;
+}
+
+export async function copyButtonEvent(connection, data, oldSensorID, oldButtonEvent, newSensorID, newButtonEvent) {
+    const rules = getButtonRules(Object.values(data.rules), oldSensorID, oldButtonEvent);
+    const converted = rules.map(rule => convertButtonRule(rule, oldSensorID, oldButtonEvent, newSensorID, newButtonEvent));
+
+    for (const rule of converted) {
+        await createRule(connection, rule);
+    }
+}
+
+export async function copyButton(connection, data, oldSensorID, oldButton, newSensorID, newButton) {
+    for (const event of [0, 1, 2, 3]) {
+        await copyButtonEvent(connection, data, oldSensorID, oldButton + event, newSensorID, newButton + event);
+    }
+}
+
+export async function copyDimmer(connection, data, oldSensorID, newSensorID) {
+    for (const button of [1000, 2000, 3000, 4000]) {
+        await copyButton(connection, data, oldSensorID, button, newSensorID, button);
+    }
 }
