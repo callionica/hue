@@ -2238,35 +2238,39 @@ export function displayLocalTime(value) {
 // TODO - freeze/copy metadata
 
 /*
-Returns true if the condition matches the specified sensor/button combo.
+Returns true if the condition matches the specified sensor-property-value.
 Otherwise returns false.
 ONLY DEALING WITH EQ OPERATOR
 */
-export function isMatchingButtonCondition(condition, sensorID, buttonEvent) {
-    const sensorAddress = `/sensors/${sensorID}/state/buttonevent`;
+export function isMatchingCondition(condition, sensorID, property, value) {
+    const sensorAddress = `/sensors/${sensorID}/state/${property}`;
     if (condition.address === sensorAddress) {
         if (condition.operator === "eq") {
-            const buttonValue = `${buttonEvent}`;
-            return condition.value === buttonValue;
+            const textValue = `${value}`;
+            return condition.value === textValue;
         }
     }
     return false;
 }
 
 /*
-Returns an array of rules using the specified button as a condition
+Returns an array of rules using the specified condition
 Rules is an array of rules
 */
-export function getButtonRules(rules, sensorID, buttonEvent) {
-    return rules.filter(rule => rule.conditions.some(condition => isMatchingButtonCondition(condition, sensorID, buttonEvent)));
+export function getMatchingRules(rules, sensorID, property, value) {
+    return rules.filter(rule => rule.conditions.some(condition => isMatchingCondition(condition, sensorID, property, value)));
 }
 
-export function convertButtonRule(rule, oldSensorID, oldButtonEvent, newSensorID, newButtonEvent) {
+export function convertButtonRule(
+    rule,
+    oldSensorID, oldProperty, oldButtonEvent,
+    newSensorID, newProperty, newButtonEvent,
+) {
     const newRule = { name: rule.name, conditions: [...rule.conditions], actions: [...rule.actions] };
 
-    const oldSensorBE = `/sensors/${oldSensorID}/state/buttonevent`;
+    const oldSensorBE = `/sensors/${oldSensorID}/state/${oldProperty}`;
     const oldSensorLU = `/sensors/${oldSensorID}/state/lastupdated`;
-    const newSensorBE = `/sensors/${newSensorID}/state/buttonevent`;
+    const newSensorBE = `/sensors/${newSensorID}/state/${newProperty}`;
     const newSensorLU = `/sensors/${newSensorID}/state/lastupdated`;
     const oldButtonValue = `${oldButtonEvent}`;
     const newButtonValue = `${newButtonEvent}`;
@@ -2286,8 +2290,12 @@ export function convertButtonRule(rule, oldSensorID, oldButtonEvent, newSensorID
 }
 
 export async function copyButtonEvent(connection, data, oldSensorID, oldButtonEvent, newSensorID, newButtonEvent) {
-    const rules = getButtonRules(Object.values(data.rules), oldSensorID, oldButtonEvent);
-    const converted = rules.map(rule => convertButtonRule(rule, oldSensorID, oldButtonEvent, newSensorID, newButtonEvent));
+
+    const oldProperty = data.sensors[newSensorID].type === "ZLLSwitch" ? "buttonevent" : "status";
+    const newProperty = data.sensors[newSensorID].type === "ZLLSwitch" ? "buttonevent" : "status";
+
+    const rules = getMatchingRules(Object.values(data.rules), oldSensorID, oldProperty, oldButtonEvent);
+    const converted = rules.map(rule => convertButtonRule(rule, oldSensorID, oldProperty, oldButtonEvent, newSensorID, newProperty, newButtonEvent));
 
     for (const rule of converted) {
         await createRule(connection, rule);
@@ -2300,8 +2308,18 @@ export async function copyButton(connection, data, oldSensorID, oldButton, newSe
     }
 }
 
-export async function copyButtonAccessory(connection, data, oldSensorID, newSensorID) {
-    for (const button of [1000, 2000, 3000, 4000]) {
-        await copyButton(connection, data, oldSensorID, button, newSensorID, button);
+export async function copyButtonAccessory(connection, data, sourceSensorID, destinationSensorID) {
+    // Only copy buttons present in the destination
+    const destination = data.sensors[destinationSensorID];
+    
+    // Switches can tell us the number of buttons
+    let buttons = destination?.capabilities?.inputs?.map(input => input.events[0].buttonevent);
+    if (buttons === undefined) {
+        // Generic sensors support up to 4 buttons
+        buttons = [1000, 2000, 3000, 4000];
+    }
+
+    for (const button of buttons) {
+        await copyButton(connection, data, sourceSensorID, button, destinationSensorID, button);
     }
 }
