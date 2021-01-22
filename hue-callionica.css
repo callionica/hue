@@ -368,6 +368,15 @@ button {
 .add-schedule {
     background-color: white;
 }
+
+.add-schedule select {
+    font-style: italic;
+}
+
+.add-schedule input {
+    font-style: italic;
+}
+
 .highlight {
     background-color: white;
 }
