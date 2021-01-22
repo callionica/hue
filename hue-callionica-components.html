@@ -121,7 +121,7 @@
 
         function propertyHTML(sensor, data) {
             let v = sensor.values ? valuesHTML(sensor) : "";
-            let result = `<div><span class="property">${sensor.metadata.property.replaceAll(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
+            let result = `<div id="sensors-${sensor.id}"><span class="property">${sensor.metadata.property.replaceAll(">", "›")}</span> = <span class="value" title="Last update: ${sensor.state.lastupdated}">${v}</span></div>`;
 
             let list = "";
             if (sensor.metadata.list) {
@@ -205,6 +205,7 @@
                 daylightAgenda = `<div style="font-weight: bold; margin-top: 12pt;">Daylight Schedule</div><table>` + component.daylightAgenda.map(a => "<tr><td>" + [displayLocalTime(a.localTime), a.sensor.metadata.property.replaceAll(">", "›"), a.sensor.values.filter(v => v.value === a.value).map(p => p.name).join(", ")].join("</td><td>") + "</td></tr>").join("\n") + "</table>";
             }
             const root = document.createElement("div");
+            root.id = `components-${component.id}`;
             root.className = "component";
             var html = `
             <h1>${component.name}</h1>
@@ -305,7 +306,11 @@
         //     main().then(x => console.log("Update"));
         // }, oneSecond);
 
-        main().then(x => console.log("Initial"));
+        main().then(x => {
+            if (document.location.hash.length > 0) {
+                document.querySelector(document.location.hash)?.scrollIntoView();
+            }
+        });
         
     </script>
 </head>
