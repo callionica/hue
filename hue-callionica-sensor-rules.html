@@ -69,7 +69,6 @@
 
         function sensorStatsHTML(data, stats) {
             return `
-            <h1>Rules triggered by each sensor</h1>
             <h3>Component Sensors</h3>
             <table>
             ${stats.components.map(sensor => componentSensorHTML(data, sensor)).join("\n")}
@@ -86,28 +85,8 @@
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAll(connection);
-            const capabilities = await getCapabilities(connection);
 
-            const o = {};
-            ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
-
-            const counts = [
-                ["Components", () => o.components.length],
-                ["Sensors", () => o.sensors.length, capabilities.sensors.total],
-                // ["CLIP Sensors", () => (capabilities.sensors.clip.total - capabilities.sensors.clip.available), capabilities.sensors.clip.total],
-                ["Rules", () => o.rules.length, capabilities.rules.total],
-                ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0), capabilities.rules.conditions.total],
-                ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0), capabilities.rules.actions.total],
-                ["Schedules", () => o.schedules.length, capabilities.schedules.total],
-                ["Groups", () => o.groups.length, capabilities.groups.total],
-                ["Lights", () => o.lights.length, capabilities.lights.total],
-                ["Scenes", () => o.scenes.length, capabilities.scenes.total],
-                ["Passwords", () => Object.values(data.config.whitelist).length],
-            ];
-
-            const html = `<h1>${connection.bridge.name}</h1>
-            <h2>Statistics</h2>` 
-            + counts.map(count => `<p>${count[0]}: ${count[1]()}${count[2] ? " of " + count[2] : ""}</p>`).join("\n") + "<p> </p>" +  sensorStatsHTML(data, sensorStats(data));
+            const html = sensorStatsHTML(data, sensorStats(data));
             document.getElementById("statistics").innerHTML = html;
         }
 
@@ -116,7 +95,7 @@
 </head>
 <body>
     <h1>Hue Sensor Rules</h1>
-    <p>Here you can the rules triggered by each sensor.</p>
+    <p>Here you can see the number of rules triggered by each sensor.</p>
     <hr/>
     <div id="statistics"></div>
 </body>
