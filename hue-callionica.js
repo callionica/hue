@@ -1774,16 +1774,16 @@ const componentSensors = [
             { value: SC_LOW_POWER, name: "Lights > Low power", description: "Turn on the lights using the low power version of the current scene" },
             { value: SC_OFF, name: "Lights > Off", description: "Turn off the lights" },
 
-            { value: BTN_ON + BTN_initial_press, name: "Button > On > Down", description: "Press the button" },
+            { value: BTN_ON + BTN_initial_press, name: "Button > I > Down", description: "Press the button" },
 
-            { value: BTN_OFF + BTN_short_release, name: "Button > Off > Up (short)", description: "Release the button" },
-            { value: BTN_OFF + BTN_long_release, name: "Button > Off > Up (long)", description: "Release the button after a pause" },
+            { value: BTN_OFF + BTN_short_release, name: "Button > O > Up (short)", description: "Release the button" },
+            { value: BTN_OFF + BTN_long_release, name: "Button > O > Up (long)", description: "Release the button after a pause" },
 
-            { value: BTN_STAR_UP + BTN_initial_press, name: "Button > 🔆 > Down", description: "Press the button" },
-            { value: BTN_STAR_UP + BTN_repeat, name: "Button > 🔆 > Repeat", description: "Fires repeatedly while the button is down" },
+            { value: BTN_STAR_UP + BTN_initial_press, name: "Button > + > Down", description: "Press the button" },
+            { value: BTN_STAR_UP + BTN_repeat, name: "Button > + > Repeat", description: "Fires repeatedly while the button is down" },
 
-            { value: BTN_STAR_DOWN + BTN_initial_press, name: "Button > 🔅 > Down", description: "Press the button" },
-            { value: BTN_STAR_DOWN + BTN_repeat, name: "Button > 🔅 > Repeat", description: "Fires repeatedly while the button is down" },
+            { value: BTN_STAR_DOWN + BTN_initial_press, name: "Button > - > Down", description: "Press the button" },
+            { value: BTN_STAR_DOWN + BTN_repeat, name: "Button > - > Repeat", description: "Fires repeatedly while the button is down" },
         ]
     },
     {
