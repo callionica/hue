@@ -8,7 +8,78 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, getCapabilities } from "./hue-callionica.js";
+        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+
+        function sensorCategory(sensor) {
+            if (sensor.metadata) {
+                return "components";
+            }
+            
+            if (sensor.type === "ZLLSwitch") {
+                return "switches";
+            }
+
+            return "other";
+        }
+        
+        function sensorKind(sensor) {
+            if (sensor.metadata) {
+                return `${sensor.metadata.component} > ${sensor.metadata.property}`.replaceAll(">", "›");
+            }
+            return sensor.productname || sensor.modelid;
+        }
+
+        function sensorStats(data) {
+            const rules = Object.values(data.rules);
+            
+            const result = {
+                switches: [],
+                components: [],
+                other: [],
+            };
+
+            for (const sensor of Object.values(data.sensors)) {
+                const category = sensorCategory(sensor);
+                const o = {
+                    ...sensor,
+                    kind: sensorKind(sensor),
+                    rules: getSensorTriggeredRules(rules, sensor.id)
+                };
+                result[category].push(o);
+            }
+    
+            result.components = result.components.sort(sortBy(s => s.component.name));
+            result.switches = result.switches.sort(sortBy(s => s.name));
+            return result;
+        }
+
+        function sensorHTML(sensor) {
+            return `
+            <tr title="ID: ${sensor.id}"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${sensor.manufacturername}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
+            `;
+        }
+
+        function componentSensorHTML(data, sensor) {
+            const name = sensor.component?.name || sensor.name;
+            return `
+            <tr title="ID: ${sensor.id}"><td>${name}</td><td>${sensor.kind}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-components.html#components-${sensor.component.id}">➲</a></td></tr>
+            `;
+        }
+
+        function sensorStatsHTML(data, stats) {
+            return `
+            <h1>Rules triggered by each sensor</h1>
+            <h3>Component Sensors</h3>
+            <table>
+            ${stats.components.map(sensor => componentSensorHTML(data, sensor)).join("\n")}
+            </table>
+            <h3>Switches & Other Sensors</h3>
+            <table>
+            ${stats.switches.map(sensorHTML).join("\n")}
+            ${stats.other.map(sensorHTML).join("\n")}
+            </table>
+            `;
+        }
 
         async function main() {
             const bridge = loadCurrentBridge();
@@ -33,8 +104,9 @@
                 ["Passwords", () => Object.values(data.config.whitelist).length],
             ];
 
-            const html = `<p>Name: ${connection.bridge.name}</p>` 
-            + counts.map(count => `<p>${count[0]}: ${count[1]()}${count[2] ? " of " + count[2] : ""}</p>`).join("\n");
+            const html = `<h1>${connection.bridge.name}</h1>
+            <h2>Statistics</h2>` 
+            + counts.map(count => `<p>${count[0]}: ${count[1]()}${count[2] ? " of " + count[2] : ""}</p>`).join("\n") + "<p> </p>" +  sensorStatsHTML(data, sensorStats(data));
             document.getElementById("statistics").innerHTML = html;
         }
 
@@ -45,7 +117,6 @@
     <h1>Hue Statistics</h1>
     <p>Here you can see statistics for the current bridge.</p>
     <hr/>
-    <h2>Statistics</h2>
     <div id="statistics"></div>
 </body>
 </html>
