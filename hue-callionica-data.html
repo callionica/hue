@@ -10,8 +10,6 @@
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { getAllCategories, getCapabilities } from "./hue-callionica.js";
 
-        const hub = new URLSearchParams(document.location.search).get("hub") || "10.0.1.186";
-
         async function main() {
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
