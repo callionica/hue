@@ -54,25 +54,25 @@ export function hueToHtml(data) {
                 if (stack[stack.length - 1] === "scene") {
                     const o = data.scenes[value];
                     const n = (o && o.name) || "";
-                    return `<a href="#scenes/${value}" title="${n}">${JSON.stringify(value)}</a>`;
+                    return `<a href="#scenes-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 if (stack[stack.length - 1] === "lights") {
                     const o = data.lights[value];
                     const n = (o && o.name) || "";
-                    return `<a href="#lights/${value}" title="${n}">${JSON.stringify(value)}</a>`;
+                    return `<a href="#lights-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 if (stack[stack.length - 1] === "group") {
                     const o = data.groups[value];
                     const n = (o && o.name) || (value === "0" ? "All lights" : "");
-                    return `<a href="#groups/${value}" title="${n}">${JSON.stringify(value)}</a>`;
+                    return `<a href="#groups-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 if (stack[stack.length - 1] === "owner") {
                     const o = data.config.whitelist[value];
                     const n = (o && o.name) || "";
-                    return `<a href="#whitelist/${value}" title="${n}">${JSON.stringify(value)}</a>`;
+                    return `<a href="#whitelist-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 let prefix = "";
@@ -90,7 +90,7 @@ export function hueToHtml(data) {
                     const n = (o && o.name) || "";
                     const n1 = m ? (n + ": " + m) : n;
 
-                    const destination = pieces.join("/");
+                    const destination = pieces.join("-");
                     prefix = `<a href="#${destination}" title="${n1}">`;
                     suffix = `</a>`;
                 }
@@ -152,7 +152,7 @@ export function hueToHtml(data) {
             }
             const isResource = ((stack.length === 1) && (stack[stack.length - 1] !== "config")) || (stack[stack.length - 1] === "whitelist");
             if (isResource) {
-                result.push(`<span id="${stack[stack.length - 1]}/${name}">`);
+                result.push(`<span id="${stack[stack.length - 1]}-${name}">`);
             }
             stack.push(name);
             result.push(JSON.stringify(name) + ": " + hueJsonToHtml(value, stack, indent + 1) + (isLast ? "" : ","));
