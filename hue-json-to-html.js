@@ -78,7 +78,7 @@ export function hueToHtml(data) {
                 let prefix = "";
                 let suffix = "";
                 let pieces = value.split("/");
-                if (pieces.length >= 3) {
+                if (value[0] === "/" && pieces.length >= 3) {
                     if (pieces[0] === "" && pieces[1] === "api") {
                         pieces = pieces.slice(3, 5); // Skip 1) blank, 2) API and 3) username
                     } else {

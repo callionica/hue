@@ -19,7 +19,11 @@
             document.getElementById("data").innerHTML = html;
         }
 
-        main().then(x => console.log("Done"));
+        main().then(x => {
+            if (document.location.hash.length > 0) {
+                document.querySelector(document.location.hash)?.scrollIntoView();
+            }
+        });
     </script>
 </head>
 <body>
