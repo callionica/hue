@@ -2137,6 +2137,9 @@ export function rearrangeForHueComponents(data) {
         component.metadata = components.filter(c => c.name === component.description)[0];
 
         for (const sensor of component.sensors) {
+            // Link from sensor to component
+            sensor.component = component;
+
             const metadata = componentSensors.filter(cs => cs.modelid === sensor.modelid && cs.manufacturername == sensor.manufacturername)[0];
             if (metadata) {
                 sensor.metadata = metadata;
@@ -2259,6 +2262,11 @@ export function isMatchingCondition(condition, sensorID, property, value) {
         }
     }
     return false;
+}
+
+export function getSensorTriggeredRules(rules, sensorID) {
+    const prefix = `/sensors/${sensorID}/`;
+    return rules.filter(rule => rule.triggers.some(trigger => trigger.conditions.some(condition => condition.address.startsWith(prefix))));
 }
 
 /*
