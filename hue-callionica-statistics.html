@@ -48,8 +48,9 @@
                 result[category].push(o);
             }
     
-            result.components = result.components.sort(sortBy(s => s.component.name));
+            result.components = result.components.sort(sortBy(s => s.component.name + s.kind + s.component.id));
             result.switches = result.switches.sort(sortBy(s => s.name));
+            result.other = result.other.sort(sortBy(s => s.name));
             return result;
         }
 
