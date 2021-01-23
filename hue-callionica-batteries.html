@@ -25,7 +25,7 @@
         let connection;
 
         function batteryHTML(item, type) {
-            return `<tr id="${type}-${item.id}"><td>${item.name}</td><td class="numeric">${item.config.battery}</td></tr>`;
+            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})"><td>${item.name}</td><td class="numeric">${item.config.battery}</td></tr>`;
         }
 
         async function main() {
