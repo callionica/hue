@@ -58,16 +58,28 @@
             return result;
         }
 
+        function mf(name) {
+            if (name.startsWith("Signify")) {
+                return "Signify";
+            }
+
+            if (name.startsWith("IKEA")) {
+                return "IKEA";
+            }
+
+            return name;
+        }
+
         function sensorHTML(sensor) {
             return `
-            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${sensor.manufacturername}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
+            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${mf(sensor.manufacturername)}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
             `;
         }
 
         function componentSensorHTML(data, sensor) {
             const name = sensor.component?.name || sensor.name;
             return `
-            <tr title="ID: ${sensor.id}"><td>${name}</td><td>${sensor.kind}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-components.html#components-${sensor.component.id}">➲</a></td></tr>
+            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${name}</td><td>${sensor.kind}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-components.html#components-${sensor.component.id}">➲</a></td></tr>
             `;
         }
 
