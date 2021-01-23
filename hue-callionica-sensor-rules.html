@@ -6,6 +6,11 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hue Sensor Rules</title>
     <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        tr[data-external='true'] {
+            color: gray;
+        }
+    </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getCapabilities, getSensorTriggeredRules, getSensorConditionRules, getSensorUpdatingRules, getSensorUpdatingSchedules } from "./hue-callionica.js";
@@ -71,8 +76,13 @@
         }
 
         function sensorHTML(sensor) {
+            const external = 
+            (sensor.conditionRules.length === 0) &&
+            (sensor.updatingRules.length === 0) &&
+            (sensor.updatingSchedules.length === 0);
+
             return `
-            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${mf(sensor.manufacturername)}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
+            <tr data-external="${external}" title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${mf(sensor.manufacturername)}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
             `;
         }
 
