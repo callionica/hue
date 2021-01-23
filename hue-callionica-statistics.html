@@ -39,18 +39,18 @@
                 ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0), capabilities.rules.conditions.total],
                 ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0), capabilities.rules.actions.total],
                 ["Schedules", () => o.schedules.length, capabilities.schedules.total],
-                ["Groups", () => o.groups.length, capabilities.groups.total],
                 ["Lights", () => o.lights.length, capabilities.lights.total],
                 ["Scenes", () => o.scenes.length, capabilities.scenes.total],
+                ["Groups", () => o.groups.length, capabilities.groups.total],
+
+                ["Rooms", () => o.groups.filter(group => group.type === "Room").length],
+                ["Zones", () => o.groups.filter(group => group.type === "Zone").length],
 
                 ["Passwords", () => Object.values(data.config.whitelist).length],
                 
                 ["Switches", () => o.sensors.filter(sensor => sensor.type === "ZLLSwitch").length],
                 ["Motion sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLPresence").length],
                 ["Temperature sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLTemperature").length],
-
-                ["Rooms", () => o.groups.filter(group => group.type === "Room").length],
-                ["Zones", () => o.groups.filter(group => group.type === "Zone").length],
 
                 ["Components", () => o.components.length],
             ];
@@ -66,6 +66,7 @@
 
         async function _main() {
             try {
+                delete document.body.dataset.showConnection;
                 await main();
             } catch (error) {
                 document.body.dataset.showConnection = true;
@@ -87,7 +88,7 @@
     <h1>Hue Statistics</h1>
     <p>Here you can see statistics for the current bridge.</p>
     <hr/>
-    <div id="connection">Connection failure</div>
+    <div id="connection"></div>
     <div id="statistics"></div>
 </body>
 </html>
