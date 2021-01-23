@@ -69,8 +69,11 @@
 
         async function _main() {
             try {
-                delete document.body.dataset.showConnection;
                 await main();
+                delete document.body.dataset.showConnection;
+
+                // setTimeout(()=> _main(), 60*1000);
+
             } catch (error) {
                 document.body.dataset.showConnection = true;
 
@@ -81,6 +84,8 @@
                 } else {
                     e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
                 }
+
+                setTimeout(()=> _main(), 5*1000);
             }
         }
 
