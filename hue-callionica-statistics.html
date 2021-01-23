@@ -6,13 +6,25 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hue Statistics</title>
     <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        .limit {
+            color: lightgray;
+        }
+        .numeric {
+            text-align: right;
+        }
+    </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
 
+        let bridge;
+        let connection;
+
         async function main() {
-            const bridge = loadCurrentBridge();
-            const connection = await loadConnection("Callionica", bridge);
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+
             const data = await getAll(connection);
             const capabilities = await getCapabilities(connection);
 
@@ -20,9 +32,9 @@
             ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
 
             const counts = [
-                ["Components", () => o.components.length],
-                ["Sensors", () => o.sensors.length, capabilities.sensors.total],
-                // ["CLIP Sensors", () => (capabilities.sensors.clip.total - capabilities.sensors.clip.available), capabilities.sensors.clip.total],
+                // ["Sensors", () => o.sensors.length, capabilities.sensors.total],
+                ["Hardware sensors", () => (capabilities.sensors.zll.total - capabilities.sensors.zll.available), capabilities.sensors.zll.total],
+                ["Software sensors", () => (capabilities.sensors.clip.total - capabilities.sensors.clip.available), capabilities.sensors.clip.total],
                 ["Rules", () => o.rules.length, capabilities.rules.total],
                 ["Conditions", () => o.rules.reduce((p, c) => p + c.conditions.length, 0), capabilities.rules.conditions.total],
                 ["Actions", () => o.rules.reduce((p, c) => p + c.actions.length, 0), capabilities.rules.actions.total],
@@ -30,22 +42,52 @@
                 ["Groups", () => o.groups.length, capabilities.groups.total],
                 ["Lights", () => o.lights.length, capabilities.lights.total],
                 ["Scenes", () => o.scenes.length, capabilities.scenes.total],
+
                 ["Passwords", () => Object.values(data.config.whitelist).length],
+                
+                ["Switches", () => o.sensors.filter(sensor => sensor.type === "ZLLSwitch").length],
+                ["Motion sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLPresence").length],
+                ["Temperature sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLTemperature").length],
+
+                ["Rooms", () => o.groups.filter(group => group.type === "Room").length],
+                ["Zones", () => o.groups.filter(group => group.type === "Zone").length],
+
+                ["Components", () => o.components.length],
             ];
 
             const html = `<h1>${connection.bridge.name}</h1>
-            <h2>Statistics</h2>` 
-            + counts.map(count => `<p>${count[0]}: ${count[1]()}${count[2] ? " of " + count[2] : ""}</p>`).join("\n");
+            <h2>Statistics</h2>
+            <table>` 
+            + counts.map(count => `<tr><td>${count[0]}</td><td class="numeric">${count[1]()}</td><td>${count[2] ? "<span class='limit'> of " + count[2] + "</span>" : ""}</td></tr>`).join("\n")
+            + `</table>`
+            ;
             document.getElementById("statistics").innerHTML = html;
         }
 
-        main().then(x => console.log("Done"));
+        async function _main() {
+            try {
+                await main();
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+            }
+        }
+
+        _main().then(x => console.log("Done"));
     </script>
 </head>
 <body>
     <h1>Hue Statistics</h1>
     <p>Here you can see statistics for the current bridge.</p>
     <hr/>
+    <div id="connection">Connection failure</div>
     <div id="statistics"></div>
 </body>
 </html>

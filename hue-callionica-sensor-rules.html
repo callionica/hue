@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules, getSensorConditionRules, getSensorUpdatingRules, getSensorUpdatingSchedules } from "./hue-callionica.js";
 
         function sensorCategory(sensor) {
             if (sensor.metadata) {
@@ -31,6 +31,7 @@
 
         function sensorStats(data) {
             const rules = Object.values(data.rules);
+            const schedules = Object.values(data.schedules);
             
             const result = {
                 switches: [],
@@ -43,7 +44,10 @@
                 const o = {
                     ...sensor,
                     kind: sensorKind(sensor),
-                    rules: getSensorTriggeredRules(rules, sensor.id)
+                    rules: getSensorTriggeredRules(rules, sensor.id),
+                    conditionRules: getSensorConditionRules(rules, sensor.id),
+                    updatingRules: getSensorUpdatingRules(rules, sensor.id),
+                    updatingSchedules: getSensorUpdatingSchedules(schedules, sensor.id),
                 };
                 result[category].push(o);
             }
@@ -56,7 +60,7 @@
 
         function sensorHTML(sensor) {
             return `
-            <tr title="ID: ${sensor.id}"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${sensor.manufacturername}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
+            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${sensor.manufacturername}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
             `;
         }
 

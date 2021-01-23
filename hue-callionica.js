@@ -2269,6 +2269,24 @@ export function getSensorTriggeredRules(rules, sensorID) {
     return rules.filter(rule => rule.triggers.some(trigger => trigger.conditions.some(condition => condition.address.startsWith(prefix))));
 }
 
+export function getSensorConditionRules(rules, sensorID) {
+    const prefix = `/sensors/${sensorID}/`;
+    return rules.filter(rule => rule.conditions.some(condition => condition.address.startsWith(prefix)));
+}
+
+export function getSensorUpdatingRules(rules, sensorID) {
+    const prefix = `/sensors/${sensorID}/`;
+    return rules.filter(rule => rule.actions.some(action => action.address.startsWith(prefix)));
+}
+
+export function getSensorUpdatingSchedules(schedules, sensorID) {
+    const prefix = `/sensors/${sensorID}/`;
+    return schedules.filter(schedule => {
+        const address = schedule.command.address.replace(/^[/]api[/][^/]+[/]/, "/");
+        return address.startsWith(prefix);
+    });
+}
+
 /*
 Returns an array of rules using the specified condition
 Rules is an array of rules
