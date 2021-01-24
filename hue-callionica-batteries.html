@@ -20,6 +20,7 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+        import { localizeDateTime } from "./hue-callionica-ui.js";
 
         let bridge;
         let connection;

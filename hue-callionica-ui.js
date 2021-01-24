@@ -1,3 +1,14 @@
+export function localizeDateTime(dt) {
+    const d = new Date(dt);
+    const o = {weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"};
+    const oDate = {weekday: "short", day: "numeric", month: "long", year: "numeric"};
+    const oTime = {hour: "numeric", minute: "numeric", timeZoneName: "short"};
+    const displayDate = d.toLocaleDateString(undefined, oDate);
+    const displayTime = d.toLocaleTimeString(undefined, oTime).replace(/(:00)?:00( [AP]M)/i, "$2");
+    const display = d.toLocaleString(undefined, o).replace(/(:00)?:00( [AP]M)/i, "$2");
+
+    return { display, displayDate, displayTime };
+}
 
 export function paramsSort(params, items) {
     function getList(name) {

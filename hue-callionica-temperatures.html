@@ -28,21 +28,10 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+        import { localizeDateTime } from "./hue-callionica-ui.js";
 
         let bridge;
         let connection;
-
-        function localizeDateTime(dt) {
-            const d = new Date(dt);
-            const o = {weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"};
-            const oDate = {weekday: "short", day: "numeric", month: "long", year: "numeric"};
-            const oTime = {hour: "numeric", minute: "numeric", timeZoneName: "short"};
-            const displayDate = d.toLocaleDateString(undefined, oDate);
-            const displayTime = d.toLocaleTimeString(undefined, oTime).replace(/(:00)?:00( [AP]M)/i, "$2");
-            const display = d.toLocaleString(undefined, o).replace(/(:00)?:00( [AP]M)/i, "$2");
-
-            return { display, displayDate, displayTime };
-        }
 
         function CtoF(c) {
             return (c * 9/5) + 32;
@@ -52,7 +41,7 @@
             const c = (item.state.temperature)/100;
             const f = CtoF(c);
             const lastUpdated = localizeDateTime(item.state.lastupdated);
-            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})"><td>${item.name}</td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td>${lastUpdated.display}</td></tr>`;
+            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})"><td>${item.name}</td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td><time datetime="${item.state.lastupdated}">${lastUpdated.display}</time></td></tr>`;
         }
 
         async function main() {
