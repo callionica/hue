@@ -13,6 +13,14 @@
         .numeric {
             text-align: right;
         }
+        .celsius::after {
+            content: '℃';
+            color: gray;
+        }
+        .fahrenheit::after {
+            content: '℉';
+            color: gray;
+        }
         td:first-of-type {
             padding: 0;
         }
@@ -24,14 +32,27 @@
         let bridge;
         let connection;
 
+        function localizeDateTime(dt) {
+            const d = new Date(dt);
+            const o = {weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"};
+            const oDate = {weekday: "short", day: "numeric", month: "long", year: "numeric"};
+            const oTime = {hour: "numeric", minute: "numeric", timeZoneName: "short"};
+            const displayDate = d.toLocaleDateString(undefined, oDate);
+            const displayTime = d.toLocaleTimeString(undefined, oTime).replace(/(:00)?:00( [AP]M)/i, "$2");
+            const display = d.toLocaleString(undefined, o).replace(/(:00)?:00( [AP]M)/i, "$2");
+
+            return { display, displayDate, displayTime };
+        }
+
         function CtoF(c) {
             return (c * 9/5) + 32;
         }
 
         function temperatureHTML(item, type) {
-            const c = (item.state.temperature)/10;
+            const c = (item.state.temperature)/100;
             const f = CtoF(c);
-            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})"><td>${item.name}</td><td class="numeric">${c} C</td><td class="numeric">${f} F</td></tr>`;
+            const lastUpdated = localizeDateTime(item.state.lastupdated);
+            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})"><td>${item.name}</td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td>${lastUpdated.display}</td></tr>`;
         }
 
         async function main() {
@@ -41,10 +62,10 @@
             const data = await getAll(connection);
             const capabilities = await getCapabilities(connection);
 
-            const o = {};
-            ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
-
-            const sensors = o.sensors.filter(sensor => sensor?.state?.temperature !== undefined);
+            const sensors = Object.values(data.sensors).filter(sensor => sensor?.state?.temperature !== undefined);
+            // const sensors = [
+            //     { id: 1, name: "Hall", state: { temperature: 1861, lastupdated: "2021-01-23T16:04:00" } },
+            // ];
 
             const html = `<h1>${connection.bridge.name}</h1>
             <h2>Temperatures</h2>
