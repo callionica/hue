@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hue Temperatures</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        .limit {
+            color: lightgray;
+        }
+        .numeric {
+            text-align: right;
+        }
+        td:first-of-type {
+            padding: 0;
+        }
+    </style>
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+
+        let bridge;
+        let connection;
+
+        function CtoF(c) {
+            return (c * 9/5) + 32;
+        }
+
+        function temperatureHTML(item, type) {
+            const c = (item.state.temperature)/10;
+            const f = CtoF(c);
+            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})"><td>${item.name}</td><td class="numeric">${c} C</td><td class="numeric">${f} F</td></tr>`;
+        }
+
+        async function main() {
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+
+            const data = await getAll(connection);
+            const capabilities = await getCapabilities(connection);
+
+            const o = {};
+            ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
+
+            const sensors = o.sensors.filter(sensor => sensor?.state?.temperature !== undefined);
+
+            const html = `<h1>${connection.bridge.name}</h1>
+            <h2>Temperatures</h2>
+            <table>` 
+            + sensors.map(item => temperatureHTML(item, "sensor")).join("\n")
+            + `</table>`
+            ;
+            document.getElementById("temperatures").innerHTML = html;
+        }
+
+        async function _main() {
+            try {
+                await main();
+                delete document.body.dataset.showConnection;
+
+                // setTimeout(()=> _main(), 60*1000);
+
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+
+                setTimeout(()=> _main(), 3*1000);
+            }
+        }
+
+        _main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Hue Temperatures</h1>
+    <p>Here you can see temperatures for devices attached to the current bridge.</p>
+    <hr/>
+    <div id="connection"></div>
+    <div id="temperatures"></div>
+</body>
+</html>
