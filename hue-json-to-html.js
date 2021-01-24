@@ -26,7 +26,14 @@ export function hueToHtml(data) {
         });
     }
 
-    for (const [key, rule] of Object.entries(data.rules)) {
+    function entries(item) {
+        if (item == undefined) {
+            return [];
+        }
+        return Object.entries(item);
+    }
+
+    for (const [key, rule] of entries(data.rules)) {
         sortConditions(rule.conditions);
     }
 
@@ -52,25 +59,25 @@ export function hueToHtml(data) {
                 break;
             case "string":
                 if (stack[stack.length - 1] === "scene") {
-                    const o = data.scenes[value];
+                    const o = data.scenes?.[value];
                     const n = (o && o.name) || "";
                     return `<a href="#scenes-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 if (stack[stack.length - 1] === "lights") {
-                    const o = data.lights[value];
+                    const o = data.lights?.[value];
                     const n = (o && o.name) || "";
                     return `<a href="#lights-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 if (stack[stack.length - 1] === "group") {
-                    const o = data.groups[value];
+                    const o = data.groups?.[value];
                     const n = (o && o.name) || (value === "0" ? "All lights" : "");
                     return `<a href="#groups-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
 
                 if (stack[stack.length - 1] === "owner") {
-                    const o = data.config.whitelist[value];
+                    const o = data.config?.whitelist?.[value];
                     const n = (o && o.name) || "";
                     return `<a href="#whitelist-${value}" title="${n}">${JSON.stringify(value)}</a>`;
                 }
