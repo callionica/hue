@@ -20,6 +20,7 @@
             data.capabilities = await getCapabilities(connection);
 
             if (scenes != undefined) {
+                document.title = "Hue Data - Scenes";
                 for (const [id, scene] of Object.entries(data.scenes)) {
                     const completeScene = await getSceneComplete(connection, id);
                     scene.lightstates = completeScene.lightstates;
