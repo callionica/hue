@@ -319,6 +319,10 @@ export async function getScenes(connection) {
     return getCategory_(connection, "scenes");
 }
 
+export async function getSceneComplete(connection, sceneID) {
+    return getCategory(connection, `scenes/${sceneID}`);
+}
+
 export async function getScene(connection, groupID, name) {
     console.log(name);
     const scenes = await getScenes(connection);
