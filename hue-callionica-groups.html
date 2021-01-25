@@ -64,22 +64,7 @@
                 const params = new URLSearchParams(document.location.search);
                 groups = paramsSort(params, groups);
 
-                daypartEnabled = params.has("daypart");
-                if (daypartEnabled) {
-                    let title = `Rooms & Zones - Day Parts`;
-
-                    daypartOverride = params.get("daypart")?.toLowerCase();
-                    if (!dayparts.includes(daypartOverride)) {
-                        daypartOverride = undefined;
-                    }
-
-                    if (daypartOverride !== undefined) {
-                        title = `Rooms & Zones - ${daypartTitles[daypartOverride]}`
-                    }
-
-                    document.title = title;
-                    document.querySelector("h1").innerText = title;
-                }
+                
 
                 const components = Object.values(data.components);
 
@@ -231,6 +216,24 @@
         }
 
         async function main() {
+            const params = new URLSearchParams(document.location.search);
+            daypartEnabled = params.has("daypart");
+            if (daypartEnabled) {
+                let title = `Rooms & Zones - Four-Part Day`;
+
+                daypartOverride = params.get("daypart")?.toLowerCase();
+                if (!dayparts.includes(daypartOverride)) {
+                    daypartOverride = undefined;
+                }
+
+                if (daypartOverride !== undefined) {
+                    title = `Rooms & Zones - ${daypartTitles[daypartOverride]}`
+                }
+
+                document.title = title;
+                document.querySelector("h1").innerText = title;
+            }
+            
             await update();
 
             async function toggle(groupID, turnOn) {
@@ -263,25 +266,25 @@
                         return getTimeSeconds(date);
                     }
 
-                    const fourDayParts = {
+                    const fourPartDayTimes = {
                         morning: "T06:00:00",
                         day: "T08:30:00",
                         evening: "T19:30:00",
                         night: "T22:00:00",
                     };
 
-                    const fourDayPartScenes = {
+                    const fourPartDayScenes = {
                         morning: ["morning", "day", "dimmed"],
                         day: ["day", "morning", "bright"],
                         evening: ["evening", "day", "morning", "dimmed"],
                         night: ["night", "nightlight"],
                     };
 
-                    const fourDayPartSeconds = {
-                        morning: timeToSeconds(fourDayParts.morning),
-                        day: timeToSeconds(fourDayParts.day),
-                        evening: timeToSeconds(fourDayParts.evening),
-                        night: timeToSeconds(fourDayParts.night),
+                    const fourPartDaySeconds = {
+                        morning: timeToSeconds(fourPartDayTimes.morning),
+                        day: timeToSeconds(fourPartDayTimes.day),
+                        evening: timeToSeconds(fourPartDayTimes.evening),
+                        night: timeToSeconds(fourPartDayTimes.night),
                     }
 
                     // function getTimeOnly() {
@@ -293,27 +296,27 @@
                     //     return `T${time.hour.toString().padStart(2, "0")}:${time.minute.toString().padStart(2, "0")}:${time.second.toString().padStart(2, "0")}`;
                     // }
 
-                    function getFourDayPart() {
+                    function getFourPartDayPart() {
                         const now = getTimeSeconds();
 
-                        if (now < fourDayPartSeconds.morning) {
+                        if (now < fourPartDaySeconds.morning) {
                             return "night";
                         }
-                        if (now < fourDayPartSeconds.day) {
+                        if (now < fourPartDaySeconds.day) {
                             return "morning";
                         }
-                        if (now < fourDayPartSeconds.evening) {
+                        if (now < fourPartDaySeconds.evening) {
                             return "day";
                         }
-                        if (now < fourDayPartSeconds.night) {
+                        if (now < fourPartDaySeconds.night) {
                             return "evening";
                         }
 
                         return "night";
                     }
 
-                    const dayPart = daypartOverride || getFourDayPart();
-                    const possibleScenes = fourDayPartScenes[dayPart];
+                    const dayPart = daypartOverride || getFourPartDayPart();
+                    const possibleScenes = fourPartDayScenes[dayPart];
                     const scenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
                     let matchingScene;
