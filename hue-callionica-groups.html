@@ -219,7 +219,7 @@
             const params = new URLSearchParams(document.location.search);
             daypartEnabled = params.has("daypart");
             if (daypartEnabled) {
-                let title = `Rooms & Zones - Four-Part Day`;
+                let title = `Rooms & Zones - 4-Part Day`;
 
                 daypartOverride = params.get("daypart")?.toLowerCase();
                 if (!dayparts.includes(daypartOverride)) {
@@ -241,7 +241,7 @@
                 const connections = getConnectedComponents(group, data);
                 const powerManagedZone = connections.find(connection => connection.metadata.name === "Power Managed Zone" && connection.metadata.manufacturer === "Callionica");
 
-                if (powerManagedZone) {
+                if (powerManagedZone /*&& !daypartEnabled*/) {
                     if (turnOn || (getPowerLevel(powerManagedZone).value !== 0)) {
                         const action = powerManagedZone.sensors.find(sensor => sensor.modelid === "PM.Zone.Action")?.id;
 
