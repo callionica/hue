@@ -2185,7 +2185,7 @@ export function rearrangeForHueComponents(data) {
 
         component.agenda = agenda;
         component.daylightAgenda = daylightAgenda;
-        console.log(daylightAgenda);
+        // console.log(daylightAgenda);
 
         return component;
     });
