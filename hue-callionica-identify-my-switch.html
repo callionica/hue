@@ -61,7 +61,8 @@
             <table>` 
             + bestMatches.map(item => `<tr id="sensor-${item.id}" title="ID: ${item.id}"><td class="name">${item.name}</td><td>ID: ${item.id}</td><td class="dateTime"><time datetime="${item.state.lastupdated}">${localizeDateTime(item.state.lastupdated).display}</time></td></tr>`).join("\n")
             + `</table>`
-            + ((bestMatches.length === 1) ? `<p><button>Find another</button></p>` : `<p>Click again to be sure!</p>`)
+            + ((bestMatches.length === 1) ? `` : `<p>Click again to be sure!</p>`)
+            + `<p><button>Find another</button></p>`
             )
             ;
             document.getElementById("instructions").innerHTML = html;
