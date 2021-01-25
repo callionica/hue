@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Four-Part Day</title>
+    <title>4-Part Day</title>
     <link rel="stylesheet" href="hue-callionica.css">
     <style>
         .limit {
@@ -18,22 +18,68 @@
         }
     </style>
     <script type="module">
-        async function main() {
+        import { getFourPartDayTimes, setFourPartDayTimes } from "./hue-callionica-ui.js";
+
+        function populateTimeSelector(e, s) {
+            for (let h = 0; h < 24; ++h) {
+                for (let m = 0; m < 60; m += 15) {
+                    const t = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+                    const value = "T" + t + ":00";
+                    const o = document.createElement("option");
+                    if (value === s) {
+                        o.selected = true;
+                    }
+                    o.value = value;
+                    o.innerText = t;
+                    e.appendChild(o);
+                }
+            }
         }
+
+        const fourPartDayParts = ["morning", "day", "evening", "night"];
+
+        function fpdt() {
+            const o = {};
+            for (const id of fourPartDayParts) {
+                const s = `#${id}`;
+                const e = document.querySelector(s);
+                o[id] = e.value;
+            }
+            return o;
+        }
+
+        function onTimeChange() {
+            setFourPartDayTimes(fpdt());
+        }
+
+        async function main() {
+            const fourPartDayTimes = getFourPartDayTimes();
+            for (const id of fourPartDayParts) {
+                const s = `#${id}`;
+                const e = document.querySelector(s);
+
+                populateTimeSelector(e, fourPartDayTimes[id]);
+
+                e.onchange = onTimeChange;
+            }
+
+            console.log(fpdt());
+        }
+
+        main().then(x => console.log("main"));
     </script>
 </head>
 <body>
-    <h1>Four-Part Day</h1>
-    <p>Here you can see the start times for the four parts of the day.</p>
-    <p>You'll be able to edit these in the future.</p>
+    <h1>4-Part Day</h1>
+    <p>Here you can edit the start times for the four parts of the day.</p>
     <hr/>
     <div id="connection"></div>
     <div id="four-part-day">
         <table>
-            <tr><td>Morning</td><td>06:00</td></tr>
-            <tr><td>Day</td><td>08:30</td></tr>
-            <tr><td>Evening</td><td>19:30</td></tr>
-            <tr><td>Night</td><td>22:00</td></tr>
+            <tr><td>Morning</td><td><select id="morning"></select></td></tr>
+            <tr><td>Day</td><td><select id="day"></select></td></tr>
+            <tr><td>Evening</td><td><select id="evening"></select></td></tr>
+            <tr><td>Night</td><td><select id="night"></select></td></tr>
         </table>
     </div>
     <hr/>

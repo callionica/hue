@@ -1,3 +1,28 @@
+
+const fourPartDayTimes = {
+    morning: "T06:00:00",
+    day: "T08:30:00",
+    evening: "T19:30:00",
+    night: "T22:00:00",
+};
+
+export function getFourPartDayTimes() {
+    const key = "hue-four-part-day";
+    let fpdt = localStorage.getItem(key);
+    if (fpdt == undefined) {
+        fpdt = fourPartDayTimes;
+        localStorage.setItem(key, JSON.stringify(fpdt, null, 2));
+    } else {
+        fpdt = JSON.parse(fpdt);
+    }
+    return fpdt;
+}
+
+export function setFourPartDayTimes(fpdt) {
+    const key = "hue-four-part-day";
+    localStorage.setItem(key, JSON.stringify(fpdt, null, 2));
+}
+
 export function localizeDateTime(dt) {
     const d = new Date(dt);
     const o = {weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"};

@@ -14,7 +14,7 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setGroupScene, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
-        import { paramsSort } from "./hue-callionica-ui.js";
+        import { paramsSort, getFourPartDayTimes } from "./hue-callionica-ui.js";
 
         import { ActionHandler } from "./hue-callionica-switch.js"
 
@@ -266,12 +266,7 @@
                         return getTimeSeconds(date);
                     }
 
-                    const fourPartDayTimes = {
-                        morning: "T06:00:00",
-                        day: "T08:30:00",
-                        evening: "T19:30:00",
-                        night: "T22:00:00",
-                    };
+                    const fourPartDayTimes = getFourPartDayTimes();
 
                     const fourPartDayScenes = {
                         morning: ["morning", "day", "dimmed"],
