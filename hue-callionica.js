@@ -207,6 +207,12 @@ export async function setGroupOn(connection, id, value) {
     return put(address, body);
 }
 
+export async function setGroupScene(connection, id, sceneID) {
+    const address = Address(connection, `groups/${id}/action`);
+    const body = { scene: sceneID };
+    return put(address, body);
+}
+
 export async function setRuleActions(connection, id, actions) {
     const address = Address(connection, `rules/${id}`);
     const body = { actions };
@@ -2361,3 +2367,4 @@ export async function copyButtonAccessory(connection, data, sourceSensorID, dest
         await copyButton(connection, data, sourceSensorID, button, destinationSensorID, button);
     }
 }
+

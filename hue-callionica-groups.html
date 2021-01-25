@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="hue-callionica.css">
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { sortBy, getAll, setSensorValue, setGroupOn, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
+        import { sortBy, getAll, setSensorValue, setGroupOn, setGroupScene, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
         import { paramsSort } from "./hue-callionica-ui.js";
 
         import { ActionHandler } from "./hue-callionica-switch.js"
@@ -21,6 +21,17 @@
         let bridge;
         let connection;
         let data;
+
+        const dayparts = ["morning", "day", "evening", "night"];
+        const daypartTitles = {
+            morning: "Morning",
+            day: "Day",
+            evening: "Evening",
+            night: "Night",
+        };
+
+        let daypartEnabled = false;
+        let daypartOverride;
 
         let actionHandler;
 
@@ -53,42 +64,22 @@
                 const params = new URLSearchParams(document.location.search);
                 groups = paramsSort(params, groups);
 
-                // const params = new URLSearchParams(document.location.search);
+                daypartEnabled = params.has("daypart");
+                if (daypartEnabled) {
+                    let title = `Rooms & Zones - Day Parts`;
 
-                // function getList(name) {
-                //     const p = params.get(name);
-                //     return p?.split(",").map(x => x.trim().toLowerCase());
-                // }
+                    daypartOverride = params.get("daypart")?.toLowerCase();
+                    if (!dayparts.includes(daypartOverride)) {
+                        daypartOverride = undefined;
+                    }
 
-                // const include = getList("include");
-                // if (include) {
-                //     // Keep name sorting, but only for the listed items
-                //     groups = groups.filter(g => include.includes(g.name.toLowerCase()));
+                    if (daypartOverride !== undefined) {
+                        title = `Rooms & Zones - ${daypartTitles[daypartOverride]}`
+                    }
 
-                //     // If we wanted to use the sort order from include as well, we'd do this:
-                //     // groups = include.map(n => groups.find(g => n === g.name.toLowerCase())).filter(x=>x);
-                // }
-
-                // const exclude = getList("exclude");
-                // if (exclude) {
-                //     groups = groups.filter(g => !exclude.includes(g.name.toLowerCase()));
-                // }
-
-                // let preferred = getList("sort");
-                // if (preferred) {
-                //     const x = new Array(preferred.length);
-                //     const y = [];
-                //     for (const group of groups) {
-                //         const index = preferred.indexOf(group.name.toLowerCase());
-                //         if (index >= 0) {
-                //             x[index] = group;
-                //         } else {
-                //             y.push(group);
-                //         }
-                //     }
-
-                //     groups = [...x.filter(x => x), ...y];
-                // }
+                    document.title = title;
+                    document.querySelector("h1").innerText = title;
+                }
 
                 const components = Object.values(data.components);
 
@@ -253,6 +244,92 @@
 
                         // Use the dimmer button actions to toggle the lights
                         await setSensorValue(connection, action, turnOn ? 1000 : 4002);
+                        return;
+                    }
+                }
+
+                if (turnOn && daypartEnabled) {
+
+                    function getTimeSeconds(date) {
+                        date = date || new Date();
+                        return (date.getHours() * 60 * 60) +
+                        (date.getMinutes() * 60) +
+                        (date.getSeconds())
+                        ;
+                    }
+
+                    function timeToSeconds(time) {
+                        const date = new Date(new Date().toISOString().substring(0, 10) + time);
+                        return getTimeSeconds(date);
+                    }
+
+                    const fourDayParts = {
+                        morning: "T06:00:00",
+                        day: "T08:30:00",
+                        evening: "T19:30:00",
+                        night: "T22:00:00",
+                    };
+
+                    const fourDayPartScenes = {
+                        morning: ["morning", "day", "dimmed"],
+                        day: ["day", "morning", "bright"],
+                        evening: ["evening", "day", "morning", "dimmed"],
+                        night: ["night", "nightlight"],
+                    };
+
+                    const fourDayPartSeconds = {
+                        morning: timeToSeconds(fourDayParts.morning),
+                        day: timeToSeconds(fourDayParts.day),
+                        evening: timeToSeconds(fourDayParts.evening),
+                        night: timeToSeconds(fourDayParts.night),
+                    }
+
+                    // function getTimeOnly() {
+                    //     const now = new Date();
+                    //     return { hour: now.getHours(), minute: now.getMinutes(), second: now.getSeconds() };
+                    // }
+
+                    // function toTS(time) {
+                    //     return `T${time.hour.toString().padStart(2, "0")}:${time.minute.toString().padStart(2, "0")}:${time.second.toString().padStart(2, "0")}`;
+                    // }
+
+                    function getFourDayPart() {
+                        const now = getTimeSeconds();
+
+                        if (now < fourDayPartSeconds.morning) {
+                            return "night";
+                        }
+                        if (now < fourDayPartSeconds.day) {
+                            return "morning";
+                        }
+                        if (now < fourDayPartSeconds.evening) {
+                            return "day";
+                        }
+                        if (now < fourDayPartSeconds.night) {
+                            return "evening";
+                        }
+
+                        return "night";
+                    }
+
+                    const dayPart = daypartOverride || getFourDayPart();
+                    const possibleScenes = fourDayPartScenes[dayPart];
+                    const scenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
+
+                    let matchingScene;
+                    for (const possibleScene of possibleScenes) {
+                        for (const scene of scenes) {
+                            if (scene.name.toLowerCase() === possibleScene) {
+                                matchingScene = scene;
+                                break;
+                            }
+                        }
+                    }
+
+                    console.log(dayPart, matchingScene);
+
+                    if (matchingScene !== undefined) {
+                        await setGroupScene(connection, groupID, matchingScene.id);
                         return;
                     }
                 }
