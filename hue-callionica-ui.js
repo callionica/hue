@@ -154,6 +154,8 @@ export const FourPartDay = (()=>{
     }
 
     function getScene(data, groupID, part) {
+        part = part || getPart(data);
+        
         const possibleScenes = scenes[part];
         const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
