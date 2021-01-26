@@ -41,10 +41,10 @@ export const FourPartDay = (()=>{
 
     const standardRules = {
         // Times
-        "morning": "T06:00:00",
+        "morning": "T06:30:00",
         "day": "T08:30:00",
         "evening": "T19:30:00",
-        "night": "T22:00:00",
+        "night": "T23:00:00",
     
         // Daylight adjustments
         "morning-dark": "morning",
@@ -75,6 +75,9 @@ export const FourPartDay = (()=>{
         rules = rules || getRules();
         date = date || new Date();
 
+        const today = new Date(date);
+        today.setHours(0, 0, 0, 0);
+
         function getTimeSeconds(date) {
             return (date.getHours() * 60 * 60) +
             (date.getMinutes() * 60) +
@@ -94,22 +97,35 @@ export const FourPartDay = (()=>{
             night: timeToSeconds(rules.night),
         }
 
+        // Assume that morning starts on or after 0 
+        // and night starts before 24
+    
         const now = getTimeSeconds(date);
 
         if (now < fourPartDaySeconds.morning) {
-            return "night";
-        }
-        if (now < fourPartDaySeconds.day) {
-            return "morning";
-        }
-        if (now < fourPartDaySeconds.evening) {
-            return "day";
-        }
-        if (now < fourPartDaySeconds.night) {
-            return "evening";
+            const lastNight = new Date(today);
+            lastNight.setDate(lastNight.getDate() - 1);
+            lastNight.setSeconds(fourPartDaySeconds.night);
+            return { name: "night", start: lastNight };
         }
 
-        return "night";
+        const start = new Date(today);
+
+        if (now < fourPartDaySeconds.day) {
+            start.setSeconds(fourPartDaySeconds.morning);
+            return { name: "morning", start };
+        }
+        if (now < fourPartDaySeconds.evening) {
+            start.setSeconds(fourPartDaySeconds.day);
+            return { name: "day", start };
+        }
+        if (now < fourPartDaySeconds.night) {
+            start.setSeconds(fourPartDaySeconds.evening);
+            return { name: "evening", start };
+        }
+
+        start.setSeconds(fourPartDaySeconds.night);
+        return { name: "night", start };
     }
 
     function adjustPart(rules, part, daylight) {
@@ -134,7 +150,7 @@ export const FourPartDay = (()=>{
         // Night can move to morning, but not evening
         const isForwardPart = forward[part];
         const daylightPart = getPartFromTime(rules, daylight.updated);
-        const isForwardTransition = (daylightPart === part);
+        const isForwardTransition = (daylightPart.name === part);
 
         // If the transition and the part are in different directions,
         // return the original part without any adjustment
@@ -154,7 +170,7 @@ export const FourPartDay = (()=>{
 
         const part = getPartFromTime(rules, date);
 
-        const adjustedPart = adjustPart(rules, part, daylight);
+        const adjustedPart = adjustPart(rules, part.name, daylight);
 
         return adjustedPart;
     }
