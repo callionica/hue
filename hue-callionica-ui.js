@@ -1,34 +1,66 @@
+export const FourPartDay = (()=>{
+    const parts = ["morning", "day", "evening", "night"];
+    
+    const daylight = {
+        morning: "light",
+        day: "light",
+        evening: "dark",
+        night: "dark"
+    };
+    
+    const forward = {
+        morning: false,
+        day: true,
+        evening: false,
+        night: true
+    };
 
-const fourPartDayRules = {
-    // Times
-    "morning": "T06:00:00",
-    "day": "T08:30:00",
-    "evening": "T19:30:00",
-    "night": "T22:00:00",
+    const scenes = {
+        morning: ["morning", "day", "dimmed"],
+        day: ["day", "morning", "bright"],
+        evening: ["evening", "day", "morning", "dimmed"],
+        night: ["night", "nightlight"],
+    };
 
-    // Daylight adjustments
-    "morning-dark": "morning",
-    "day-dark": "day",
-    "evening-light": "evening",
-    "night-light": "night",
-};
+    const adjustments = parts.map(part => `${part}-${daylight[part] === "light" ? "dark" : "light"}`);
 
-export function getFourPartDayRules() {
+    const rules = [...parts, ...adjustments];
+
+    const standardRules = {
+        // Times
+        "morning": "T06:00:00",
+        "day": "T08:30:00",
+        "evening": "T19:30:00",
+        "night": "T22:00:00",
+    
+        // Daylight adjustments
+        "morning-dark": "morning",
+        "day-dark": "day",
+        "evening-light": "evening",
+        "night-light": "night",
+    };
+
     const key = "hue-four-part-day";
-    let fpdt = localStorage.getItem(key);
-    if (fpdt == undefined) {
-        fpdt = fourPartDayRules;
-        localStorage.setItem(key, JSON.stringify(fpdt, null, 2));
-    } else {
-        fpdt = JSON.parse(fpdt);
+
+    function getRules() {
+        let rules = localStorage.getItem(key);
+        if (rules == undefined) {
+            rules = standardRules;
+            localStorage.setItem(key, JSON.stringify(rules, null, 2));
+        } else {
+            rules = JSON.parse(rules);
+        }
+        return rules;
     }
-    return fpdt;
-}
+    
+    function setRules(rules) {
+        localStorage.setItem(key, JSON.stringify(rules, null, 2));
+    }
 
-export function setFourPartDayRules(fpdt) {
-    const key = "hue-four-part-day";
-    localStorage.setItem(key, JSON.stringify(fpdt, null, 2));
-}
+    return { parts, adjustments, rules, scenes, daylight, forward, standardRules, getRules, setRules };
+})();
+
+
 
 export function localizeDateTime(dt) {
     const d = new Date(dt);

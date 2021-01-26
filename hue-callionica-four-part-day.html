@@ -27,7 +27,7 @@
         }
     </style>
     <script type="module">
-        import { getFourPartDayRules, setFourPartDayRules } from "./hue-callionica-ui.js";
+        import { FourPartDay } from "./hue-callionica-ui.js";
 
         function populateTimeSelector(e, s) {
             for (let h = 0; h < 24; ++h) {
@@ -45,13 +45,9 @@
             }
         }
 
-        const fourPartDayParts = ["morning", "day", "evening", "night"];
-        const fourPartDayAdjustments = ["morning-dark", "day-dark", "evening-light", "night-light"];
-        const fourPartDayRules = [...fourPartDayParts, ...fourPartDayAdjustments];
-
         function getFourPartDayRulesFromUI() {
             const o = {};
-            for (const id of fourPartDayRules) {
+            for (const id of FourPartDay.rules) {
                 const s = `#${id}`;
                 const e = document.querySelector(s);
                 o[id] = e.value;
@@ -60,26 +56,26 @@
         }
 
         function onRuleChange() {
-            setFourPartDayRules(getFourPartDayRulesFromUI());
+            FourPartDay.setRules(getFourPartDayRulesFromUI());
         }
 
         async function main() {
-            const fourPartDayTimes = getFourPartDayRules();
+            const fourPartDayRules = FourPartDay.getRules();
 
-            for (const id of fourPartDayParts) {
+            for (const id of FourPartDay.parts) {
                 const s = `#${id}`;
                 const e = document.querySelector(s);
 
-                populateTimeSelector(e, fourPartDayTimes[id]);
+                populateTimeSelector(e, fourPartDayRules[id]);
 
                 e.onchange = onRuleChange;
             }
 
-            for (const id of fourPartDayAdjustments) {
+            for (const id of FourPartDay.adjustments) {
                 const s = `#${id}`;
                 const e = document.querySelector(s);
 
-                const o = [...e.querySelectorAll("option")].find(o => o.value === fourPartDayTimes[id]);
+                const o = [...e.querySelectorAll("option")].find(o => o.value === fourPartDayRules[id]);
                 o.selected = true;
 
                 e.onchange = onRuleChange;

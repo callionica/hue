@@ -14,7 +14,7 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setGroupScene, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
-        import { paramsSort, getFourPartDayRules } from "./hue-callionica-ui.js";
+        import { paramsSort, FourPartDay } from "./hue-callionica-ui.js";
 
         import { ActionHandler } from "./hue-callionica-switch.js"
 
@@ -266,14 +266,7 @@
                         return getTimeSeconds(date);
                     }
 
-                    const fourPartDayRules = getFourPartDayRules();
-
-                    const fourPartDayScenes = {
-                        morning: ["morning", "day", "dimmed"],
-                        day: ["day", "morning", "bright"],
-                        evening: ["evening", "day", "morning", "dimmed"],
-                        night: ["night", "nightlight"],
-                    };
+                    const fourPartDayRules = FourPartDay.getRules();
 
                     const fourPartDaySeconds = {
                         morning: timeToSeconds(fourPartDayRules.morning),
@@ -353,7 +346,7 @@
                     }
 
                     const dayPart = daypartOverride || getAdjustedFourPartDayPart();
-                    const possibleScenes = fourPartDayScenes[dayPart];
+                    const possibleScenes = FourPartDay.scenes[dayPart];
                     const scenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
                     let matchingScene;
