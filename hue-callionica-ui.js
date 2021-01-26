@@ -57,7 +57,123 @@ export const FourPartDay = (()=>{
         localStorage.setItem(key, JSON.stringify(rules, null, 2));
     }
 
-    return { parts, adjustments, rules, scenes, daylight, forward, standardRules, getRules, setRules };
+    // Returns the part based only on the time rules
+    function getPartFromTime(rules, date) {
+        rules = rules || getRules();
+        date = date || new Date();
+
+        function getTimeSeconds(date) {
+            return (date.getHours() * 60 * 60) +
+            (date.getMinutes() * 60) +
+            (date.getSeconds())
+            ;
+        }
+
+        function timeToSeconds(time) {
+            const date = new Date(new Date().toISOString().substring(0, 10) + time);
+            return getTimeSeconds(date);
+        }
+
+        const fourPartDaySeconds = {
+            morning: timeToSeconds(rules.morning),
+            day: timeToSeconds(rules.day),
+            evening: timeToSeconds(rules.evening),
+            night: timeToSeconds(rules.night),
+        }
+
+        const now = getTimeSeconds(date);
+
+        if (now < fourPartDaySeconds.morning) {
+            return "night";
+        }
+        if (now < fourPartDaySeconds.day) {
+            return "morning";
+        }
+        if (now < fourPartDaySeconds.evening) {
+            return "day";
+        }
+        if (now < fourPartDaySeconds.night) {
+            return "evening";
+        }
+
+        return "night";
+    }
+
+    function adjustPart(rules, part, daylight, daylightUpdated) {
+        // If there's no daylight information, return the current part
+        if ((daylight === undefined) || (daylightUpdated === undefined)) {
+            return part;
+        }
+
+        const adjustment = `${part}-${daylight}`;
+        const result = rules[adjustment];
+
+        // If there's no adjustment, return the current part
+        if ((result === undefined) || (result === part)) {
+            return part;
+        }
+
+        // If the daylight change happened in the current period,
+        // we can adjust to the next period.
+        // Otherwise, we can adjust to the previous period.
+
+        // Day can move to evening, but not morning
+        // Night can move to morning, but not evening
+        const isForwardPart = forward[part];
+        const daylightPart = getPartFromTime(rules, daylightUpdated);
+        const isForwardTransition = (daylightPart === part);
+
+        // If the transition and the part are in different directions,
+        // return the original part without any adjustment
+        if (isForwardTransition !== isForwardPart) {
+            return part;
+        }
+
+        return result;
+    }
+
+    // Returns the part based on both time and daylight rules
+    function getPart(data, rules, date) {
+        rules = rules || getRules();
+        date = date || new Date();
+
+        const daylightSensor = Object.values(data.sensors).find(sensor => sensor.type === "Daylight");
+
+        let daylight;
+        let daylightUpdated;
+        if (daylightSensor?.config?.configured && daylightSensor?.config?.on) {
+            daylight = (daylightSensor?.state?.daylight) ? "light" : "dark";
+            daylightUpdated = new Date(daylightSensor?.state?.lastupdated);
+        }
+
+        const part = getPartFromTime(rules, date);
+
+        const adjustedPart = adjustPart(rules, part, daylight, daylightUpdated);
+
+        return adjustedPart;
+    }
+
+    function getScene(data, groupID, part) {
+        const possibleScenes = scenes[part];
+        const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
+
+        let matchingScene;
+        for (const possibleScene of possibleScenes) {
+            for (const scene of groupScenes) {
+                if (scene.name.toLowerCase() === possibleScene) {
+                    matchingScene = scene;
+                    break;
+                }
+            }
+        }
+    
+        return matchingScene;
+    }
+
+    return {
+        parts, adjustments, rules, scenes, daylight, forward, standardRules,
+        getRules, setRules, getPartFromTime, adjustPart, getPart, getScene
+    };
 })();
 
 
