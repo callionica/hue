@@ -170,6 +170,16 @@ export const FourPartDay = (()=>{
         return matchingScene;
     }
 
+    // function adjustPart_Test() {
+    //     const rules = getRules();
+    //     const part = "day";
+    //     const daylight = undefined; //"dark";
+    //     const daylightUpdated = new Date("2001-01-01T10:30:00");
+    //     console.log(part, adjustPart(rules, part, daylight, daylightUpdated))
+    // }
+
+    // adjustPart_Test();
+
     return {
         parts, adjustments, rules, scenes, daylight, forward, standardRules,
         getRules, setRules, getPartFromTime, adjustPart, getPart, getScene
