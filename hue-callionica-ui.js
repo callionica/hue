@@ -1,3 +1,16 @@
+export function getDaylight(data) {
+    const daylightSensor = Object.values(data.sensors).find(sensor => sensor.type === "Daylight");
+
+    let daylight;
+    if (daylightSensor?.config?.configured && daylightSensor?.config?.on) {
+        daylight = {
+            value: (daylightSensor?.state?.daylight) ? "light" : "dark",
+            updated: new Date(daylightSensor?.state?.lastupdated)
+        };
+    }
+    return daylight;
+}
+
 export const FourPartDay = (()=>{
     const parts = ["morning", "day", "evening", "night"];
     
@@ -99,13 +112,13 @@ export const FourPartDay = (()=>{
         return "night";
     }
 
-    function adjustPart(rules, part, daylight, daylightUpdated) {
+    function adjustPart(rules, part, daylight) {
         // If there's no daylight information, return the current part
-        if ((daylight === undefined) || (daylightUpdated === undefined)) {
+        if (daylight === undefined) {
             return part;
         }
 
-        const adjustment = `${part}-${daylight}`;
+        const adjustment = `${part}-${daylight.value}`;
         const result = rules[adjustment];
 
         // If there's no adjustment, return the current part
@@ -120,7 +133,7 @@ export const FourPartDay = (()=>{
         // Day can move to evening, but not morning
         // Night can move to morning, but not evening
         const isForwardPart = forward[part];
-        const daylightPart = getPartFromTime(rules, daylightUpdated);
+        const daylightPart = getPartFromTime(rules, daylight.updated);
         const isForwardTransition = (daylightPart === part);
 
         // If the transition and the part are in different directions,
@@ -137,25 +150,18 @@ export const FourPartDay = (()=>{
         rules = rules || getRules();
         date = date || new Date();
 
-        const daylightSensor = Object.values(data.sensors).find(sensor => sensor.type === "Daylight");
-
-        let daylight;
-        let daylightUpdated;
-        if (daylightSensor?.config?.configured && daylightSensor?.config?.on) {
-            daylight = (daylightSensor?.state?.daylight) ? "light" : "dark";
-            daylightUpdated = new Date(daylightSensor?.state?.lastupdated);
-        }
+        const daylight = getDaylight(data);
 
         const part = getPartFromTime(rules, date);
 
-        const adjustedPart = adjustPart(rules, part, daylight, daylightUpdated);
+        const adjustedPart = adjustPart(rules, part, daylight);
 
         return adjustedPart;
     }
 
     function getScene(data, groupID, part) {
         part = part || getPart(data);
-        
+
         const possibleScenes = scenes[part];
         const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
