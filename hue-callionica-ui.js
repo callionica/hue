@@ -1,9 +1,16 @@
 
 const fourPartDayTimes = {
-    morning: "T06:00:00",
-    day: "T08:30:00",
-    evening: "T19:30:00",
-    night: "T22:00:00",
+    // Times
+    "morning": "T06:00:00",
+    "day": "T08:30:00",
+    "evening": "T19:30:00",
+    "night": "T22:00:00",
+    
+    // Daylight adjustments
+    "morning-dark": "morning",
+    "day-dark": "day",
+    "evening-light": "evening",
+    "night-light": "night",
 };
 
 export function getFourPartDayTimes() {

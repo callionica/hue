@@ -13,6 +13,15 @@
         .numeric {
             text-align: right;
         }
+        select {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: gray;
+            padding: 0.2rem;
+        }
+        thead {
+            font-weight: bold;
+        }
         td:first-of-type {
             padding: 0;
         }
@@ -37,10 +46,12 @@
         }
 
         const fourPartDayParts = ["morning", "day", "evening", "night"];
+        const fourPartDayAdjustments = ["morning-dark", "day-dark", "evening-light", "night-light"];
+        const fourPartDayRules = [...fourPartDayParts, ...fourPartDayAdjustments];
 
         function fpdt() {
             const o = {};
-            for (const id of fourPartDayParts) {
+            for (const id of fourPartDayRules) {
                 const s = `#${id}`;
                 const e = document.querySelector(s);
                 o[id] = e.value;
@@ -48,22 +59,32 @@
             return o;
         }
 
-        function onTimeChange() {
+        function onRuleChange() {
             setFourPartDayTimes(fpdt());
         }
 
         async function main() {
             const fourPartDayTimes = getFourPartDayTimes();
+
             for (const id of fourPartDayParts) {
                 const s = `#${id}`;
                 const e = document.querySelector(s);
 
                 populateTimeSelector(e, fourPartDayTimes[id]);
 
-                e.onchange = onTimeChange;
+                e.onchange = onRuleChange;
             }
 
-            console.log(fpdt());
+            for (const id of fourPartDayAdjustments) {
+                const s = `#${id}`;
+                const e = document.querySelector(s);
+
+                const o = [...e.querySelectorAll("option")].find(o => o.value === fourPartDayTimes[id]);
+                o.selected = true;
+
+                e.onchange = onRuleChange;
+            }
+
         }
 
         main().then(x => console.log("main"));
@@ -71,21 +92,69 @@
 </head>
 <body>
     <h1>4-Part Day</h1>
-    <p>Here you can edit the start times for the four parts of the day.</p>
+    <p>Here you can edit the rules for the four parts of the day.</p>
     <hr/>
     <div id="connection"></div>
     <div id="four-part-day">
+        <h2>Personal Start Times</h2>
         <table>
             <tr><td>Morning</td><td><select id="morning"></select></td></tr>
             <tr><td>Day</td><td><select id="day"></select></td></tr>
             <tr><td>Evening</td><td><select id="evening"></select></td></tr>
             <tr><td>Night</td><td><select id="night"></select></td></tr>
         </table>
+        <h2>Daylight Adjustments</h3>
+        <table>
+            <thead>
+                <tr>
+                    <td>Time</td>
+                    <td>Daylight</td>
+                    <td>Result</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Morning</td>
+                    <td>Dark</td>
+                    <td><select id="morning-dark">
+                        <option value="night">Night</option>
+                        <option value="morning" selected>Morning</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Day</td>
+                    <td>Dark</td>
+                    <td><select id="day-dark">
+                        <option value="day" selected>Day</option>
+                        <option value="evening">Evening</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Evening</td>
+                    <td>Light</td>
+                    <td><select id="evening-light">
+                        <option value="day">Day</option>
+                        <option value="evening" selected>Evening</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Night</td>
+                    <td>Light</td>
+                    <td><select id="night-light">
+                        <option value="night" selected>Night</option>
+                        <option value="morning">Morning</option>
+                    </select></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
     <hr/>
-    <p>Name your scenes "Morning", "Day", "Evening", or "Night" and the Rooms & Zones control panel will
-        use those scenes for the appropriate time period. It will use a sensible fallback 
-        scene if a particular period doesn't have a scene with that name. If there's no appropriate scene, the group will just be turned on with its current settings.
+    <p>
+        Name your scenes "Morning", "Day", "Evening", or "Night" and the Rooms & Zones control panel will use those scenes when you turn on the lights. It will use a sensible fallback 
+        scene if a particular period doesn't have a scene with that name. If there's no appropriate scene, the room or zone will be turned on with its current settings.
+    </p>
+    <p>
+        If the bridge has been configured with your location so that the daylight sensor can calculate sunrise and sunset times to determine whether it is currently light or dark, we can use that information to adjust the period if you choose to use Daylight Adjustments.
     </p>
 </body>
 </html>
