@@ -76,7 +76,9 @@
                 const e = document.querySelector(s);
 
                 const o = [...e.querySelectorAll("option")].find(o => o.value === fourPartDayRules[id]);
-                o.selected = true;
+                if (o !== undefined) {
+                    o.selected = true;
+                }
 
                 e.onchange = onRuleChange;
             }
