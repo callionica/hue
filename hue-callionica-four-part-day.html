@@ -27,7 +27,7 @@
         }
     </style>
     <script type="module">
-        import { getFourPartDayTimes, setFourPartDayTimes } from "./hue-callionica-ui.js";
+        import { getFourPartDayRules, setFourPartDayRules } from "./hue-callionica-ui.js";
 
         function populateTimeSelector(e, s) {
             for (let h = 0; h < 24; ++h) {
@@ -49,7 +49,7 @@
         const fourPartDayAdjustments = ["morning-dark", "day-dark", "evening-light", "night-light"];
         const fourPartDayRules = [...fourPartDayParts, ...fourPartDayAdjustments];
 
-        function fpdt() {
+        function getFourPartDayRulesFromUI() {
             const o = {};
             for (const id of fourPartDayRules) {
                 const s = `#${id}`;
@@ -60,11 +60,11 @@
         }
 
         function onRuleChange() {
-            setFourPartDayTimes(fpdt());
+            setFourPartDayRules(getFourPartDayRulesFromUI());
         }
 
         async function main() {
-            const fourPartDayTimes = getFourPartDayTimes();
+            const fourPartDayTimes = getFourPartDayRules();
 
             for (const id of fourPartDayParts) {
                 const s = `#${id}`;
@@ -85,6 +85,7 @@
                 e.onchange = onRuleChange;
             }
 
+            window.addEventListener('storage', ()=>{}); // TODO
         }
 
         main().then(x => console.log("main"));

@@ -14,7 +14,7 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setGroupScene, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
-        import { paramsSort, getFourPartDayTimes } from "./hue-callionica-ui.js";
+        import { paramsSort, getFourPartDayRules } from "./hue-callionica-ui.js";
 
         import { ActionHandler } from "./hue-callionica-switch.js"
 
@@ -266,7 +266,7 @@
                         return getTimeSeconds(date);
                     }
 
-                    const fourPartDayTimes = getFourPartDayTimes();
+                    const fourPartDayRules = getFourPartDayRules();
 
                     const fourPartDayScenes = {
                         morning: ["morning", "day", "dimmed"],
@@ -276,23 +276,14 @@
                     };
 
                     const fourPartDaySeconds = {
-                        morning: timeToSeconds(fourPartDayTimes.morning),
-                        day: timeToSeconds(fourPartDayTimes.day),
-                        evening: timeToSeconds(fourPartDayTimes.evening),
-                        night: timeToSeconds(fourPartDayTimes.night),
+                        morning: timeToSeconds(fourPartDayRules.morning),
+                        day: timeToSeconds(fourPartDayRules.day),
+                        evening: timeToSeconds(fourPartDayRules.evening),
+                        night: timeToSeconds(fourPartDayRules.night),
                     }
 
-                    // function getTimeOnly() {
-                    //     const now = new Date();
-                    //     return { hour: now.getHours(), minute: now.getMinutes(), second: now.getSeconds() };
-                    // }
-
-                    // function toTS(time) {
-                    //     return `T${time.hour.toString().padStart(2, "0")}:${time.minute.toString().padStart(2, "0")}:${time.second.toString().padStart(2, "0")}`;
-                    // }
-
-                    function getFourPartDayPart() {
-                        const now = getTimeSeconds();
+                    function getFourPartDayPart(date) {
+                        const now = getTimeSeconds(date);
 
                         if (now < fourPartDaySeconds.morning) {
                             return "night";
@@ -310,7 +301,58 @@
                         return "night";
                     }
 
-                    const dayPart = daypartOverride || getFourPartDayPart();
+                    function adjustPart(rules, part, daylight, daylightUpdated) {
+                        // If there's no daylight information, return the current part
+                        if ((daylight === undefined) || (daylightUpdated === undefined)) {
+                            return part;
+                        }
+
+                        const adjustment = `${part}-${daylight}`;
+                        const result = rules[adjustment];
+
+                        // If there's no adjustment, return the current part
+                        if ((result === undefined) || (result === part)) {
+                            return part;
+                        }
+
+                        // If the daylight change happened in the current period,
+                        // we can adjust to the next period.
+                        // Otherwise, we can adjust to the previous period.
+
+                        // Day can move to evening, but not morning
+                        // Night can move to morning, but not evening
+                        const forwardParts = ["day", "night"];
+                        const isForwardPart = forwardParts.includes(part);
+                        const daylightPart = getFourPartDayPart(daylightUpdated);
+                        const isForwardTransition = (daylightPart === part);
+
+                        // If the transition and the part are in different directions,
+                        // return the original part without any adjustment
+                        if (isForwardTransition !== isForwardPart) {
+                            return part;
+                        }
+
+                        return result;
+                    }
+
+                    function getAdjustedFourPartDayPart() {
+                        const daylightSensor = Object.values(data.sensors).find(sensor => sensor.type === "Daylight");
+
+                        let daylight;
+                        let daylightUpdated;
+                        if (daylightSensor?.config?.configured && daylightSensor?.config?.on) {
+                            daylight = (daylightSensor?.state?.daylight) ? "light" : "dark";
+                            daylightUpdated = new Date(daylightSensor?.state?.lastupdated);
+                        }
+
+                        const part = getFourPartDayPart();
+
+                        const adjustedPart = adjustPart(fourPartDayRules, part, daylight, daylightUpdated);
+
+                        return adjustedPart;
+                    }
+
+                    const dayPart = daypartOverride || getAdjustedFourPartDayPart();
                     const possibleScenes = fourPartDayScenes[dayPart];
                     const scenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 

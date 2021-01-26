@@ -1,11 +1,11 @@
 
-const fourPartDayTimes = {
+const fourPartDayRules = {
     // Times
     "morning": "T06:00:00",
     "day": "T08:30:00",
     "evening": "T19:30:00",
     "night": "T22:00:00",
-    
+
     // Daylight adjustments
     "morning-dark": "morning",
     "day-dark": "day",
@@ -13,11 +13,11 @@ const fourPartDayTimes = {
     "night-light": "night",
 };
 
-export function getFourPartDayTimes() {
+export function getFourPartDayRules() {
     const key = "hue-four-part-day";
     let fpdt = localStorage.getItem(key);
     if (fpdt == undefined) {
-        fpdt = fourPartDayTimes;
+        fpdt = fourPartDayRules;
         localStorage.setItem(key, JSON.stringify(fpdt, null, 2));
     } else {
         fpdt = JSON.parse(fpdt);
@@ -25,7 +25,7 @@ export function getFourPartDayTimes() {
     return fpdt;
 }
 
-export function setFourPartDayTimes(fpdt) {
+export function setFourPartDayRules(fpdt) {
     const key = "hue-four-part-day";
     localStorage.setItem(key, JSON.stringify(fpdt, null, 2));
 }
