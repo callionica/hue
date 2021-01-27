@@ -72,11 +72,13 @@ export const FourPartDay = (()=>{
     }
 
     function getManual() {
-        let item = localStorage.getItem(keyManual);
+        const item = localStorage.getItem(keyManual);
         if (item == undefined) {
             return undefined;
         }
-        return JSON.parse(item);
+        const o = JSON.parse(item);
+        o.start = new Date(o.start);
+        return o;
     }
 
     function setManual(manual) {
@@ -147,11 +149,11 @@ export const FourPartDay = (()=>{
             return part;
         }
 
-        const adjustment = `${part}-${daylight.value}`;
+        const adjustment = `${part.name}-${daylight.value}`;
         const result = rules[adjustment];
 
         // If there's no adjustment, return the current part
-        if ((result === undefined) || (result === part)) {
+        if ((result === undefined) || (result === part.name)) {
             return part;
         }
 
@@ -161,9 +163,9 @@ export const FourPartDay = (()=>{
 
         // Day can move to evening, but not morning
         // Night can move to morning, but not evening
-        const isForwardPart = forward[part];
+        const isForwardPart = forward[part.name];
         const daylightPart = getPartFromTime(rules, daylight.updated);
-        const isForwardTransition = (daylightPart.name === part);
+        const isForwardTransition = (daylightPart.name === part.name);
 
         // If the transition and the part are in different directions,
         // return the original part without any adjustment
@@ -171,39 +173,41 @@ export const FourPartDay = (()=>{
             return part;
         }
 
-        return result;
+        // Start time is the later of the original period's start time or the sunset/sunrise time
+        return { name: result, start: new Date(Math.max(daylight.updated, part.start)) };
     }
 
     // Returns the part based on time, daylight rules, and manual override
     function getPart(data, rules, date, manual) {
         rules = rules || getRules();
         date = date || new Date();
+        manual = manual || getManual();
+
+        if (manual !== undefined) {
+            if (manual.locked) {
+                return manual;
+            }
+        }
 
         const part = getPartFromTime(rules, date);
 
         const daylight = getDaylight(data);
-        const adjustedPart = adjustPart(rules, part.name, daylight);
+        const adjustedPart = adjustPart(rules, part, daylight);
 
         if (manual !== undefined) {
-            // Time wins if a new part started after our manual override was made
-            const timeWins = manual.start < part.start;
-
-            // Daylight wins if there was a daylight adjustment and light conditions changed after
-            // our manual override was made
-            const daylightWins = (adjustedPart !== part.name) && (daylight !== undefined) && manual.start < daylight.updated;
-
-            if (!timeWins && !daylightWins) {
-                return manual.part;
+            const expired = manual.start < adjustedPart.start;
+            if (!expired) {
+                return manual;
             }
         }
 
         return adjustedPart;
     }
 
-    function getScene(data, groupID, part) {
-        part = part || getPart(data);
+    function getScene(data, groupID, partName) {
+        partName = partName || getPart(data).name;
 
-        const possibleScenes = scenes[part];
+        const possibleScenes = scenes[partName];
         const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
         let matchingScene;
@@ -218,16 +222,6 @@ export const FourPartDay = (()=>{
     
         return matchingScene;
     }
-
-    // function adjustPart_Test() {
-    //     const rules = getRules();
-    //     const part = "day";
-    //     const daylight = undefined; //"dark";
-    //     const daylightUpdated = new Date("2001-01-01T10:30:00");
-    //     console.log(part, adjustPart(rules, part, daylight, daylightUpdated))
-    // }
-
-    // adjustPart_Test();
 
     return {
         parts, adjustments, rules, scenes, daylight, forward, standardRules,
