@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Identify My Scene</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        .name {
+            font-weight: bold;
+        }
+        .dateTime {
+            color: gray;
+        }
+        .numeric {
+            text-align: right;
+        }
+        td:first-of-type {
+            padding: 0;
+        }
+    </style>
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+        import { localizeDateTime } from "./hue-callionica-ui.js";
+
+        let bridge;
+        let connection;
+
+        const iterationTime = 3 * 1000;
+        const recentTime = iterationTime + 1 * 1000;
+
+        let start;
+        let bestMatches = [];
+
+        function isRecent(sensor) {
+            const lastUpdated = new Date(sensor.state.lastupdated).valueOf();
+            const difference = lastUpdated - start;
+            if ((0 < difference) && (difference < recentTime)) {
+                return true;
+            }
+            return false;
+        }
+
+        async function iteration() {
+            const data = await getAll(connection);
+            
+            let clicked = Object.values(data.sensors).filter(sensor => sensor.type === "ZLLSwitch" && isRecent(sensor));
+            // console.log(clicked);
+
+            if (bestMatches.length > 0) {
+                clicked = clicked.filter(sensor => bestMatches.some(p => sensor.id === p.id));
+            }
+
+            if (clicked.length > 0) {
+                bestMatches = clicked;
+            }
+
+            const html = (bestMatches.length === 0) ? `<p>Click any button on the switch you want to identify</p>` : (`<h2>${connection.bridge.name}</h2>
+            <table>` 
+            + bestMatches.map(item => `<tr id="sensor-${item.id}" title="ID: ${item.id}"><td class="name">${item.name}</td><td>ID: ${item.id}</td><td class="dateTime"><time datetime="${item.state.lastupdated}">${localizeDateTime(item.state.lastupdated).display}</time></td></tr>`).join("\n")
+            + `</table>`
+            + ((bestMatches.length === 1) ? `` : `<p>Click again to be sure!</p>`)
+            + `<p><button>Find another</button></p>`
+            )
+            ;
+            document.getElementById("instructions").innerHTML = html;
+
+            const button = document.querySelector("button");
+            if (button != undefined) {
+                button.onclick = () => _main();
+            }
+
+            if (bestMatches.length !== 1) {
+                start = Date.now();
+                setTimeout(()=> iteration(), iterationTime);
+            }
+        }
+
+        async function main() {
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+
+            const data = await getAll(connection);
+
+            document.getElementById("instructions").innerHTML = `<p>Click any button on the switch you want to identify</p>`;
+
+            start = Date.now();
+            bestMatches = [];
+            setTimeout(()=> iteration(), iterationTime);
+        }
+
+        async function _main() {
+            try {
+                await main();
+                delete document.body.dataset.showConnection;
+
+                // setTimeout(()=> _main(), 60*1000);
+
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+
+                setTimeout(()=> _main(), 3*1000);
+            }
+        }
+
+        _main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Identify My Scene</h1>
+    <p>Follow the instructions to identify the scene applied to a room or zone.</p>
+    <hr/>
+    <div id="connection"></div>
+    <div id="instructions">
+        <p>Choose a room or zone</p>
+    </div>
+</body>
+</html>
