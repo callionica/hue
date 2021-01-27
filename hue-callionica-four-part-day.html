@@ -25,6 +25,9 @@
         td:first-of-type {
             padding: 0;
         }
+        body[loading] select {
+            color: rgba(0, 0, 0, 0);
+        }
     </style>
     <script type="module">
         import { FourPartDay } from "./hue-callionica-ui.js";
@@ -35,6 +38,7 @@
         let connection;
 
         function populateTimeSelector(e, s) {
+            e.innerHTML = "";
             for (let h = 0; h < 24; ++h) {
                 for (let m = 0; m < 60; m += 15) {
                     const t = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
@@ -104,13 +108,15 @@
             current.value = part.name;
             current.onchange = onCurrentChange;
 
+            document.body.removeAttribute("loading");
+
             window.addEventListener('storage', ()=>{}); // TODO
         }
 
         main().then(x => console.log("main"));
     </script>
 </head>
-<body>
+<body loading>
     <h1>4-Part Day</h1>
     <p>Here you can edit the rules for the four parts of the day.</p>
     <hr/>
@@ -118,10 +124,10 @@
     <div id="four-part-day">
         <h2>Personal Start Times</h2>
         <table>
-            <tr><td>Morning</td><td><select id="morning"></select></td></tr>
-            <tr><td>Day</td><td><select id="day"></select></td></tr>
-            <tr><td>Evening</td><td><select id="evening"></select></td></tr>
-            <tr><td>Night</td><td><select id="night"></select></td></tr>
+            <tr><td>Morning</td><td><select id="morning"><option value="T07:00:00" selected>07:00</option></select></td></tr>
+            <tr><td>Day</td><td><select id="day"><option value="T08:30:00" selected>08:30</option></select></select></td></tr>
+            <tr><td>Evening</td><td><select id="evening"><option value="T19:30:00" selected>19:30</option></select></select></td></tr>
+            <tr><td>Night</td><td><select id="night"><option value="T23:00:00" selected>23:00</option></select></select></td></tr>
         </table>
         <h2>Daylight Adjustments</h3>
         <table>
