@@ -113,7 +113,29 @@
             window.addEventListener('storage', ()=>{}); // TODO
         }
 
-        main().then(x => console.log("main"));
+        async function _main() {
+            try {
+                await main();
+                delete document.body.dataset.showConnection;
+
+                // setTimeout(()=> _main(), 60*1000);
+
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+
+                setTimeout(()=> _main(), 3*1000);
+            }
+        }
+
+        _main().then(x => console.log("main"));
     </script>
 </head>
 <body loading>
