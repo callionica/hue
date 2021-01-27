@@ -260,8 +260,12 @@
 
                     if (matchingScene !== undefined) {
                         await setGroupScene(connection, groupID, matchingScene.id);
-                        return;
+                    } else {
+                        await setGroupOn(connection, groupID, true);
                     }
+
+                    FourPartDay.setLastAction({ date: new Date(), part: dayPartName });
+                    return;
                 }
 
                 await setGroupOn(connection, groupID, turnOn);

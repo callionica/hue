@@ -29,6 +29,7 @@ export const FourPartDay = (()=>{
     };
 
     const scenes = {
+        first: ["first"],
         morning: ["morning", "day", "dimmed"],
         day: ["day", "morning", "bright"],
         evening: ["evening", "day", "morning", "dimmed"],
@@ -55,6 +56,7 @@ export const FourPartDay = (()=>{
 
     const keyRules = "hue-four-part-day";
     const keyManual = "hue-four-part-day-manual";
+    const keyLastAction = "hue-four-part-day-last-action";
 
     function getRules() {
         let rules = localStorage.getItem(keyRules);
@@ -83,6 +85,20 @@ export const FourPartDay = (()=>{
 
     function setManual(manual) {
         localStorage.setItem(keyManual, JSON.stringify(manual, null, 2));
+    }
+
+    function getLastAction() {
+        const item = localStorage.getItem(keyLastAction);
+        if (item == undefined) {
+            return undefined;
+        }
+        const o = JSON.parse(item);
+        o.date = new Date(o.date);
+        return o;
+    }
+
+    function setLastAction(action) {
+        localStorage.setItem(keyLastAction, JSON.stringify(action, null, 2));
     }
 
     // Returns the part based only on the time rules
@@ -207,16 +223,39 @@ export const FourPartDay = (()=>{
     function getScene(data, groupID, partName) {
         partName = partName || getPart(data).name;
 
-        const possibleScenes = scenes[partName];
+        // Allow the 'first' scene to be used if no previous action this morning
+        let firstScenes = [];
+        if (partName === "morning") {
+            const o = getLastAction();
+            if (o !== undefined) {
+                const day = new Date(o.date);
+                day.setHours(0, 0, 0, 0);
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if ((day.getTime() != today.getTime()) || (o.part !== partName)) {
+                    firstScenes = scenes["first"];
+                    console.log("FIRST", firstScenes);
+                }
+            }
+        }
+
+        const possibleScenes = [...firstScenes, ...scenes[partName]];
         const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
         let matchingScene;
         for (const possibleScene of possibleScenes) {
             for (const scene of groupScenes) {
-                if (scene.name.toLowerCase() === possibleScene) {
+                const name = scene.name.toLowerCase();
+                if (name === possibleScene) {
                     matchingScene = scene;
                     break;
                 }
+            }
+
+            if (matchingScene !== undefined) {
+                break;
             }
         }
     
@@ -225,7 +264,7 @@ export const FourPartDay = (()=>{
 
     return {
         parts, adjustments, rules, scenes, daylight, forward, standardRules,
-        getRules, setRules, getManual, setManual, getPartFromTime, adjustPart, getPart, getScene
+        getRules, setRules, getManual, setManual, getLastAction, setLastAction, getPartFromTime, adjustPart, getPart, getScene
     };
 })();
 

@@ -1,7 +1,7 @@
 // deno-lint-ignore-file
 
 function getActionElement(src) {
-    while (src && src.dataset.action == undefined) {
+    while (src && src.dataset?.action == undefined) {
         src = src.parentNode;
     }
     return src;
