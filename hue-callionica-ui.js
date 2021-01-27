@@ -53,13 +53,14 @@ export const FourPartDay = (()=>{
         "night-light": "night",
     };
 
-    const key = "hue-four-part-day";
+    const keyRules = "hue-four-part-day";
+    const keyManual = "hue-four-part-day-manual";
 
     function getRules() {
-        let rules = localStorage.getItem(key);
+        let rules = localStorage.getItem(keyRules);
         if (rules == undefined) {
             rules = standardRules;
-            localStorage.setItem(key, JSON.stringify(rules, null, 2));
+            localStorage.setItem(keyRules, JSON.stringify(rules, null, 2));
         } else {
             rules = JSON.parse(rules);
         }
@@ -67,7 +68,19 @@ export const FourPartDay = (()=>{
     }
     
     function setRules(rules) {
-        localStorage.setItem(key, JSON.stringify(rules, null, 2));
+        localStorage.setItem(keyRules, JSON.stringify(rules, null, 2));
+    }
+
+    function getManual() {
+        let item = localStorage.getItem(keyManual);
+        if (item == undefined) {
+            return undefined;
+        }
+        return JSON.parse(item);
+    }
+
+    function setManual(manual) {
+        localStorage.setItem(keyManual, JSON.stringify(manual, null, 2));
     }
 
     // Returns the part based only on the time rules
@@ -161,16 +174,28 @@ export const FourPartDay = (()=>{
         return result;
     }
 
-    // Returns the part based on both time and daylight rules
-    function getPart(data, rules, date) {
+    // Returns the part based on time, daylight rules, and manual override
+    function getPart(data, rules, date, manual) {
         rules = rules || getRules();
         date = date || new Date();
 
-        const daylight = getDaylight(data);
-
         const part = getPartFromTime(rules, date);
 
+        const daylight = getDaylight(data);
         const adjustedPart = adjustPart(rules, part.name, daylight);
+
+        if (manual !== undefined) {
+            // Time wins if a new part started after our manual override was made
+            const timeWins = manual.start < part.start;
+
+            // Daylight wins if there was a daylight adjustment and light conditions changed after
+            // our manual override was made
+            const daylightWins = (adjustedPart !== part.name) && (daylight !== undefined) && manual.start < daylight.updated;
+
+            if (!timeWins && !daylightWins) {
+                return manual.part;
+            }
+        }
 
         return adjustedPart;
     }
