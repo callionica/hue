@@ -236,7 +236,6 @@ export const FourPartDay = (()=>{
 
                 if ((day.getTime() != today.getTime()) || (o.part !== partName)) {
                     firstScenes = scenes["first"];
-                    console.log("FIRST", firstScenes);
                 }
             }
         }
