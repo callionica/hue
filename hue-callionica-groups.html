@@ -219,7 +219,7 @@
             const params = new URLSearchParams(document.location.search);
             daypartEnabled = params.has("daypart");
             if (daypartEnabled) {
-                let title = `Rooms & Zones - 4-Part Day`;
+                let title = `Rooms & Zones 🕐`;
 
                 daypartOverride = params.get("daypart")?.toLowerCase();
                 if (!dayparts.includes(daypartOverride)) {
