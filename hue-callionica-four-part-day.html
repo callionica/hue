@@ -28,6 +28,11 @@
     </style>
     <script type="module">
         import { FourPartDay } from "./hue-callionica-ui.js";
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll } from "./hue-callionica.js";
+
+        let bridge;
+        let connection;
 
         function populateTimeSelector(e, s) {
             for (let h = 0; h < 24; ++h) {
@@ -59,7 +64,18 @@
             FourPartDay.setRules(getFourPartDayRulesFromUI());
         }
 
+        function onCurrentChange() {
+            const current = document.querySelector("#current-period");
+            const name = current.value;
+            FourPartDay.setManual({ name, start: new Date() });
+        }
+
         async function main() {
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+            
+            const data = await getAll(connection);
+
             const fourPartDayRules = FourPartDay.getRules();
 
             for (const id of FourPartDay.parts) {
@@ -82,6 +98,11 @@
 
                 e.onchange = onRuleChange;
             }
+
+            const current = document.querySelector("#current-period");
+            const part = FourPartDay.getPart(data);
+            current.value = part.name;
+            current.onchange = onCurrentChange;
 
             window.addEventListener('storage', ()=>{}); // TODO
         }
@@ -145,6 +166,15 @@
                     </select></td>
                 </tr>
             </tbody>
+        </table>
+        <h2>Manual Control</h3>
+        <table>
+        <tr><td>Current</td><td><select id="current-period">
+            <option value="morning">Morning</option>
+            <option value="day">Day</option>
+            <option value="evening">Evening</option>
+            <option value="night">Night</option>
+        </select></td></tr>
         </table>
     </div>
     <hr/>

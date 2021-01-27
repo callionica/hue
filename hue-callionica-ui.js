@@ -225,7 +225,7 @@ export const FourPartDay = (()=>{
 
     return {
         parts, adjustments, rules, scenes, daylight, forward, standardRules,
-        getRules, setRules, getPartFromTime, adjustPart, getPart, getScene
+        getRules, setRules, getManual, setManual, getPartFromTime, adjustPart, getPart, getScene
     };
 })();
 
