@@ -19,76 +19,96 @@
         td:first-of-type {
             padding: 0;
         }
+        thead {
+            font-weight: bold;
+        }
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+        import { sortBy, getAll, getSceneComplete } from "./hue-callionica.js";
         import { localizeDateTime } from "./hue-callionica-ui.js";
 
         let bridge;
         let connection;
 
-        const iterationTime = 3 * 1000;
-        const recentTime = iterationTime + 1 * 1000;
-
-        let start;
-        let bestMatches = [];
-
-        function isRecent(sensor) {
-            const lastUpdated = new Date(sensor.state.lastupdated).valueOf();
-            const difference = lastUpdated - start;
-            if ((0 < difference) && (difference < recentTime)) {
-                return true;
-            }
-            return false;
-        }
-
-        async function iteration() {
-            const data = await getAll(connection);
-            
-            let clicked = Object.values(data.sensors).filter(sensor => sensor.type === "ZLLSwitch" && isRecent(sensor));
-            // console.log(clicked);
-
-            if (bestMatches.length > 0) {
-                clicked = clicked.filter(sensor => bestMatches.some(p => sensor.id === p.id));
-            }
-
-            if (clicked.length > 0) {
-                bestMatches = clicked;
-            }
-
-            const html = (bestMatches.length === 0) ? `<p>Click any button on the switch you want to identify</p>` : (`<h2>${connection.bridge.name}</h2>
-            <table>` 
-            + bestMatches.map(item => `<tr id="sensor-${item.id}" title="ID: ${item.id}"><td class="name">${item.name}</td><td>ID: ${item.id}</td><td class="dateTime"><time datetime="${item.state.lastupdated}">${localizeDateTime(item.state.lastupdated).display}</time></td></tr>`).join("\n")
-            + `</table>`
-            + ((bestMatches.length === 1) ? `` : `<p>Click again to be sure!</p>`)
-            + `<p><button>Find another</button></p>`
-            )
-            ;
-            document.getElementById("instructions").innerHTML = html;
-
-            const button = document.querySelector("button");
-            if (button != undefined) {
-                button.onclick = () => _main();
-            }
-
-            if (bestMatches.length !== 1) {
-                start = Date.now();
-                setTimeout(()=> iteration(), iterationTime);
-            }
-        }
-
         async function main() {
+            const e = document.getElementById("instructions");
+            
+            e.innerHTML = `<p>Please wait while we connect to the bridge...</p>`;
+
             bridge = loadCurrentBridge();
             connection = await loadConnection("Callionica", bridge);
 
             const data = await getAll(connection);
 
-            document.getElementById("instructions").innerHTML = `<p>Click any button on the switch you want to identify</p>`;
+            function grp(scene) {
+                if (scene.group !== undefined) {
+                    return data.groups[scene.group].name;
+                }
+                return "";
+            }
 
-            start = Date.now();
-            bestMatches = [];
-            setTimeout(()=> iteration(), iterationTime);
+            function lgt(scene) {
+                return scene.lights.map(id => data.lights[id].name).join(", ");
+            }
+
+            e.innerHTML = `<p>Please wait while we read the scenes...</p>`;
+
+            const scenes = Object.values(data.scenes);
+            for (const scene of scenes) {
+                const completeScene = await getSceneComplete(connection, scene.id);
+                scene.lightstates = completeScene.lightstates;
+            }
+
+            e.innerHTML = `<p>Please wait while we analyze the lighting...</p>`;
+
+            const possibleScenes = [];
+            for (const scene of scenes) {
+                const states = Object.entries(scene.lightstates);
+                let same = true;
+                for (const [lightID, sceneState] of states) {
+                    const light = data.lights[lightID];
+                    const lightState = light.state;
+                    if (!lightState.reachable) {
+                        same = false;
+                        break;
+                    }
+                    for (const [prop, sceneValue] of Object.entries(sceneState))  {
+                        if (["transitiontime"].includes(prop)) {
+                            break;
+                        }
+                        const lightValue = lightState[prop];
+                        if (lightValue !== sceneValue) {
+                            // Bright scene triggers this condition
+                            const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
+                            if (!ignore) {
+                                same = false;
+                                console.log("DIFF", grp(scene), scene.name, light.name, prop, sceneValue, lightValue);
+                                break;
+                            }
+                        }
+                    }
+                    if (!same) {
+                        break;
+                    }
+                }
+                if (same) {
+                    possibleScenes.push(scene);
+                }
+            }
+
+            e.innerHTML = `<p>Please wait while we present the results...</p>`;
+
+            const rows = possibleScenes.map(scene => `<tr><td>${scene.name}</td><td>${grp(scene)}</td><td>${lgt(scene)}</td></tr>`).join("\n");
+
+            e.innerHTML = `
+            <table>
+                <thead>
+                <tr><td>Scene</td><td>Room or zone</td><td>Lights</td></tr>
+                </thead>
+                ${rows}
+            </table>
+            `;
         }
 
         async function _main() {
@@ -118,11 +138,11 @@
 </head>
 <body>
     <h1>Identify My Scene</h1>
-    <p>Follow the instructions to identify the scene applied to a room or zone.</p>
+    <p>Here you can see the scenes that are compatible with the current lighting.</p>
     <hr/>
     <div id="connection"></div>
     <div id="instructions">
-        <p>Choose a room or zone</p>
+        <p>Please wait while we analyze the lighting...</p>
     </div>
 </body>
 </html>
