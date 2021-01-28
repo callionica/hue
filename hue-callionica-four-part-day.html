@@ -32,6 +32,13 @@
             background: none;
             text-decoration: underline;
         }
+        #current-period-delete {
+            background: none;
+            visibility: hidden;
+        }
+        body[data-manual] #current-period-delete {
+            visibility: visible;
+        }
     </style>
     <script type="module">
         import { FourPartDay } from "./hue-callionica-ui.js";
@@ -68,14 +75,33 @@
             return o;
         }
 
+        async function refreshCurrent() {
+            const data = await getAll(connection);
+            const current = document.querySelector("#current-period");
+            const part = FourPartDay.getPart(data);
+            current.value = part.name;
+            if (part.kind === "manual") {
+                document.body.dataset.manual = true;
+            } else {
+                delete document.body.dataset.manual;
+            }
+        }
+        
+        function onRemoveManual() {
+            FourPartDay.removeManual();
+            refreshCurrent();
+        }
+
         function onRuleChange() {
             FourPartDay.setRules(getFourPartDayRulesFromUI());
+            refreshCurrent();
         }
 
         function onCurrentChange() {
             const current = document.querySelector("#current-period");
             const name = current.value;
             FourPartDay.setManual({ name, start: new Date() });
+            document.body.dataset.manual = true;
         }
 
         async function main() {
@@ -110,7 +136,16 @@
             const current = document.querySelector("#current-period");
             const part = FourPartDay.getPart(data);
             current.value = part.name;
+            if (part.kind === "manual") {
+                document.body.dataset.manual = true;
+            } else {
+                delete document.body.dataset.manual;
+            }
+
             current.onchange = onCurrentChange;
+
+            const clear = document.querySelector("#current-period-delete");
+            clear.onclick = onRemoveManual;
 
             document.body.removeAttribute("loading");
 
@@ -206,7 +241,7 @@
             <option value="day" selected>Day</option>
             <option value="evening">Evening</option>
             <option value="night">Night</option>
-        </select></td></tr>
+        </select></td><td><button id="current-period-delete" title="Remove manual override">ⓧ</button></td></tr>
         </table>
     </div>
     <hr/>

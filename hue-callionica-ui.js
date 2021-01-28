@@ -112,11 +112,16 @@ export const FourPartDay = (()=>{
         }
         const o = JSON.parse(item);
         o.start = new Date(o.start);
+        o.kind = "manual";
         return o;
     }
 
     function setManual(manual) {
         localStorage.setItem(keyManual, JSON.stringify(manual, null, 2));
+    }
+
+    function removeManual() {
+        localStorage.removeItem(keyManual);
     }
 
     function getLastAction() {
@@ -169,26 +174,26 @@ export const FourPartDay = (()=>{
             const lastNight = new Date(today);
             lastNight.setDate(lastNight.getDate() - 1);
             lastNight.setSeconds(fourPartDaySeconds.night);
-            return { name: "night", start: lastNight };
+            return { name: "night", start: lastNight, kind: "time" };
         }
 
         const start = new Date(today);
 
         if (now < fourPartDaySeconds.day) {
             start.setSeconds(fourPartDaySeconds.morning);
-            return { name: "morning", start };
+            return { name: "morning", start, kind: "time" };
         }
         if (now < fourPartDaySeconds.evening) {
             start.setSeconds(fourPartDaySeconds.day);
-            return { name: "day", start };
+            return { name: "day", start, kind: "time" };
         }
         if (now < fourPartDaySeconds.night) {
             start.setSeconds(fourPartDaySeconds.evening);
-            return { name: "evening", start };
+            return { name: "evening", start, kind: "time" };
         }
 
         start.setSeconds(fourPartDaySeconds.night);
-        return { name: "night", start };
+        return { name: "night", start, kind: "time" };
     }
 
     function adjustPart(rules, part, daylight) {
@@ -222,7 +227,7 @@ export const FourPartDay = (()=>{
         }
 
         // Start time is the later of the original period's start time or the sunset/sunrise time
-        return { name: result, start: new Date(Math.max(daylight.updated, part.start)) };
+        return { name: result, start: new Date(Math.max(daylight.updated, part.start)), kind: "adjustment" };
     }
 
     // Returns the part based on time, daylight rules, and manual override
@@ -295,7 +300,7 @@ export const FourPartDay = (()=>{
 
     return {
         parts, adjustments, rules, scenes, daylight, forward, standardRules,
-        getRules, setRules, getManual, setManual, getLastAction, setLastAction, getPartFromTime, adjustPart, getPart, getScene
+        getRules, setRules, getManual, setManual, removeManual, getLastAction, setLastAction, getPartFromTime, adjustPart, getPart, getScene
     };
 })();
 
