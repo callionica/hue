@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Daylight</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        .limit {
+            color: lightgray;
+        }
+        .numeric {
+            text-align: right;
+        }
+        td:first-of-type {
+            padding: 0;
+        }
+        a {
+            background: none;
+            text-decoration: underline;
+        }
+    </style>
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { sortBy, getAll, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
+        import { localizeDateTime, getDaylight } from "./hue-callionica-ui.js";
+
+        let bridge;
+        let connection;
+
+        async function main() {
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+
+            const data = await getAll(connection);
+            
+            const daylight = getDaylight(data);
+
+            let html = `
+            <p>Sunrise and sunset have not been configured on the Hue bridge.</p>
+            <p>To use this feature, please open the official Hue app and go to Settings › Advanced.</p>
+            <!--<p>We recommend that you use sunrise and sunset offsets of 0 minutes.</p>-->
+            `;
+            if (daylight !== undefined) {
+
+                const sr = (daylight.sunrise !== undefined) ? `<tr><td>Light at</td><td>${localizeDateTime(daylight.sunrise)?.displayTime || "Unknown"}</td></tr>` : "";
+
+                const ss = (daylight.sunset !== undefined) ? `<tr><td>Dark at</td><td>${localizeDateTime(daylight.sunset)?.displayTime || "Unknown"}</td></tr>` : "";
+
+                html = `
+                <table>
+                <tr><td><h2>Settings</h2></td><td></td></tr>
+                <tr><td>Dark after sunrise</td><td>${daylight.sunriseOffset} mins</td></tr>
+                <tr><td>Dark before sunset</td><td>${-daylight.sunsetOffset} mins</td></tr>
+                <tr><td><h2>Values</h2></td><td></td></tr>
+                <tr><td>Currently</td><td>${daylight.value === "light" ? "Light" : "Dark"}</td></tr>
+                ${sr}
+                ${ss}
+                </table>
+                <hr/>
+                <p>Daylight is, optionally, used to work out which part of the <a href="hue-callionica-four-part-day.html">4-part day</a> to use.</p>
+                <p>Sunset and sunrise times are provided by the Hue bridge.</p>
+                <p>To configure this feature, please open the official Hue app and go to Settings › Advanced.</p>
+                `;
+            }
+
+            document.getElementById("content").innerHTML = html;
+        }
+
+        async function _main() {
+            try {
+                await main();
+                delete document.body.dataset.showConnection;
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+
+                setTimeout(()=> _main(), 3*1000);
+            }
+        }
+
+        _main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Daylight</h1>
+    <hr/>
+    <div id="connection"></div>
+    <div id="content"></div>
+</body>
+</html>

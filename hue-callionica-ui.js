@@ -8,7 +8,9 @@ export function getDaylight(data) {
     if (daylightSensor?.config?.configured && daylightSensor?.config?.on) {
         daylight = {
             value: (daylightSensor?.state?.daylight) ? "light" : "dark",
-            updated: new Date(daylightSensor?.state?.lastupdated)
+            updated: new Date(daylightSensor?.state?.lastupdated),
+            sunriseOffset: daylightSensor?.config?.sunriseoffset,
+            sunsetOffset: daylightSensor?.config?.sunsetoffset,
         };
 
         // Cache and return sunrise/sunset times
@@ -300,6 +302,11 @@ export const FourPartDay = (()=>{
 
 
 export function localizeDateTime(dt) {
+    if (dt === undefined) {
+        return undefined;
+        // return { display: "Unknown", displayDate: "Unknown", displayTime: "Unknown" };
+    }
+
     const d = new Date(dt);
     const o = {weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"};
     const oDate = {weekday: "short", day: "numeric", month: "long", year: "numeric"};

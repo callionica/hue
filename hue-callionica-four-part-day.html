@@ -28,6 +28,10 @@
         body[loading] select {
             color: rgba(0, 0, 0, 0);
         }
+        a {
+            background: none;
+            text-decoration: underline;
+        }
     </style>
     <script type="module">
         import { FourPartDay } from "./hue-callionica-ui.js";
@@ -140,7 +144,7 @@
 </head>
 <body loading>
     <h1>4-Part Day</h1>
-    <p>Here you can edit the rules for the four parts of the day.</p>
+    <!--<p>Here you can edit the rules for the four parts of the day.</p>-->
     <hr/>
     <div id="connection"></div>
     <div id="four-part-day">
@@ -211,7 +215,7 @@
         scene if a particular period doesn't have a scene with that name. If there's no appropriate scene, the room or zone will be turned on with its current settings.
     </p>
     <p>
-        If the bridge has been configured with your location so that the daylight sensor can calculate sunrise and sunset times to determine whether it is currently light or dark, we can use that information to adjust the period if you choose to use Daylight Adjustments.
+        If the bridge has been configured with your location so that the <a href="hue-callionica-daylight.html">daylight sensor</a> can calculate sunrise and sunset times to determine whether it is currently light or dark, we can use that information to adjust the period if you choose to use Daylight Adjustments.
     </p>
 </body>
 </html>
