@@ -14,7 +14,7 @@
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, setSensorValue, setGroupOn, setGroupScene, setRuleActions, createSchedule, getConnectedComponents, deleteComponent, deleteSchedule, displayLocalTime } from "./hue-callionica.js";
-        import { paramsSort, FourPartDay } from "./hue-callionica-ui.js";
+        import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         import { ActionHandler } from "./hue-callionica-switch.js"
 
@@ -64,7 +64,15 @@
                 const params = new URLSearchParams(document.location.search);
                 groups = paramsSort(params, groups);
 
-                
+                if (daypartEnabled && (daypartOverride === undefined)) {
+                    const daylight = getDaylight(data);
+                    let title = `Rooms & Zones 🕒`;
+                    if (daylight?.value === "dark") {
+                        title = `Rooms & Zones 🕘`;
+                    }
+                    document.title = title;
+                    document.querySelector("h1").innerText = title;
+                }
 
                 const components = Object.values(data.components);
 
