@@ -28,12 +28,15 @@ export const FourPartDay = (()=>{
         night: true
     };
 
+    const brights = ["day", "bright", "read", "morning"];
+    const dims = ["evening", "dimmed", "morning"];
+
     const scenes = {
         first: ["first"],
-        morning: ["morning", "day", "dimmed"],
-        day: ["day", "morning", "bright"],
-        evening: ["evening", "day", "morning", "dimmed"],
-        night: ["night", "nightlight"],
+        morning: [...new Set(["morning", ...dims, ...brights])],
+        day: [...new Set(["day", ...brights, ...dims])],
+        evening: [...new Set(["evening", ...dims, ...brights])],
+        night: [...new Set(["night", "nightlight", ...dims])],
     };
 
     const adjustments = parts.map(part => `${part}-${daylight[part] === "light" ? "dark" : "light"}`);
