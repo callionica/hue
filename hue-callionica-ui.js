@@ -277,7 +277,10 @@ export const FourPartDay = (()=>{
             }
         }
 
-        const possibleScenes = [...firstScenes, ...scenes[partName]];
+        const daylight = getDaylight(data);
+        const specific = (daylight !== undefined) ? `${partName}-${daylight.value}` : "";
+
+        const possibleScenes = [...firstScenes, specific, ...scenes[partName]];
         const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
 
         let matchingScene;
