@@ -20,6 +20,9 @@
             background: none;
             text-decoration: underline;
         }
+        h4 {
+            color: darkgray;
+        }
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -58,10 +61,6 @@
                 ${sr}
                 ${ss}
                 </table>
-                <hr/>
-                <p>Daylight is, optionally, used to work out which part of the <a href="hue-callionica-four-part-day.html">4-part day</a> to use.</p>
-                <p>Sunset and sunrise times are provided by the Hue bridge.</p>
-                <p>To configure this feature, please open the official Hue app and go to Settings › Advanced.</p>
                 `;
             }
 
@@ -95,5 +94,14 @@
     <hr/>
     <div id="connection"></div>
     <div id="content"></div>
+    <hr/>
+    <table>
+        <tr><td><h4>Related</h4></td><td></td></tr>
+        <tr><td><a href="hue-callionica-four-part-day.html">Time › 4-Part Day</a></td><td></td></tr>
+        <tr><td><a href="hue-callionica-groups.html?group&daypart">Rooms & Zones</a></td><td></td></tr>
+    </table>
+    <hr/>
+    <p>Sunset and sunrise times are provided by the Hue bridge.</p>
+    <p>To configure this feature, please open the official Hue app and go to Settings › Advanced.</p>
 </body>
 </html>
