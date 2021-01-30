@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Backup</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        .limit {
+            color: lightgray;
+        }
+        .numeric {
+            text-align: right;
+        }
+        td:first-of-type {
+            padding: 0;
+        }
+        a {
+            background: none;
+            text-decoration: underline;
+        }
+    </style>
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { sortBy, getAll, getAllCategories, getCapabilities, getSceneComplete } from "./hue-callionica.js";
+        import { localizeDateTime } from "./hue-callionica-ui.js";
+
+        let bridge;
+        let connection;
+
+        function getAppData() {
+            const excluded = ["hue-callionica-disclaimer", "hue-bridges", "hue-bridge-current"];
+            const o = {};
+            for (const key of Object.keys(localStorage).filter(key => key.startsWith("hue-"))) {
+                if (!key.startsWith("hue-connection:")) {
+                    if (!excluded.some(e => e == key)) {
+                        o[key] = localStorage[key];
+                    }
+                }
+            }
+            return o;
+        }
+
+        function getAppConnections() {
+            const o = {};
+            for (const key of Object.keys(localStorage).filter(key => ["hue-bridges", "hue-bridge-current"].includes(key) || key.startsWith("hue-connection:"))) {
+                o[key] = localStorage[key];
+            }
+            return o;
+        }
+
+        async function getBridgeData() {
+            const data = await getAllCategories(connection);
+            data.capabilities = await getCapabilities(connection);
+            for (const [id, scene] of Object.entries(data.scenes)) {
+                const completeScene = await getSceneComplete(connection, id);
+                scene.lightstates = completeScene.lightstates;
+            }
+            
+            return data;
+        }
+
+        function downloadAppData() {
+            const data = getAppData();
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+	        const file = URL.createObjectURL(blob);
+
+            const app = document.querySelector("#app");
+            app.href = file;
+        }
+
+        function downloadAppConnections() {
+            const data = getAppConnections();
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+	        const file = URL.createObjectURL(blob);
+
+            const app = document.querySelector("#app-connections");
+            app.href = file;
+        }
+
+        async function downloadBridgeData(e) {
+            const btnBridge = document.querySelector("#bridge");
+            if (btnBridge.disabled) {
+                return; 
+            }
+            btnBridge.disabled = true;
+
+            e.preventDefault();
+
+            async function download() {
+                const data = await getBridgeData();
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const file = URL.createObjectURL(blob);
+
+                const btn = document.querySelector("#bridge-async");
+                btn.href = file;
+
+                const btnBridge = document.querySelector("#bridge");
+                btnBridge.disabled = false;
+
+                btn.click();
+            }
+
+            download();
+        }
+
+        async function main() {
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+
+            const data = await getAll(connection);
+
+            const app = document.querySelector("#app");
+            app.onclick = downloadAppData;
+
+            const connections = document.querySelector("#app-connections");
+            connections.onclick = downloadAppConnections;
+
+            const btnBridge = document.querySelector("#bridge");
+            btnBridge.onclick = downloadBridgeData;
+        }
+
+        async function _wrap(fn) {
+            try {
+                await fn();
+                delete document.body.dataset.showConnection;
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+
+                setTimeout(()=> _main(), 3*1000);
+            }
+        }
+
+        _wrap(main).then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Backup</h1>
+    <p>Here you can download data and settings from this app or from the Hue bridge.</p>
+    <hr/>
+    <div id="connection"></div>
+    <div id="content">
+        <p><a id="app" download="app-data.json">Download app data</a></p>
+        <p><a id="app-connections" download="app-connections.json">Download app connections</a></p>
+        <p><a id="bridge" href="#">Download Hue bridge data</a><a id="bridge-async" download="bridge-data.json" style="display: none;">Download</a></p>
+    </div>
+    <hr/>
+    <table>
+        <tr><td><h4>Related</h4></td><td></td></tr>
+        <tr><td><a href="hue-callionica-backup-restore.html">Restore</a></td><td></td></tr>
+    </table>
+    <hr/>
+    <p>IMPORTANT: Not all Hue bridge data can be restored. Backing up the Hue bridge data gives you <i>a chance</i> to see what has changed or been lost in the event of a problem, but there is no automatic mechanism to put all your lights, settings, groups, and scenes back the way they were.</p>
+    <p>IMPORTANT: Hue bridge data may contain the password/token for accessing your bridge. App connection data definitely contains the password/token for accessing your bridge. Do not post these backups publicly online or share them with untrusted individuals.</p>
+</body>
+</html>
