@@ -114,14 +114,14 @@
 
             const data = await getAll(connection);
 
-            const app = document.querySelector("#app");
+            /*const app = document.querySelector("#app");
             app.onclick = downloadAppData;
 
             const connections = document.querySelector("#app-connections");
             connections.onclick = downloadAppConnections;
 
             const btnBridge = document.querySelector("#bridge");
-            btnBridge.onclick = downloadBridgeData;
+            btnBridge.onclick = downloadBridgeData;*/
         }
 
         async function _wrap(fn) {
@@ -152,9 +152,10 @@
     <hr/>
     <div id="connection"></div>
     <div id="content">
-        <p><a id="app" download="app-data.json">Restore app data</a></p>
+        <p>NOT YET IMPLEMENTED!</p>
+        <!--<p><a id="app" download="app-data.json">Restore app data</a></p>
         <p><a id="app-connections" download="app-connections.json">Restore app connections</a></p>
-        <p><a id="bridge" href="#">Restore Hue bridge data</a><a id="bridge-async" download="bridge-data.json" style="display: none;">Download</a></p>
+        <p><a id="bridge" href="#">Restore Hue bridge data</a><a id="bridge-async" download="bridge-data.json" style="display: none;">Download</a></p>-->
     </div>
     <hr/>
     <table>
