@@ -88,13 +88,23 @@
             const r = document.querySelector("#result");
             r.innerHTML = "<hr/>";
 
-            const tbl = Diff.propertyTable({"Source": name, "Destination": destination.config.name});
+            const s_name = source.config?.name;
+            const d_name = destination.config?.name;
+
+            const s_time = new Date(source.config.UTC + "Z");
+            const s_displayTime = localizeDateTime(s_time).display;
+            const s_display = (s_name !== undefined) && (s_name === d_name) ? name : `${s_name} (${name})`;
+            const tbl = Diff.propertyTable([
+                ["Destination", destination.config.name],
+                ["Source", s_display],
+                ["Source Date", s_displayTime], 
+            ]);
 
             const lightsTable = Diff.lightsTable(lights, tbl);
 
             r.append(lightsTable);
 
-            alert("RESTORING BRIDGE DATA IS NOT IMPLEMENTED");
+            // alert("RESTORING BRIDGE DATA IS NOT IMPLEMENTED");
         }
 
         async function main() {
@@ -140,7 +150,7 @@
 </head>
 <body>
     <h1>Restore</h1>
-    <p>NOT YET IMPLEMENTED! - Here you can restore data and settings for this app or for the Hue bridge.</p>
+    <p>NOT YET IMPLEMENTED!<!-- Here you can restore data and settings for this app or for the Hue bridge.--></p>
     <hr/>
     <div id="connection"></div>
     <div id="content">
@@ -148,7 +158,7 @@
         <p><a id="app-connections" download="app-connections.json">Restore app connections</a></p>-->
         <table>
             <tr>
-            <td><label for="bridge-data">Restore bridge data:</label></td>
+            <td><label for="bridge-data">Load Hue bridge data:</label></td>
             <td><button id="bridge-data-proxy">Choose file</button><input id="bridge-data" type="file" accept=".json,application/json"></td>
             </tr>
         </table>

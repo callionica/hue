@@ -60,10 +60,10 @@ function cells(r, ...texts) {
     }
 }
 
-export function propertyTable(o, tbl) {
+export function propertyTable(kv, tbl) {
     tbl = tbl || table();
 
-    for (const [key, value] of Object.entries(o)) {
+    for (const [key, value] of kv) {
         const r = row(tbl);
         const k = cell(r, key);
         k.dataset.type = "label";
