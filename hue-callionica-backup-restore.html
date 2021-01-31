@@ -28,7 +28,7 @@
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getAllCategories, getCapabilities, getSceneComplete } from "./hue-callionica.js";
         import { localizeDateTime } from "./hue-callionica-ui.js";
-        import { lights } from "./hue-callionica-diff.js";
+        import * as Diff from "./hue-callionica-diff.js";
 
         let bridge;
         let connection;
@@ -61,6 +61,10 @@
                     return;
                 }
             }
+
+            const lights = Diff.lights({ source, destination });
+
+            console.log(lights);
 
             alert("RESTORING BRIDGE DATA IS NOT IMPLEMENTED");
         }
