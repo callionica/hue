@@ -34,3 +34,94 @@ export function lights({ source, destination }) {
 
     return { sourceOnly, destinationOnly, both, renamed };
 }
+
+function table() {
+    return document.createElement("table");
+}
+
+function row(tbl) {
+    const e = document.createElement("tr");
+    tbl.appendChild(e);
+    return e;
+}
+
+function cell(r, text) {
+    const e = document.createElement("td");
+    r.appendChild(e);
+    if (text !== undefined) {
+        e.innerText = text;
+    }
+    return e;
+}
+
+function cells(r, ...texts) {
+    for (const text of texts) {
+        cell(r, text);
+    }
+}
+
+export function propertyTable(o, tbl) {
+    tbl = tbl || table();
+
+    for (const [key, value] of Object.entries(o)) {
+        const r = row(tbl);
+        const k = cell(r, key);
+        k.dataset.type = "label";
+        const v = cell(r, value);
+    }
+    return tbl;
+}
+
+export function lightsTable(lights, tbl) {
+    tbl = tbl || table();
+
+    if (lights.sourceOnly.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        cells(r, "Lights only in source", "", "");
+        
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Name", "Type", "");
+    }
+
+    for (const v of lights.sourceOnly) {
+        const r = row(tbl);
+        r.dataset.type = "sourceOnly";
+        cells(r, v.name, v.type, "");
+    }
+
+    if (lights.destinationOnly.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        cells(r, "Lights only in destination", "", "");
+
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Name", "Type", "");
+    }
+
+    for (const v of lights.destinationOnly) {
+        const r = row(tbl);
+        r.dataset.type = "destinationOnly";
+        cells(r, v.name, v.type, "");
+    }
+
+    if (lights.renamed.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        cells(r, "Lights with different names", "", "");
+
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Name in source", "Name in destination", "");
+    }
+
+    for (const v of lights.renamed) {
+        const r = row(tbl);
+        r.dataset.type = "renamed";
+        cells(r, v.source.name, v.destination.name);
+    }
+
+    return tbl;
+}

@@ -23,6 +23,23 @@
         #bridge-data {
             display: none;
         }
+        tr[data-type='heading'] {
+            color: gray;
+            text-transform: uppercase;
+        }
+        tr[data-type='heading'] td {
+            padding-top: 0.75rem;
+        }
+        tr[data-type='labels'] {
+            font-weight: bold;
+        }
+        td[data-type='label'] {
+            font-weight: bold;
+        }
+        td[data-type='label']::after {
+            font-weight: bold;
+            content: ':';
+        }
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -64,7 +81,18 @@
 
             const lights = Diff.lights({ source, destination });
 
+            // const lightsTable = Diff.lightsTable(lights);
+
             console.log(lights);
+
+            const r = document.querySelector("#result");
+            r.innerHTML = "<hr/>";
+
+            const tbl = Diff.propertyTable({"Source": name, "Destination": destination.config.name});
+
+            const lightsTable = Diff.lightsTable(lights, tbl);
+
+            r.append(lightsTable);
 
             alert("RESTORING BRIDGE DATA IS NOT IMPLEMENTED");
         }
@@ -112,11 +140,10 @@
 </head>
 <body>
     <h1>Restore</h1>
-    <p>Here you can restore data and settings for this app or for the Hue bridge.</p>
+    <p>NOT YET IMPLEMENTED! - Here you can restore data and settings for this app or for the Hue bridge.</p>
     <hr/>
     <div id="connection"></div>
     <div id="content">
-        <p>NOT YET IMPLEMENTED!</p>
         <!--<p><a id="app" download="app-data.json">Restore app data</a></p>
         <p><a id="app-connections" download="app-connections.json">Restore app connections</a></p>-->
         <table>
@@ -126,6 +153,7 @@
             </tr>
         </table>
     </div>
+    <div id="result"></div>
     <hr/>
     <table>
         <tr><td><h4>Related</h4></td><td></td></tr>
