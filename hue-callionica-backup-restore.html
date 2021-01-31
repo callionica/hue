@@ -82,14 +82,7 @@
             await step1(name, source, destination);
         }
 
-        async function step1(name, source, destination) {
-            destination = destination || await getAll(connection);
-
-            const lights = Diff.lights({ source, destination });
-
-            const r = document.querySelector("#result");
-            r.innerHTML = "<hr/>";
-
+        function contentTable(name, source, destination) {
             const s_name = source.config?.name;
             const d_name = destination.config?.name;
 
@@ -101,10 +94,41 @@
                 ["Source", s_display],
                 ["Source Date", s_displayTime], 
             ]);
+            return tbl;
+        }
+
+        async function step1(name, source, destination) {
+            destination = destination || await getAll(connection);
+
+            const r = document.querySelector("#result");
+            r.innerHTML = "<hr/>";
+
+            const tbl = contentTable(name, source, destination);
+
+            const lights = Diff.lights({ source, destination });
 
             const lightsTable = Diff.lightsTable(lights, tbl);
 
             r.append(lightsTable);
+
+            const next = document.createElement("button");
+            next.append("Next ›");
+            next.onclick = () => {
+                step2(name, source, destination);
+            };
+
+            r.append(next);
+        }
+
+        async function step2(name, source, destination) {
+            destination = destination || await getAll(connection);
+
+            const r = document.querySelector("#result");
+            r.innerHTML = "<hr/>";
+
+            const tbl = contentTable(name, source, destination);
+
+            r.append(tbl);
         }
 
         async function main() {
