@@ -28,6 +28,7 @@
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getAllCategories, getCapabilities, getSceneComplete } from "./hue-callionica.js";
         import { localizeDateTime } from "./hue-callionica-ui.js";
+        import { lights } from "./hue-callionica-diff.js";
 
         let bridge;
         let connection;
@@ -41,13 +42,13 @@
             }
 
             if (source === undefined) {
-                alert("File does not contain Hue bridge data or is corrupted.");
+                alert(`${name} does not contain Hue bridge data or is corrupted.`);
             }
 
             const s_id = source.config?.bridgeid;
 
             if (s_id === undefined) {
-                alert("File does not contain Hue bridge data.");
+                alert(`${name} does not contain Hue bridge data.`);
                 return;
             }
 
