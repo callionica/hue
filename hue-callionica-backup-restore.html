@@ -73,17 +73,19 @@
             const d_id = destination.config?.bridgeid;
 
             if (s_id !== d_id) {
-                const shouldContinue = confirm("Bridges are different. Continue?");
+                const shouldContinue = confirm("This backup comes from a different bridge. Continue?");
                 if (!shouldContinue) {
                     return;
                 }
             }
 
+            await step1(name, source, destination);
+        }
+
+        async function step1(name, source, destination) {
+            destination = destination || await getAll(connection);
+
             const lights = Diff.lights({ source, destination });
-
-            // const lightsTable = Diff.lightsTable(lights);
-
-            console.log(lights);
 
             const r = document.querySelector("#result");
             r.innerHTML = "<hr/>";
@@ -103,8 +105,6 @@
             const lightsTable = Diff.lightsTable(lights, tbl);
 
             r.append(lightsTable);
-
-            // alert("RESTORING BRIDGE DATA IS NOT IMPLEMENTED");
         }
 
         async function main() {
