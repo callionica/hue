@@ -88,7 +88,7 @@ export function lightPicker(lights) {
     if (true) {
         const o = document.createElement("option");
 
-        o.value = undefined;
+        o.value = "(none)";
         o.innerText = "(None)";
         o.title = "No light";
 
@@ -107,6 +107,12 @@ export function lightPicker(lights) {
     }
 
     return e;
+}
+
+export function extractSourceToDestinationMap(e) {
+    e = e || document;
+    const elements = [...e.querySelectorAll("select[data-type='map-source-to-destination']")];
+    return elements.map(e => [e.dataset.uniqueid, e.value === "(none)" ? undefined : e.value]);
 }
 
 export function lightsTable(lights, tbl) {

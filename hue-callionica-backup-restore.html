@@ -120,6 +120,8 @@
             const next = document.createElement("button");
             next.append("Next ›");
             next.onclick = () => {
+                const s2d = Diff.extractSourceToDestinationMap();
+                console.log(s2d);
                 step2(name, source, destination);
             };
 
