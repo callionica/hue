@@ -27,36 +27,46 @@ export function lights({ source, destination }) {
     }
 
     const values = Object.values(lights);
-    const sourceOnly = values.filter(v => (v.source !== undefined) && (v.destination === undefined)).map(v => v.source);
-    const destinationOnly = values.filter(v => (v.destination !== undefined) && (v.source === undefined)).map(v => v.destination);
+    const sourceOnly = values.filter(v => (v.source !== undefined) && (v.destination === undefined)).map(v => v.source).sort((a,b) => a.name.localeCompare(b.name));
+    const destinationOnly = values.filter(v => (v.destination !== undefined) && (v.source === undefined)).map(v => v.destination).sort((a,b) => a.name.localeCompare(b.name));
     const both = values.filter(v => (v.destination !== undefined) && (v.source !== undefined));
     const renamed = both.filter(v => v.destination.name !== v.source.name);
 
-    return { sourceOnly, destinationOnly, both, renamed };
+    // Unmatched lights in the destination are ones whose name has changed or which don't have a uniqueid match in the source
+    // IOW if there is a uniqueid match or a name match, the light is not unmatched
+    const dst = [
+        ...destinationOnly.map(v => ({...v, unmatched: "new"})),
+        ...renamed.map(v => ({ ...v.destination, unmatched: "renamed" }))
+    ].sort((a,b) => a.name.localeCompare(b.name));
+
+    const unmatched = {
+        destination: dst
+    };
+    return { all: lights, sourceOnly, destinationOnly, both, renamed, unmatched };
 }
 
 function table() {
     return document.createElement("table");
 }
 
-function row(tbl) {
+function row(table) {
     const e = document.createElement("tr");
-    tbl.appendChild(e);
+    table.appendChild(e);
     return e;
 }
 
-function cell(r, text) {
+function cell(row, item) {
     const e = document.createElement("td");
-    r.appendChild(e);
-    if (text !== undefined) {
-        e.innerText = text;
+    row.appendChild(e);
+    if (item !== undefined) {
+        e.append(item);
     }
     return e;
 }
 
-function cells(r, ...texts) {
-    for (const text of texts) {
-        cell(r, text);
+function cells(row, ...items) {
+    for (const item of items) {
+        cell(row, item);
     }
 }
 
@@ -72,6 +82,33 @@ export function propertyTable(kv, tbl) {
     return tbl;
 }
 
+export function lightPicker(lights) {
+    const e = document.createElement("select");
+
+    if (true) {
+        const o = document.createElement("option");
+
+        o.value = undefined;
+        o.innerText = "(None)";
+        o.title = "No light";
+
+        e.append(o);
+    }
+
+    for (const light of lights) {
+        const o = document.createElement("option");
+        
+        o.value = light.uniqueid;
+        o.innerText = light.name;
+        const um = light.unmatched?.toUpperCase() || "";
+        o.title = `${um}: ${light.type}`;
+
+        e.append(o);
+    }
+
+    return e;
+}
+
 export function lightsTable(lights, tbl) {
     tbl = tbl || table();
 
@@ -82,16 +119,58 @@ export function lightsTable(lights, tbl) {
         
         const rl = row(tbl);
         rl.dataset.type = "labels";
-        cells(rl, "Name", "Type", "");
+        cells(rl, "Name", "Type", "Destination");
     }
 
     for (const v of lights.sourceOnly) {
         const r = row(tbl);
-        r.dataset.type = "sourceOnly";
-        cells(r, v.name, v.type, "");
+        const d = r.dataset;
+        d.uniqueid = v.uniqueid;
+        d.type = "source-only";
+
+        const lp = lightPicker(lights.unmatched.destination);
+        lp.dataset.uniqueid = v.uniqueid;
+        lp.dataset.type = "map-source-to-destination";
+
+        for (const o of [...lp.querySelectorAll("option")]) {
+            if (o.innerText === v.name) {
+                o.selected = true;
+                break;
+            }
+        }
+
+        cells(r, v.name, v.type, lp);
     }
 
-    if (lights.destinationOnly.length > 0) {
+    if (lights.renamed.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        cells(r, "Lights with different names", "", "");
+
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Name", "Type", "Destination");
+    }
+
+    for (const v of lights.renamed) {
+        const r = row(tbl);
+        r.dataset.type = "renamed";
+
+        const lp = lightPicker(lights.unmatched.destination);
+        lp.dataset.uniqueid = v.uniqueid;
+        lp.dataset.type = "map-source-to-destination";
+
+        for (const o of [...lp.querySelectorAll("option")]) {
+            if (o.innerText === v.destination.name) {
+                o.selected = true;
+                break;
+            }
+        }
+
+        cells(r, v.source.name, v.source.type, lp);
+    }
+
+    /*if (lights.destinationOnly.length > 0) {
         const r = row(tbl);
         r.dataset.type = "heading";
         cells(r, "Lights only in destination", "", "");
@@ -103,25 +182,11 @@ export function lightsTable(lights, tbl) {
 
     for (const v of lights.destinationOnly) {
         const r = row(tbl);
-        r.dataset.type = "destinationOnly";
+        const d = r.dataset;
+        d.uniqueid = v.uniqueid;
+        d.type = "destination-only";
         cells(r, v.name, v.type, "");
-    }
-
-    if (lights.renamed.length > 0) {
-        const r = row(tbl);
-        r.dataset.type = "heading";
-        cells(r, "Lights with different names", "", "");
-
-        const rl = row(tbl);
-        rl.dataset.type = "labels";
-        cells(rl, "Name in source", "Name in destination", "");
-    }
-
-    for (const v of lights.renamed) {
-        const r = row(tbl);
-        r.dataset.type = "renamed";
-        cells(r, v.source.name, v.destination.name);
-    }
+    }*/
 
     return tbl;
 }
