@@ -31,10 +31,12 @@
         }
         tr[data-type='heading'] {
             color: gray;
-            text-transform: uppercase;
+            font-size: 1.35rem;
+            /*text-transform: uppercase;*/
         }
         tr[data-type='heading'] td {
             padding-top: 0.75rem;
+            padding-bottom: 0.25rem;
         }
         tr[data-type='labels'] {
             font-weight: bold;
@@ -103,11 +105,14 @@
             return tbl;
         }
 
+        // step 1 - map lights
+        // step 2 - rename lights
+
         async function step1(name, source, destination) {
             destination = destination || await getAll(connection);
 
             const r = document.querySelector("#result");
-            r.innerHTML = "<hr/>";
+            r.innerHTML = "<hr/><h2>Stage 1: Connect old & new lights</h2>";
 
             const tbl = contentTable(name, source, destination);
 
@@ -121,7 +126,7 @@
             next.append("Next ›");
             next.onclick = () => {
                 const s2d = Diff.extractSourceToDestinationMap(lights);
-                console.log(s2d);
+
                 const missing = s2d.some(([s,d]) => d === undefined);
                 const duplicates = Object.keys(s2d.reduce((p, [s,d]) => {
                     if (d !== undefined) {
@@ -132,9 +137,6 @@
                     }
                     return p;
                 }, { seen: {}, duplicates: {} }).duplicates);
-
-                
-                console.log(missing, duplicates);
 
                 if (missing || duplicates.length > 0) {
                     const ok = confirm(
@@ -148,19 +150,21 @@
                     }
                 }
 
-                step2(name, source, destination);
+                step2(name, source, destination, s2d);
             };
 
             r.append(next);
         }
 
-        async function step2(name, source, destination) {
+        async function step2(name, source, destination, s2d) {
             destination = destination || await getAll(connection);
 
             const r = document.querySelector("#result");
-            r.innerHTML = "<hr/>";
+            r.innerHTML = "<hr/><h2>Stage 2: Rename lights</h2>";
 
             const tbl = contentTable(name, source, destination);
+
+            console.log(s2d);
 
             r.append(tbl);
         }

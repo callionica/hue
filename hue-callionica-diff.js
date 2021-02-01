@@ -79,6 +79,7 @@ export function propertyTable(kv, tbl) {
         const k = cell(r, key);
         k.dataset.type = "label";
         const v = cell(r, value);
+        v.setAttribute("colspan", 2);
     }
     return tbl;
 }
@@ -141,11 +142,12 @@ export function lightsTable(lights, tbl) {
     if (lights.sourceOnly.length > 0) {
         const r = row(tbl);
         r.dataset.type = "heading";
-        cells(r, "Lights only in source", "", "");
+        const h = cell(r, "Missing lights");
+        h.setAttribute("colspan", 3);
         
         const rl = row(tbl);
         rl.dataset.type = "labels";
-        cells(rl, "Name", "Type", "Destination");
+        cells(rl, "Name", "Type", "New Light");
     }
 
     for (const v of lights.sourceOnly) {
@@ -171,11 +173,12 @@ export function lightsTable(lights, tbl) {
     if (lights.renamed.length > 0) {
         const r = row(tbl);
         r.dataset.type = "heading";
-        cells(r, "Lights with different names", "", "");
+        const h = cell(r, "Renamed lights");
+        h.setAttribute("colspan", 3);
 
         const rl = row(tbl);
         rl.dataset.type = "labels";
-        cells(rl, "Name", "Type", "Destination");
+        cells(rl, "Name", "Type", "New Light");
     }
 
     for (const v of lights.renamed) {
