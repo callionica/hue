@@ -71,6 +71,13 @@ function cells(row, ...items) {
     }
 }
 
+function option(s, ...items) {
+    const e = document.createElement("option");
+    s.appendChild(e);
+    e.append(...items);
+    return e;
+}
+
 export function propertyTable(kv, tbl) {
     tbl = tbl || table();
 
@@ -216,6 +223,58 @@ export function lightsTable(lights, tbl) {
         d.type = "destination-only";
         cells(r, v.name, v.type, "");
     }*/
+
+    return tbl;
+}
+
+export function renameTable(source, destination, s2d, tbl) {
+    tbl = tbl || table();
+
+    const renames = [];
+    
+    for (const [id, dst] of s2d) {
+        const src = source.lights[id];
+        if ((dst !== undefined) && (src.name !== dst.name)) {
+            renames.push([src, dst]);
+        }
+    }
+
+    console.log(renames);
+
+
+    if (renames.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        const h = cell(r, "Renames");
+        h.setAttribute("colspan", 3);
+        
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Current name", "Proposed name", "Action");
+    }
+
+    for (const [src, dst] of renames) {
+        const r = row(tbl);
+
+        const select = document.createElement("select");
+        const d = select.dataset;
+
+        d.targetCategory = "lights";
+        d.targetId = dst.id;
+        d.targetProperty = "name";
+        d.targetValue = src.name;
+
+        const change = option(select, "Change name");
+        change.value = "change";
+        change.selected = true;
+
+        const nochange = option(select, "Don't change");
+        nochange.value = "no-change";
+
+        select.append(change, nochange);
+
+        cells(r, dst.name, src.name, select);
+    }
 
     return tbl;
 }
