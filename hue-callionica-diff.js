@@ -110,10 +110,11 @@ export function lightPicker(lights) {
     return e;
 }
 
-export function extractSourceToDestinationMap(lights, e) {
-    e = e || document;
+// Returns array of [source-id, destination-light]
+export function extractSourceToDestinationMap(lights, scope) {
+    scope = scope || document;
 
-    const elements = [...e.querySelectorAll("select[data-type='map-source-to-destination']")];
+    const elements = [...scope.querySelectorAll("select[data-type='map-source-to-destination']")];
     const uniqueids = elements.map(e => [e.dataset.uniqueid, e.value === "(none)" ? undefined : e.value]);
 
     const ids = [];
