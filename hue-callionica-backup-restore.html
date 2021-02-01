@@ -120,8 +120,34 @@
             const next = document.createElement("button");
             next.append("Next ›");
             next.onclick = () => {
-                const s2d = Diff.extractSourceToDestinationMap();
+                const s2d = Diff.extractSourceToDestinationMap(lights);
                 console.log(s2d);
+                const missing = s2d.some(([s,d]) => d === undefined);
+                const duplicates = Object.keys(s2d.reduce((p, [s,d]) => {
+                    if (d !== undefined) {
+                        if (p.seen[d.id]) {
+                            p.duplicates[d.id] = true;
+                        }
+                        p.seen[d.id] = true;
+                    }
+                    return p;
+                }, { seen: {}, duplicates: {} }).duplicates);
+
+                
+                console.log(missing, duplicates);
+
+                if (missing || duplicates.length > 0) {
+                    const ok = confirm(
+                        (missing ? "Not all lights are matched." : "") + 
+                        ((missing && duplicates) ? "\n" : "") +
+                        (duplicates.length > 0 ? "Some lights are matched to the same light." : "") + 
+                        "\nContinue?"
+                    );
+                    if (!ok) {
+                        return;
+                    }
+                }
+
                 step2(name, source, destination);
             };
 

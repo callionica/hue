@@ -42,6 +42,7 @@ export function lights({ source, destination }) {
     const unmatched = {
         destination: dst
     };
+
     return { all: lights, sourceOnly, destinationOnly, both, renamed, unmatched };
 }
 
@@ -109,10 +110,28 @@ export function lightPicker(lights) {
     return e;
 }
 
-export function extractSourceToDestinationMap(e) {
+export function extractSourceToDestinationMap(lights, e) {
     e = e || document;
+
     const elements = [...e.querySelectorAll("select[data-type='map-source-to-destination']")];
-    return elements.map(e => [e.dataset.uniqueid, e.value === "(none)" ? undefined : e.value]);
+    const uniqueids = elements.map(e => [e.dataset.uniqueid, e.value === "(none)" ? undefined : e.value]);
+
+    const ids = [];
+    for (const [uniqueid, value] of Object.entries(lights.all)) {
+        if (value.source === undefined) {
+            continue;
+        }
+
+        const mapped = uniqueids.find(v => v[0] === uniqueid);
+        if (mapped !== undefined) {
+            const [src, dst] = mapped; 
+            ids.push([value.source.id, (dst === undefined) ? undefined : lights.all[dst].destination]);
+        } else {
+            ids.push([value.source.id, value.destination]);
+        }
+    }
+
+    return ids;
 }
 
 export function lightsTable(lights, tbl) {
