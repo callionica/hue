@@ -278,3 +278,14 @@ export function renameTable(source, destination, s2d, tbl) {
 
     return tbl;
 }
+
+export function extractRenameList(scope) {
+    scope = scope || document;
+
+    const list = [...scope.querySelectorAll("select[data-target-property='name']")].filter(e => e.value === "change").map(e => {
+        const d = e.dataset;
+        return { category: d.targetCategory, id: d.targetId, property: d.targetProperty, value: d.targetValue };
+    });
+
+    return list;
+}
