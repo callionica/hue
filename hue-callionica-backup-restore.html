@@ -125,10 +125,10 @@
             const next = document.createElement("button");
             next.append("Next ›");
             next.onclick = () => {
-                const s2d = Diff.extractSourceToDestinationMap(lights);
+                const s2dLights = Diff.extractSourceToDestinationMap(lights);
 
-                const missing = s2d.some(([s,d]) => d === undefined);
-                const duplicates = Object.keys(s2d.reduce((p, [s,d]) => {
+                const missing = s2dLights.some(([s,d]) => d === undefined);
+                const duplicates = Object.keys(s2dLights.reduce((p, [s,d]) => {
                     if (d !== undefined) {
                         if (p.seen[d.id]) {
                             p.duplicates[d.id] = true;
@@ -141,7 +141,7 @@
                 if (missing || duplicates.length > 0) {
                     const ok = confirm(
                         (missing ? "Not all lights are matched." : "") + 
-                        ((missing && duplicates) ? "\n" : "") +
+                        ((missing && duplicates.length > 0) ? "\n" : "") +
                         (duplicates.length > 0 ? "Some lights are matched to the same light." : "") + 
                         "\nContinue?"
                     );
@@ -150,13 +150,13 @@
                     }
                 }
 
-                step2(name, source, destination, s2d);
+                step2(name, source, destination, s2dLights);
             };
 
             r.append(next);
         }
 
-        async function step2(name, source, destination, s2d) {
+        async function step2(name, source, destination, s2dLights) {
             destination = destination || await getAll(connection);
 
             const r = document.querySelector("#result");
@@ -164,9 +164,9 @@
 
             const tbl = contentTable(name, source, destination);
 
-            console.log(s2d);
+            console.log(s2dLights);
 
-            Diff.renameTable(source, destination, s2d, tbl);
+            Diff.renameTable(source, destination, s2dLights, tbl);
 
             r.append(tbl);
 
@@ -187,17 +187,17 @@ This will make changes to your Hue bridge now.`
                     }
                 }
 
-                step3(name, source, destination, s2d);                
+                step3(name, source, destination, s2dLights);                
             };
 
             r.append(next);
         }
 
-        async function step3(name, source, destination, s2d) {
+        async function step3(name, source, destination, s2dLights) {
             destination = destination || await getAll(connection);
 
             const r = document.querySelector("#result");
-            r.innerHTML = "<hr/><h2>Stage 3: Handle groups</h2>";
+            r.innerHTML = "<hr/><h2>Stage 3: Connect old & new groups</h2>";
 
             const tbl = contentTable(name, source, destination);
 
