@@ -428,3 +428,55 @@ export function extractGroupMap(scope) {
 
     return selects.map(s => ({ source: s.dataset.id, destination: s.value }));
 }
+
+export function renameGroupTable(source, destination, groupMap, tbl) {
+    tbl = tbl || table();
+
+    const renames = [];
+    
+    for (const [srcid, dstid] of Object.entries(groupMap)) {
+        const src = source.groups[srcid];
+        const dst = destination.groups[dstid];
+        if ((dst !== undefined) && (src.name !== dst.name)) {
+            renames.push([{ id: srcid, ...src}, { id: dstid, ...dst}]);
+        }
+    }
+
+    console.log(renames);
+
+    if (renames.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        const h = cell(r, "Renames");
+        h.setAttribute("colspan", 3);
+        
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Current name", "Proposed name", "Action");
+    }
+
+    for (const [src, dst] of renames) {
+        const r = row(tbl);
+
+        const select = document.createElement("select");
+        const d = select.dataset;
+
+        d.targetCategory = "groups";
+        d.targetId = dst.id;
+        d.targetProperty = "name";
+        d.targetValue = src.name;
+
+        const change = option(select, "Change name");
+        change.value = "change";
+        change.selected = true;
+
+        const nochange = option(select, "Don't change");
+        nochange.value = "no-change";
+
+        select.append(change, nochange);
+
+        cells(r, dst.name, src.name, select);
+    }
+
+    return tbl;
+}
