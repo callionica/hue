@@ -54,6 +54,7 @@
                 ["Switches", () => o.sensors.filter(sensor => sensor.type === "ZLLSwitch").length],
                 ["Motion sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLPresence").length],
                 ["Temperature sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLTemperature").length],
+                ["Light level sensors", () => o.sensors.filter(sensor => sensor.type === "ZLLLightLevel").length],
 
                 ["Components", () => o.components.length],
             ];
@@ -94,7 +95,7 @@
 </head>
 <body>
     <h1>Hue Statistics</h1>
-    <p>Here you can see statistics for the current bridge.</p>
+    <p>Here you can see the number of items on the current Hue bridge.</p>
     <hr/>
     <div id="connection"></div>
     <div id="statistics"></div>
