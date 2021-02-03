@@ -288,7 +288,38 @@ This will make changes to your Hue bridge now.`
         }
 
         async function step4(name, source, destination, lightMap, groupMap) {
-            alert("step 4 - rename groups");
+            destination = destination || await getAll(connection);
+
+            const r = document.querySelector("#result");
+            r.innerHTML = "<hr/><h2>Stage 4: Rename groups</h2>";
+
+            const tbl = contentTable(name, source, destination);
+
+            // Diff.renameGroupTable(source, destination, lightMap, groupMap, tbl);
+
+            r.append(tbl);
+
+            const next = document.createElement("button");
+            next.append("Next ›");
+            next.onclick = () => {
+//                 const list = Diff.extractGroupRenameList(document);
+//                 // console.log(list);
+//                 if (list.length > 0) {
+//                     const ok = confirm(
+// `OK to rename ${list.length} groups?
+// This will make changes to your Hue bridge now.`
+//                     );
+//                     if (ok) {
+//                         alert("Not yet implemented");
+//                     } else {
+//                         return;
+//                     }
+//                 }
+
+                // step5(name, source, destination, lightMap, groupMap);                
+            };
+
+            r.append(next);
         }
 
         async function main() {
