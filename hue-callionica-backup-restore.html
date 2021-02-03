@@ -206,7 +206,49 @@ This will make changes to your Hue bridge now.`
 
             console.log(groups);
 
+            const getFloatingD = (name) => groups.destination[name].filter(d => !groups.source[name].some(r => (r.destination === d) && (r.match === "id-name"))).sort((a, b) => a.name.localeCompare(b.name));
+            
+            const getFloatingS = (name) => groups.source[name].filter(r => r.match !== "id-name").sort((a, b) => a.name.localeCompare(b.name));
+
+            // Groups in the destination that don't have exact matches in the source
+            const floatingDestination = { rooms: getFloatingD("rooms"), zones: getFloatingD("zones") };
+
+            // Groups in the source that don't have exact matches in the destination
+            const floatingSource = { rooms: getFloatingS("rooms"), zones: getFloatingS("zones") };
+
+            console.log("floatingD", floatingDestination);
+            console.log("floatingS", floatingSource);
+
+            Diff.groupsTable("Room", floatingSource.rooms, floatingDestination.rooms, tbl);
+
+            Diff.groupsTable("Zone", floatingSource.zones, floatingDestination.zones, tbl);
+
             r.append(tbl);
+
+            const next = document.createElement("button");
+            next.append("Next ›");
+            next.onclick = () => {
+                const list = [1];
+                if (list.length > 0) {
+                    const ok = confirm(
+`OK to create ${list.length} groups?
+This will make changes to your Hue bridge now.`
+                    );
+                    if (ok) {
+                        alert("Not yet implemented");
+                    } else {
+                        return;
+                    }
+                }
+
+                step4();
+            };
+
+            r.append(next);
+        }
+
+        async function step4() {
+            alert("step 4 - rename groups");
         }
 
         async function main() {

@@ -350,3 +350,70 @@ export function groups({ source, destination, lightMap }) {
 
     return { source: { rooms, zones }, destination: { rooms: destinationRooms, zones: destinationZones } };
 }
+
+export function groupsTable(type, source, destination, tbl) {
+    tbl = tbl || table();
+
+    if (source.length > 0) {
+        const r = row(tbl);
+        r.dataset.type = "heading";
+        const h = cell(r, `${type}s`);
+        h.setAttribute("colspan", 3);
+
+        const rl = row(tbl);
+        rl.dataset.type = "labels";
+        cells(rl, "Name", "Lights", `${type}`);
+    }
+
+    for (const value of source) {
+        const r = row(tbl);
+        r.dataset.match = value.match;
+
+        const picker = groupPicker(destination, value.source.type);
+        const o = [...picker.querySelectorAll("option")].find(o => o.value === value.destination?.id);
+        if (o !== undefined) {
+            o.selected = true;
+            o.title = `MATCH: ${value.match}`;
+        }
+
+        cells(r, value.source.name, value.source.lights.length, picker);
+    }
+
+    return tbl;
+}
+
+export function groupPicker(groups, type) {
+    const e = document.createElement("select");
+
+    if (true) {
+        const o = document.createElement("option");
+
+        o.value = "(create)";
+        o.innerText = `(Create ${type})`;
+        o.title = `Create a new ${type}`;
+
+        e.append(o);
+    }
+
+    if (true) {
+        const o = document.createElement("option");
+
+        o.value = "(none)";
+        o.innerText = `(None)`;
+        o.title = `No ${type}`;
+
+        e.append(o);
+    }
+
+    for (const group of groups) {
+        const o = document.createElement("option");
+
+        o.value = group.id;
+        o.innerText = group.name;
+        o.title = `${group.lights.length} lights`;
+
+        e.append(o);
+    }
+
+    return e;
+}
