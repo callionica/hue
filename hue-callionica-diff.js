@@ -295,20 +295,17 @@ function items(o) {
 }
 
 function isSetEqual(a, b) {
-    console.log(a, b);
     const w = new Set(b);
     for (const o of a) {
         if (w.has(o)) {
             w.delete(o);
         } else {
-            console.log("No has");
             return false;
         }
     }
     if (w.size === 0) {
         return true;
     }
-    console.log("Extra items in B");
     return false;
 }
 
@@ -320,15 +317,12 @@ export function groups({ source, destination, lightMap }) {
     const destinationRooms = destinationGroups.filter(g => g.type === "Room");
     const destinationZones = destinationGroups.filter(g => g.type !== "Room");
 
-    const lm = Object.fromEntries(lightMap);
-
     for (const group of items(source.groups)) {
         const collection = (group.type === "Room") ? rooms : zones;
         const dest = (group.type === "Room") ? destinationRooms : destinationZones;
 
-        
-        const lights = group.lights.map(id => lm[id]?.id);
-        console.log("LIGHTS", lights);
+        const lights = group.lights.map(id => lightMap[id]?.id);
+        // console.log("LIGHTS", lights);
 
         const idNameMatch = dest.find(g => (g.id === group.id) && (g.name === group.name));
 

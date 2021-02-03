@@ -164,7 +164,7 @@
 
             const tbl = contentTable(name, source, destination);
 
-            console.log(s2dLights);
+            // console.log(s2dLights);
 
             Diff.renameTable(source, destination, s2dLights, tbl);
 
@@ -174,7 +174,7 @@
             next.append("Next ›");
             next.onclick = () => {
                 const list = Diff.extractRenameList(document);
-                console.log(list);
+                // console.log(list);
                 if (list.length > 0) {
                     const ok = confirm(
 `OK to rename ${list.length} lights?
@@ -193,7 +193,7 @@ This will make changes to your Hue bridge now.`
             r.append(next);
         }
 
-        async function step3(name, source, destination, lightMap) {
+        async function step3(name, source, destination, s2dLights) {
             destination = destination || await getAll(connection);
 
             const r = document.querySelector("#result");
@@ -201,6 +201,7 @@ This will make changes to your Hue bridge now.`
 
             const tbl = contentTable(name, source, destination);
 
+            const lightMap = Object.fromEntries(s2dLights);
             const groups = Diff.groups({ source, destination, lightMap });
 
             console.log(groups);
