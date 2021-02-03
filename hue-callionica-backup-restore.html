@@ -246,8 +246,8 @@ This will make changes to your Hue bridge now.`
                 if ((duplicates.size > 0) || (unmatched.length > 0)) {
                     const ok = confirm(
                         ((unmatched.length > 0) ? "Not all groups are matched." : "") + 
-                        (((unmatched.length > 0) && duplicates.size > 0) ? "\n" : "") +
-                        (duplicates.size > 0 ? "Some groups are matched to the same group." : "") + 
+                        (((unmatched.length > 0) && (duplicates.size > 0)) ? "\n" : "") +
+                        ((duplicates.size > 0) ? "Some groups are matched to the same group." : "") + 
                         "\nContinue?"
                     );
                     if (!ok) {
@@ -267,13 +267,27 @@ This will make changes to your Hue bridge now.`
                     }
                 }
 
-                step4();
+                const gm = [...groups.source.rooms, ...groups.source.zones].map(v => list.find(item => item.source === v.source.id) || ({ source: v.source.id, destination: v.destination.id })).map(v => [v.source, v.destination]);
+
+                for (const g of gm) {
+                    if (g[1] === "(create)") {
+                        g[1] = undefined;  // TODO
+                    } else if (g[1] === "(none)") {
+                        g[1] = undefined;
+                    }
+                }
+
+                const groupMap = Object.fromEntries(gm);
+
+                console.log("groupMap", groupMap);
+
+                step4(name, source, destination, lightMap, groupMap);
             };
 
             r.append(next);
         }
 
-        async function step4() {
+        async function step4(name, source, destination, lightMap, groupMap) {
             alert("step 4 - rename groups");
         }
 
