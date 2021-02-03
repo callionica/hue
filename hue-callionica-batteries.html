@@ -40,7 +40,7 @@
             ["sensors", "components", "rules", "schedules", "groups", "lights", "scenes"].forEach(n => o[n] = Object.values(data[n]));
 
             const lights = o.lights.filter(light => light?.config?.battery !== undefined);
-            const sensors = o.sensors.filter(sensor => sensor?.config?.battery !== undefined);
+            const sensors = o.sensors.filter(sensor => sensor?.config?.battery !== undefined).sort((a,b) => a.name.localeCompare(b.name));
 
             const html = `<h1>${connection.bridge.name}</h1>
             <h2>Batteries</h2>

@@ -70,7 +70,7 @@
             const data = await getAll(connection);
             const capabilities = await getCapabilities(connection);
 
-            const sensors = Object.values(data.sensors).filter(sensor => sensor?.state?.temperature !== undefined).sort((a, b) => a.localeCompare(b));
+            const sensors = Object.values(data.sensors).filter(sensor => sensor?.state?.temperature !== undefined).sort((a, b) => a.name.localeCompare(b.name));
 
             // const sensors = [
             //     { id: 1, name: "Hall", state: { temperature: 1861, lastupdated: "2021-01-23T16:04:00" } },
