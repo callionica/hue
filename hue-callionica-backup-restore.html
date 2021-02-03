@@ -208,7 +208,7 @@ This will make changes to your Hue bridge now.`
 
             const getFloatingD = (name) => groups.destination[name].filter(d => !groups.source[name].some(r => (r.destination === d) && (r.match === "id-name"))).sort((a, b) => a.name.localeCompare(b.name));
             
-            const getFloatingS = (name) => groups.source[name].filter(r => r.match !== "id-name").sort((a, b) => a.name.localeCompare(b.name));
+            const getFloatingS = (name) => groups.source[name].filter(r => r.match !== "id-name").sort((a, b) => a.source.name.localeCompare(b.source.name));
 
             // Groups in the destination that don't have exact matches in the source
             const floatingDestination = { rooms: getFloatingD("rooms"), zones: getFloatingD("zones") };
@@ -216,8 +216,8 @@ This will make changes to your Hue bridge now.`
             // Groups in the source that don't have exact matches in the destination
             const floatingSource = { rooms: getFloatingS("rooms"), zones: getFloatingS("zones") };
 
-            console.log("floatingD", floatingDestination);
-            console.log("floatingS", floatingSource);
+            // console.log("floatingD", floatingDestination);
+            // console.log("floatingS", floatingSource);
 
             Diff.groupsTable("Room", floatingSource.rooms, floatingDestination.rooms, tbl);
 
@@ -228,10 +228,36 @@ This will make changes to your Hue bridge now.`
             const next = document.createElement("button");
             next.append("Next ›");
             next.onclick = () => {
-                const list = [1];
-                if (list.length > 0) {
+                const list = Diff.extractGroupMap(document);
+
+                const unmatched = list.filter(item => item.destination === "(none)");
+                const create = list.filter(item => item.destination === "(create)");
+                const matched = list.filter(item => (item.destination !== "(none)") && (item.destination !== "(create)") );
+
+                const duplicates = list.reduce((p, item) => {
+                    if (p.seen.has(item.destination)) {
+                        p.duplicates.add(item.destination);
+                    } else {
+                        p.seen.add(item.destination);
+                    }
+                    return p;
+                }, { seen: new Set(), duplicates: new Set() }).duplicates; 
+
+                if ((duplicates.size > 0) || (unmatched.length > 0)) {
                     const ok = confirm(
-`OK to create ${list.length} groups?
+                        ((unmatched.length > 0) ? "Not all groups are matched." : "") + 
+                        (((unmatched.length > 0) && duplicates.size > 0) ? "\n" : "") +
+                        (duplicates.size > 0 ? "Some groups are matched to the same group." : "") + 
+                        "\nContinue?"
+                    );
+                    if (!ok) {
+                        return;
+                    }
+                }
+
+                if (create.length > 0) {
+                    const ok = confirm(
+`OK to create ${create.length} groups?
 This will make changes to your Hue bridge now.`
                     );
                     if (ok) {

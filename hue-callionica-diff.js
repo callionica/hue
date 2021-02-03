@@ -370,6 +370,9 @@ export function groupsTable(type, source, destination, tbl) {
         r.dataset.match = value.match;
 
         const picker = groupPicker(destination, value.source.type);
+        picker.dataset.id = value.source.id;
+        picker.dataset.type = "group-source-to-destination";
+
         const o = [...picker.querySelectorAll("option")].find(o => o.value === value.destination?.id);
         if (o !== undefined) {
             o.selected = true;
@@ -416,4 +419,12 @@ export function groupPicker(groups, type) {
     }
 
     return e;
+}
+
+export function extractGroupMap(scope) {
+    scope = scope || document;
+
+    const selects = [...scope.querySelectorAll("select[data-type='group-source-to-destination']")];
+
+    return selects.map(s => ({ source: s.dataset.id, destination: s.value }));
 }
