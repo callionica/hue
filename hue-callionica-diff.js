@@ -289,3 +289,70 @@ export function extractRenameList(scope) {
 
     return list;
 }
+
+function items(o) {
+    return Object.entries(o).map(([id, item]) => ({ id, ...item }));
+}
+
+function isSetEqual(a, b) {
+    console.log(a, b);
+    const w = new Set(b);
+    for (const o of a) {
+        if (w.has(o)) {
+            w.delete(o);
+        } else {
+            console.log("No has");
+            return false;
+        }
+    }
+    if (w.size === 0) {
+        return true;
+    }
+    console.log("Extra items in B");
+    return false;
+}
+
+export function groups({ source, destination, lightMap }) {
+    const rooms = [];
+    const zones = [];
+
+    const destinationGroups = items(destination.groups);
+    const destinationRooms = destinationGroups.filter(g => g.type === "Room");
+    const destinationZones = destinationGroups.filter(g => g.type !== "Room");
+
+    const lm = Object.fromEntries(lightMap);
+
+    for (const group of items(source.groups)) {
+        const collection = (group.type === "Room") ? rooms : zones;
+        const dest = (group.type === "Room") ? destinationRooms : destinationZones;
+
+        
+        const lights = group.lights.map(id => lm[id]?.id);
+        console.log("LIGHTS", lights);
+
+        const idNameMatch = dest.find(g => (g.id === group.id) && (g.name === group.name));
+
+        if (idNameMatch !== undefined) {
+            collection.push({ source: group, destination: idNameMatch, match: "id-name" });
+            continue;
+        }
+
+        const nameMatch = dest.find(g => (g.name === group.name));
+
+        if (nameMatch !== undefined) {
+            collection.push({ source: group, destination: nameMatch, match: "name" });
+            continue;
+        }
+
+        const lightsMatch = dest.find(g => isSetEqual(lights, g.lights));
+
+        if (lightsMatch !== undefined) {
+            collection.push({ source: group, destination: lightsMatch, match: "lights" });
+            continue;
+        }
+
+        collection.push({ source: group, destination: undefined, match: "none" });
+    }
+
+    return { source: { rooms, zones }, destination: { rooms: destinationRooms, zones: destinationZones } };
+}

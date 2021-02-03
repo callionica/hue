@@ -193,13 +193,17 @@ This will make changes to your Hue bridge now.`
             r.append(next);
         }
 
-        async function step3(name, source, destination, s2dLights) {
+        async function step3(name, source, destination, lightMap) {
             destination = destination || await getAll(connection);
 
             const r = document.querySelector("#result");
             r.innerHTML = "<hr/><h2>Stage 3: Connect old & new groups</h2>";
 
             const tbl = contentTable(name, source, destination);
+
+            const groups = Diff.groups({ source, destination, lightMap });
+
+            console.log(groups);
 
             r.append(tbl);
         }
