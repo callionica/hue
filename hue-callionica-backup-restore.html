@@ -302,24 +302,28 @@ This will make changes to your Hue bridge now.`
             const next = document.createElement("button");
             next.append("Next ›");
             next.onclick = () => {
-//                 const list = Diff.extractGroupRenameList(document);
-//                 // console.log(list);
-//                 if (list.length > 0) {
-//                     const ok = confirm(
-// `OK to rename ${list.length} groups?
-// This will make changes to your Hue bridge now.`
-//                     );
-//                     if (ok) {
-//                         alert("Not yet implemented");
-//                     } else {
-//                         return;
-//                     }
-//                 }
+                const list = Diff.extractRenameList(document);
+                console.log(list);
+                if (list.length > 0) {
+                    const ok = confirm(
+`OK to rename ${list.length} groups?
+This will make changes to your Hue bridge now.`
+                    );
+                    if (ok) {
+                        alert("Not yet implemented");
+                    } else {
+                        return;
+                    }
+                }
 
-                // step5(name, source, destination, lightMap, groupMap);                
+                step5(name, source, destination, lightMap, groupMap);                
             };
 
             r.append(next);
+        }
+
+        async function step5(name, source, destination, lightMap, groupMap) {
+            alert("step 5");
         }
 
         async function main() {
