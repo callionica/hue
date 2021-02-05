@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Last Changes</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        .limit {
+            color: lightgray;
+        }
+        .numeric {
+            text-align: right;
+        }
+        .celsius::after {
+            content: '℃';
+            color: gray;
+        }
+        .fahrenheit::after {
+            content: '℉';
+            color: gray;
+        }
+        td:first-of-type {
+            padding: 0;
+        }
+        tr[data-on='false'] {
+            color: gray;
+        }
+        tr[data-reachable='false'] {
+            color: gray;
+        }
+        thead {
+            font-weight: bold;
+        }
+    </style>
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { sortBy, getAll, getLastChanges } from "./hue-callionica.js";
+        import { localizeDateTime } from "./hue-callionica-ui.js";
+
+        let bridge;
+        let connection;
+
+        function category2(category, o) {
+            if (category === "sensor") {
+                category = o.type;
+            }
+            return category;
+        }
+
+        function lastChangeHTML(item) {
+            const [ property, date, category, o ] = item;
+
+            const propertyTitles = {
+                "installed": "Software updated",
+            };
+
+            const categoryTitles = {
+                "user": "App user",
+                "software-update": "Software update",
+                "ZLLSwitch": "Switch",
+                "ZLLTemperature": "Temperature",
+                "ZLLLightLevel": "Light level",
+                "ZLLPresence": "Motion",
+                "CLIPGenericStatus": "Software sensor",
+                "CLIPGenericFlag": "Software flag",
+            };
+
+            const cat = category2(category, o);
+            const lastChanged = localizeDateTime(date).display;
+            const propertyTitle = propertyTitles[property] || (property[0].toUpperCase() + property.substring(1));
+            const categoryTitle = categoryTitles[cat] || (cat[0].toUpperCase() + cat.substring(1));
+            const name = o.name || o;
+
+            return `<tr><td>${lastChanged}</td><td>${name}</td><td>${categoryTitle}</td><td>${propertyTitle}</td></tr>`;
+        }
+
+        async function main() {
+            bridge = loadCurrentBridge();
+            connection = await loadConnection("Callionica", bridge);
+
+            const data = await getAll(connection);
+
+            const changes = getLastChanges(data);
+
+            const msg = (changes.length === 0) ? `<p>No changes found.</p>` : "";
+
+            const html = `<h1>${connection.bridge.name}</h1>
+            <h2>Last Changes</h2>
+            <table>
+            <thead><tr><td>Date</td><td>Name</td><td>Category</td><td>Action</td></tr></thead>` 
+            + changes.map(item => lastChangeHTML(item)).join("\n")
+            + `</table>`
+            + msg
+            ;
+            document.getElementById("last-changes").innerHTML = html;
+        }
+
+        async function _main() {
+            try {
+                await main();
+                delete document.body.dataset.showConnection;
+
+                // setTimeout(()=> _main(), 60*1000);
+
+            } catch (error) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                }
+
+                setTimeout(()=> _main(), 3*1000);
+            }
+        }
+
+        _main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Last Changes</h1>
+    <p>Here you can see the most recent changes made to the Hue bridge.</p>
+    <hr/>
+    <div id="connection"></div>
+    <div id="last-changes"></div>
+</body>
+</html>

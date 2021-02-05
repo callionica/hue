@@ -2368,3 +2368,104 @@ export async function copyButtonAccessory(connection, data, sourceSensorID, dest
     }
 }
 
+// Returns changes to the bridge in a date-ordered list with the most recent changes at the head
+// to the extent allowable by the date stamps that are tracked by the bridge.
+/*
+swupdate.lastinstall (lights/sensors)
+state.lastupdated (sensors)
+lasttriggered (rules) - can be “none”
+created (rules, schedules)
+starttime (schedules) - only for timers
+lastupdated (scenes)
+swupdate2.bridge.lastinstall (config)
+swupdate2.lastchange (config) - is this release date of the firmware???
+whitelist.<X>.create date (config) - it has a space
+whitelist.<X>.last use date (config) - it has two spaces
+*/
+export function getLastChanges(data) {
+    const result = [];
+
+    for (const [id, light] of Object.entries(data.lights)) {
+        const o = { id, ...light };
+        const lastinstall = o.swupdate?.lastinstall;
+        if ((lastinstall !== undefined) && (lastinstall !== "none")) {
+            result.push(["installed", lastinstall, "light", o]);
+        }
+    }
+
+    for (const [id, sensor] of Object.entries(data.sensors)) {
+        const o = { id, ...sensor };
+        const lastinstall = o.swupdate?.lastinstall;
+        if ((lastinstall !== undefined) && (lastinstall !== "none")) {
+            result.push(["installed", lastinstall, "sensor", o]);
+        }
+
+        const lastupdated = o.state?.lastupdated;
+        if ((lastupdated !== undefined) && (lastupdated !== "none")) {
+            result.push(["updated", lastupdated, "sensor", o]);
+        }
+    }
+
+    for (const [id, rule] of Object.entries(data.rules)) {
+        const o = { id, ...rule };
+        const lasttriggered = o.lasttriggered;
+        if ((lasttriggered !== undefined) && (lasttriggered !== "none")) {
+            result.push(["triggered", lasttriggered, "rule", o]);
+        }
+
+        const created = o.created;
+        if ((created !== undefined) && (created !== "none")) {
+            result.push(["created", created, "rule", o]);
+        }
+    }
+
+    for (const [id, schedule] of Object.entries(data.schedules)) {
+        const o = { id, ...schedule };
+        const starttime = o.starttime;
+        if ((starttime !== undefined) && (starttime !== "none")) {
+            result.push(["started", starttime, "schedule", o]);
+        }
+
+        const created = o.created;
+        if ((created !== undefined) && (created !== "none")) {
+            result.push(["created", created, "schedule", o]);
+        }
+    }
+
+    for (const [id, scene] of Object.entries(data.scenes)) {
+        const o = { id, ...scene };
+
+        const lastupdated = o.lastupdated;
+        if ((lastupdated !== undefined) && (lastupdated !== "none")) {
+            result.push(["updated", lastupdated, "scene", o]);
+        }
+    }
+
+    for (const [id, user] of Object.entries(data.config.whitelist)) {
+        const o = { id, ...user };
+
+        const created = o["create date"];
+        if ((created !== undefined) && (created !== "none")) {
+            result.push(["created", created, "user", o]);
+        }
+
+        const used = o["last use date"];
+        if ((used !== undefined) && (used !== "none")) {
+            result.push(["used", used, "user", o]);
+        }
+    }
+
+    if (true) {
+        const lastinstall = data.config.swupdate2?.bridge?.lastinstall;
+        if ((lastinstall !== undefined) && (lastinstall !== "none")) {
+            result.push(["installed", lastinstall, "bridge", data.config]);
+        }
+
+        const lastchange = data.config.swupdate2?.lastchange;
+        if ((lastchange !== undefined) && (lastchange !== "none")) {
+            result.push(["changed", lastchange, "software-update", data.config]);
+        }
+    }
+
+    return result.sort((a,b) => -a[1].localeCompare(b[1], "en"));
+}
