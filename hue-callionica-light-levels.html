@@ -66,11 +66,14 @@
 
             const sensors = Object.values(data.sensors).filter(sensor => sensor?.state?.lightlevel !== undefined).sort((a, b) => a.name.localeCompare(b.name));
 
+            const msg = (sensors.length === 0) ? `<p>No light level sensors found.</p>` : "";
+
             const html = `<h1>${connection.bridge.name}</h1>
             <h2>Light Levels</h2>
             <table>` 
             + sensors.map(item => lightLevelHTML(item, "sensor")).join("\n")
             + `</table>`
+            + msg
             ;
             document.getElementById("light-levels").innerHTML = html;
         }
