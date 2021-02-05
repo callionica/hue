@@ -76,11 +76,14 @@
             //     { id: 1, name: "Hall", state: { temperature: 1861, lastupdated: "2021-01-23T16:04:00" } },
             // ];
 
+            const msg = (sensors.length === 0) ? `<p>No temperature sensors found.</p>` : "";
+
             const html = `<h1>${connection.bridge.name}</h1>
             <h2>Temperatures</h2>
             <table>` 
             + sensors.map(item => temperatureHTML(item, "sensor")).join("\n")
             + `</table>`
+            + msg
             ;
             document.getElementById("temperatures").innerHTML = html;
         }
