@@ -101,12 +101,15 @@
 
             const rows = possibleScenes.map(scene => `<tr><td>${scene.name}</td><td>${grp(scene)}</td><td>${lgt(scene)}</td></tr>`).join("\n");
 
+            const msg = (possibleScenes.length === 0) ? `<tr><td colspan="3">No matching scenes found</td></tr>` : "";
+
             e.innerHTML = `
             <table>
                 <thead>
                 <tr><td>Scene</td><td>Room/Zone</td><td>Lights</td></tr>
                 </thead>
                 ${rows}
+                ${msg}
             </table>
             `;
         }
