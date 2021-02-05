@@ -23,6 +23,7 @@
         }
         td:first-of-type {
             padding: 0;
+            padding-left: 0.5rem;
         }
         tr[data-on='false'] {
             color: gray;
@@ -30,8 +31,27 @@
         tr[data-reachable='false'] {
             color: gray;
         }
+        table {
+            border-collapse: collapse;
+        }
+        tr[data-category='user'] {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: gray;
+            background-color: lightgray;
+        }
+        tr[data-category='user'] td {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
         thead {
             font-weight: bold;
+        }
+        td[data-type='date'] {
+            /*font-family: 'Andale Mono', 'Menlo', 'Courier New', Courier, monospace;*/
+        }
+        td[data-type='time'] {
+            font-family: 'Andale Mono', 'Monaco', 'Menlo', 'Courier New', Courier, monospace;
         }
     </style>
     <script type="module">
@@ -68,12 +88,19 @@
             };
 
             const cat = category2(category, o);
-            const lastChanged = localizeDateTime(date).display;
+            const lastChanged = localizeDateTime(date);
+            const time = lastChanged.displayTime[1] == ":" ? (" " + lastChanged.displayTime) : lastChanged.displayTime;
             const propertyTitle = propertyTitles[property] || (property[0].toUpperCase() + property.substring(1));
             const categoryTitle = categoryTitles[cat] || (cat[0].toUpperCase() + cat.substring(1));
             const name = o.name || o;
 
-            return `<tr><td>${lastChanged}</td><td>${name}</td><td>${categoryTitle}</td><td>${propertyTitle}</td></tr>`;
+            return `<tr data-category="${cat}" data-property="${property}">
+                <td data-type="date">${lastChanged.displayDate}</td>
+                <td data-type="time">${time}</td>
+                <td>${name}</td>
+                <td>${categoryTitle}</td>
+                <td>${propertyTitle}</td>
+            </tr>`;
         }
 
         async function main() {
@@ -89,7 +116,7 @@
             const html = `<h1>${connection.bridge.name}</h1>
             <h2>Last Changes</h2>
             <table>
-            <thead><tr><td>Date</td><td>Name</td><td>Category</td><td>Action</td></tr></thead>` 
+            <thead><tr><td>Date</td><td>Time</td><td>Name</td><td>Category</td><td>Action</td></tr></thead>` 
             + changes.map(item => lastChangeHTML(item)).join("\n")
             + `</table>`
             + msg
@@ -125,6 +152,7 @@
 <body>
     <h1>Last Changes</h1>
     <p>Here you can see the most recent changes made to the Hue bridge.</p>
+    <p>This is <em>not</em> a log of all changes made to the Hue bridge, but it might help you work out why something has changed.</p>
     <hr/>
     <div id="connection"></div>
     <div id="last-changes"></div>
