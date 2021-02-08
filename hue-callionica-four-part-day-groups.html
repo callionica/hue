@@ -64,12 +64,13 @@
         }
 
         :root {
+            --expando-over-height: 2rem;
             --expando-inner-height: 3rem;
         }
 
         *[data-expando='outer'] {
             /* Have to use a fixed height to get a smooth transition */
-            height: 3rem;
+            height: var(--expando-over-height);
             overflow: hidden;
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
@@ -81,7 +82,12 @@
             z-index: 2;
         }
 
+        *[data-expando='over'] {
+            height: var(--expando-over-height);
+        }
+
         *[data-expando='inner'] {
+            /* Relative positioning with z-index for slide behind */
             position: relative;
             z-index: 1;
             height: var(--expando-inner-height);
@@ -90,7 +96,7 @@
 
         *[data-expando='outer'][data-selected='true'] {
             /* Have to use a fixed height to get a smooth transition */
-            height: 6rem;
+            height: calc(var(--expando-inner-height) + var(--expando-over-height));
         }
 
         *[data-expando='outer'] > *[data-expando='inner'] {
