@@ -216,7 +216,9 @@
                 if ((bridge === undefined) || (connection === undefined)) {
                     e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                 } else {
-                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
+                    const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                    e.innerHTML = `<a href="${link}">Refresh your Hue bridge connection</a>`;
+                    e.querySelector("iframe").src = link;
                 }
 
                 return;
@@ -504,7 +506,9 @@
 <body data-page="groups">
     <h1>Rooms & Zones</h1>
     <hr/>
-    <div id="connection"></div>
+    <div id="connection">
+        <iframe style="display: none"></iframe>
+    </div>
     <div id="data" data-select-group="true"></div>
     <!--<iframe src=""></iframe>-->
 </body>
