@@ -217,13 +217,7 @@
                     e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                 } else {
                     const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
-                    e.innerHTML = `<a href="${link}">Refresh your Hue bridge connection</a>`;
-                    e.onclick = (evt) => {
-                        alert("Temporaily unavailable");
-                        e.querySelector("iframe").src = link;
-                        evt.preventDefault();
-                        e.onclick = undefined;
-                    }
+                    e.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection</a>`;
                 }
 
                 return;
