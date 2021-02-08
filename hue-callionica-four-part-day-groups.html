@@ -63,26 +63,46 @@
             text-align: center;
         }
 
+        :root {
+            --expando-inner-height: 3rem;
+        }
+
         *[data-expando='outer'] {
             /* Have to use a fixed height to get a smooth transition */
-            height: 10vh;
+            height: 3rem;
             overflow: hidden;
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
 
+        *[data-expando='outer'] > *[data-expando='over'] {
+            /* Opaque background and relative positioning with z-index for slide behind */
+            background-color: darkkhaki;
+            position: relative;
+            z-index: 2;
+        }
+
+        *[data-expando='inner'] {
+            position: relative;
+            z-index: 1;
+            height: var(--expando-inner-height);
+            background-color: darkorange;
+        }
+
         *[data-expando='outer'][data-selected='true'] {
             /* Have to use a fixed height to get a smooth transition */
-            height: 20vh;
+            height: 6rem;
         }
 
         *[data-expando='outer'] > *[data-expando='inner'] {
             opacity: 0;
+            margin-top: calc(-1 * var(--expando-inner-height));
             visibility: hidden;
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
 
         *[data-expando='outer'][data-selected='true'] > *[data-expando='inner'] {
             opacity: 1;
+            margin-top: 0rem;
             visibility: unset;
         }
 
@@ -148,7 +168,17 @@
     <div id="connection"></div>
     <div id="data" data-expando="group">
         <div data-expando="outer" data-selected="true">
-            <div>Bedroom</div>
+            <div data-expando="over">Bedroom</div>
+            <div data-expando="inner">
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+            </div>
+            
+        </div>
+        <div data-expando="outer">
+            <div data-expando="over">Bedroom</div>
             <div data-expando="inner">
                 <button>Morning</button>
                 <button>Day</button>
@@ -157,16 +187,7 @@
             </div>
         </div>
         <div data-expando="outer">
-            <div>Bedroom</div>
-            <div data-expando="inner">
-                <button>Morning</button>
-                <button>Day</button>
-                <button>Evening</button>
-                <button>Night</button>
-            </div>
-        </div>
-        <div data-expando="outer">
-            <div>Bedroom</div>
+            <div data-expando="over">Bedroom</div>
             <a href="#what">Test</a>
             <div data-expando="inner">
                 <button>Morning</button>
