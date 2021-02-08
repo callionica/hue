@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Zones">
+    <link rel="apple-touch-icon" href="apple-touch-icon-precomposed.png">
+
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Rooms & Zones</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-size: inherit;
+        }
+
+        :root {
+            font-size: 16pt;
+        }
+
+        @media (max-width: 720px) {
+            :root {
+                font-size: 3vw;
+            }
+        }
+
+        body {
+            width: 100vw;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+        }
+        h2 {
+            font-size: 1.2rem;
+        }
+        h3 {
+            font-size: 1.1rem;
+        }
+
+        select, button, input {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: gray;
+            padding: 0.2rem;
+        }
+
+        hr {
+            overflow: visible; /* For IE */
+            padding: 0;
+            margin-bottom: 0.4rem;
+            margin-top: 0.4rem;
+            border: none;
+            border-top: medium double #333;
+            color: #333;
+            text-align: center;
+        }
+
+        *[data-expando='outer'] {
+            /* Have to use a fixed height to get a smooth transition */
+            height: 10vh;
+            overflow: hidden;
+            transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        *[data-expando='outer'][data-selected='true'] {
+            /* Have to use a fixed height to get a smooth transition */
+            height: 20vh;
+        }
+
+        *[data-expando='outer'] > *[data-expando='inner'] {
+            opacity: 0;
+            visibility: hidden;
+            transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        *[data-expando='outer'][data-selected='true'] > *[data-expando='inner'] {
+            opacity: 1;
+            visibility: unset;
+        }
+
+        button {
+            height: 2rem;
+            width: 6rem;
+        }
+    </style>
+    <script type="module">
+
+        function expando(e) {
+            
+            const removeSelection = (e.dataset.selected === "true");
+
+            let container = e.parentNode;
+            while (container) {
+                if (container.dataset.expando === "group") {
+                    break;
+                }
+                container = container.parentNode;
+            }
+
+            if (container == undefined) {
+                return;
+            }
+
+            const selected = container.querySelectorAll("[data-selected='true']");
+            for (const s of selected) {
+                delete s.dataset.selected;
+            }
+
+            if (!removeSelection) {
+                e.dataset.selected = true;
+            } else {
+                delete e.dataset.selected;
+            }
+        }
+    
+        function setupExpando(scope) {
+            scope = scope || document;
+
+            const excludes = ["A", "BUTTON", "INPUT"];
+            const elements = [...scope.querySelectorAll("*[data-expando='outer']")];
+            for (const element of elements) {
+                element.addEventListener("click", (e) => {
+                    if (!excludes.includes(e.target.nodeName)) {
+                        expando(element);
+                        e.preventDefault();
+                    }
+                }, false);
+            }
+        }
+
+        setupExpando();
+
+    </script>
+</head>
+<body data-page="groups">
+    <h1>Rooms & Zones</h1>
+    <h2>Rooms & Zones</h2>
+    <h3>Rooms & Zones</h3>
+    <hr/>
+    <div id="connection"></div>
+    <div id="data" data-expando="group">
+        <div data-expando="outer" data-selected="true">
+            <div>Bedroom</div>
+            <div data-expando="inner">
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+            </div>
+        </div>
+        <div data-expando="outer">
+            <div>Bedroom</div>
+            <div data-expando="inner">
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+            </div>
+        </div>
+        <div data-expando="outer">
+            <div>Bedroom</div>
+            <a href="#what">Test</a>
+            <div data-expando="inner">
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
