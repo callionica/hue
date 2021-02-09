@@ -66,6 +66,8 @@
         :root {
             --expando-over-height: 2rem;
             --expando-inner-height: 3rem;
+            --expando-color: 35,35,35;
+            --expando-text-color: 204,204,204;
         }
 
         *[data-expando='outer'] {
@@ -73,13 +75,20 @@
             height: var(--expando-over-height);
             overflow: hidden;
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
+
+            color: rgb(var(--expando-text-color));
+            background-color: rgb(var(--expando-color));
+
+            margin-left: 0.25rem;
+            margin-right: 0.25rem;
+            margin-bottom: 0.75rem;
         }
 
         *[data-expando='over'] {
             height: var(--expando-over-height);
 
             /* Opaque background and relative positioning with z-index for slide behind */
-            background-color: darkkhaki;
+            background-color: rgb(var(--expando-color));
             position: relative;
             z-index: 2;
         }
@@ -90,7 +99,7 @@
             /* Relative positioning with z-index for slide behind */
             position: relative;
             z-index: 1;
-            background-color: darkorange;
+            /*background-color: darkorange;*/
 
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
@@ -104,6 +113,8 @@
             opacity: 0;
             margin-top: calc(-1 * var(--expando-inner-height));
             visibility: hidden;
+
+            transition: height 0.6s ease, margin 0.6s ease, opacity 1.2s ease, visibility 0.6s ease;
         }
 
         *[data-expando='outer'][data-selected='true'] > *[data-expando='inner'] {
@@ -116,6 +127,28 @@
             height: 2rem;
             width: 6rem;
         }
+
+        :root {
+            --back-color: 30,30,30;
+            --button-color: 45,45,45;
+            --text-color: 204,204,204;
+        }
+
+        /*.group {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            
+            width: 98vw;
+
+            border-radius: 0.3rem;
+            margin-bottom: 0.75rem;
+
+            border-width: 0.2rem;
+            border-style: solid;
+            border-color: rgb(var(--button-color));
+        }*/
+
     </style>
     <script type="module">
 
@@ -175,7 +208,7 @@
     <hr/>
     <div id="connection"></div>
     <div id="data" data-expando="group">
-        <div data-expando="outer" data-selected="true">
+        <div class="group" data-expando="outer" data-selected="true">
             <div data-expando="over">Bedroom</div>
             <div data-expando="inner">
                 <button>Morning</button>
@@ -185,7 +218,7 @@
             </div>
             
         </div>
-        <div data-expando="outer">
+        <div class="group" data-expando="outer">
             <div data-expando="over">Bedroom</div>
             <div data-expando="inner">
                 <button>Morning</button>
@@ -194,7 +227,7 @@
                 <button>Night</button>
             </div>
         </div>
-        <div data-expando="outer">
+        <div class="group" data-expando="outer">
             <div data-expando="over">Bedroom</div>
             <a href="#what">Test</a>
             <div data-expando="inner">
