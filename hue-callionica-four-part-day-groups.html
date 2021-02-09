@@ -119,18 +119,23 @@
     </style>
     <script type="module">
 
-        function expando(e) {
-            
-            const removeSelection = (e.dataset.selected === "true");
-
+        function ancestor(e, pred) {
             let container = e.parentNode;
             while (container) {
-                if (container.dataset.expando === "group") {
+                if (pred(container)) {
                     break;
                 }
                 container = container.parentNode;
             }
+            return container || undefined;
+        }
 
+        function expando(e) {
+            
+            const removeSelection = (e.dataset.selected === "true");
+
+            // let container = ancestor(e, a => a.dataset.expando === "group");
+            let container = e.closest("*[data-expando='group']");
             if (container == undefined) {
                 return;
             }
@@ -168,8 +173,6 @@
 </head>
 <body data-page="groups">
     <h1>Rooms & Zones</h1>
-    <h2>Rooms & Zones</h2>
-    <h3>Rooms & Zones</h3>
     <hr/>
     <div id="connection"></div>
     <div id="data" data-expando="group">
