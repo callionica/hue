@@ -37,18 +37,25 @@
 
         h1 {
             font-size: 1.4rem;
+            padding-top: 0.25rem;
+            padding-left: 0.5rem;
         }
         h2 {
             font-size: 1.2rem;
+            padding-top: 0.25rem;
+            padding-left: 0.5rem;
         }
         h3 {
             font-size: 1.1rem;
+            padding-top: 0.25rem;
+            padding-left: 0.5rem;
         }
 
         select, button, input {
             border-style: solid;
             border-width: 0.1rem;
             border-color: gray;
+            border-radius: 0.275rem;
             padding: 0.2rem;
         }
 
@@ -64,9 +71,9 @@
         }
 
         :root {
-            --expando-over-height: 2rem;
-            --expando-inner-height: 3rem;
-            --expando-color: 35,35,35;
+            --expando-over-height: 2.5rem;
+            --expando-inner-height: 2.5rem;
+            --expando-color: 55,55,55;
             --expando-text-color: 204,204,204;
         }
 
@@ -82,6 +89,12 @@
             margin-left: 0.25rem;
             margin-right: 0.25rem;
             margin-bottom: 0.75rem;
+
+            border-radius: 0.3rem;
+
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
         }
 
         *[data-expando='over'] {
@@ -95,11 +108,13 @@
 
         *[data-expando='inner'] {
             height: var(--expando-inner-height);
+            display: flex;
+            overflow-y: hidden;
 
             /* Relative positioning with z-index for slide behind */
             position: relative;
             z-index: 1;
-            /*background-color: darkorange;*/
+            background-color: darkorange;
 
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
@@ -124,30 +139,30 @@
         }
 
         button {
+            margin: 0.25rem;
             height: 2rem;
             width: 6rem;
+            min-width: 6rem;
+            overflow-x: hidden;
+            overflow-y: hidden;
         }
 
         :root {
             --back-color: 30,30,30;
             --button-color: 45,45,45;
             --text-color: 204,204,204;
+
+            background-color: rgb(var(--back-color));
+            color: rgb(var(--text-color));
         }
 
-        /*.group {
-            -moz-user-select: none;
-            -webkit-user-select: none;
-            cursor: pointer;
-            
-            width: 98vw;
-
-            border-radius: 0.3rem;
-            margin-bottom: 0.75rem;
-
-            border-width: 0.2rem;
-            border-style: solid;
-            border-color: rgb(var(--button-color));
-        }*/
+        .group-name {
+            margin: 0.25rem;
+            margin-left: 0.5rem;
+            min-width: 25rem;
+            width: 25rem;
+            display: inline-block;
+        }
 
     </style>
     <script type="module">
@@ -209,8 +224,30 @@
     <div id="connection"></div>
     <div id="data" data-expando="group">
         <div class="group" data-expando="outer" data-selected="true">
-            <div data-expando="over">Bedroom</div>
+            <div data-expando="over">
+                <span class="group-name">Bedroom</span>
+                <button>ON</button>
+            </div>
             <div data-expando="inner">
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+                <button>Morning</button>
+                <button>Day</button>
+                <button>Evening</button>
+                <button>Night</button>
+                <button>Looooooooong</button>
+                <button>Evening</button>
+                <button>Night</button>
                 <button>Morning</button>
                 <button>Day</button>
                 <button>Evening</button>
@@ -219,7 +256,10 @@
             
         </div>
         <div class="group" data-expando="outer">
-            <div data-expando="over">Bedroom</div>
+            <div data-expando="over">
+                <span class="group-name">Living room</span>
+                <button>ON</button>
+            </div>
             <div data-expando="inner">
                 <button>Morning</button>
                 <button>Day</button>
@@ -228,7 +268,10 @@
             </div>
         </div>
         <div class="group" data-expando="outer">
-            <div data-expando="over">Bedroom</div>
+            <div data-expando="over">
+                <span class="group-name">Bedroom</span>
+                <button>ON</button>
+            </div>
             <a href="#what">Test</a>
             <div data-expando="inner">
                 <button>Morning</button>
