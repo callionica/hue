@@ -134,8 +134,7 @@
             
             const removeSelection = (e.dataset.selected === "true");
 
-            // let container = ancestor(e, a => a.dataset.expando === "group");
-            let container = e.closest("*[data-expando='group']");
+            let container = e.closest("[data-expando='group']");
             if (container == undefined) {
                 return;
             }
