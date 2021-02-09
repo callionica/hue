@@ -31,24 +31,25 @@
         }
 
         body {
+            -webkit-text-size-adjust: 100%;
             width: 100vw;
+            padding: 0.25rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
             overflow-x: hidden;
         }
 
         h1 {
             font-size: 1.4rem;
             padding-top: 0.25rem;
-            padding-left: 0.5rem;
         }
         h2 {
             font-size: 1.2rem;
             padding-top: 0.25rem;
-            padding-left: 0.5rem;
         }
         h3 {
             font-size: 1.1rem;
             padding-top: 0.25rem;
-            padding-left: 0.5rem;
         }
 
         select, button, input {
@@ -86,8 +87,8 @@
             color: rgb(var(--expando-text-color));
             background-color: rgb(var(--expando-color));
 
-            margin-left: 0.25rem;
-            margin-right: 0.25rem;
+            /*margin-left: 0.25rem;
+            margin-right: 0.25rem;*/
             margin-bottom: 0.75rem;
 
             border-radius: 0.3rem;
@@ -99,6 +100,7 @@
 
         *[data-expando='over'] {
             height: var(--expando-over-height);
+            display: flex;
 
             /* Opaque background and relative positioning with z-index for slide behind */
             background-color: rgb(var(--expando-color));
@@ -114,7 +116,7 @@
             /* Relative positioning with z-index for slide behind */
             position: relative;
             z-index: 1;
-            background-color: darkorange;
+            /* background-color: darkorange; */
 
             transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
@@ -159,6 +161,8 @@
         .group-name {
             margin: 0.25rem;
             margin-left: 0.5rem;
+            margin-right: 0.5rem;
+            padding: 0.2rem;
             min-width: 25rem;
             width: 25rem;
             display: inline-block;
