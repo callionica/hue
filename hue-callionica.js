@@ -2469,3 +2469,35 @@ export function getLastChanges(data) {
 
     return result.sort((a,b) => -a[1].localeCompare(b[1], "en"));
 }
+
+export function summarizeLights(group, data) {
+    if (group.lights.length === 0) {
+        return { anyOn: false, allOn: false, anyUnreachable: true, allUnreachable: true };
+    }
+
+    let anyOn = false;
+    let allOn = true;
+    let anyUnreachable = false;
+    let allUnreachable = true;
+
+    for (const lightID of group.lights) {
+        const light = data.lights[lightID];
+
+        const unreachable = !light.state.reachable;
+        const on = (light.state.on && light.state.reachable);
+
+        if (on) {
+            anyOn = true;
+        }
+
+        allOn = allOn && on;
+
+        if (unreachable) {
+            anyUnreachable = true;
+        }
+
+        allUnreachable = allUnreachable && unreachable;
+    }
+
+    return { anyOn, allOn, anyUnreachable, allUnreachable };
+}

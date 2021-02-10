@@ -170,6 +170,52 @@
 
     </style>
     <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAll, summarizeLights } from "./hue-callionica.js";
+        import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
+
+        async function ondata(data) {
+            // Called when new data arrives
+            updateGroups(data, Object.values(data.groups));
+        }
+
+        let dataTimeoutToken;
+        let bridge;
+        let connection;
+
+        // Call to get new data
+        async function requestData() {
+            clearTimeout(dataTimeoutToken);
+
+            let data;
+
+            try {
+                if (bridge === undefined) {
+                    bridge = loadCurrentBridge();
+                }
+
+                if (connection === undefined) {
+                    connection = await loadConnection("Callionica", bridge);
+                }
+
+                data = await getAll(connection);
+            } catch (e) {
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if ((bridge === undefined) || (connection === undefined)) {
+                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                } else {
+                    const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                    e.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection</a>`;
+                }
+            }
+
+            dataTimeoutToken = setTimeout(requestData, 2 * 1000);
+
+            ondata(data);
+        }
 
         function ancestor(e, pred) {
             let container = e.parentNode;
@@ -203,23 +249,103 @@
             }
         }
     
+        const expandoExcludes = ["A", "BUTTON", "INPUT"];
+
+        function setupExpandoElement(element) {
+            element.addEventListener("click", (e) => {
+                if (!expandoExcludes.includes(e.target.nodeName)) {
+                    expando(element);
+                    e.preventDefault();
+                }
+            }, false);
+        }
+
         function setupExpando(scope) {
             scope = scope || document;
 
-            const excludes = ["A", "BUTTON", "INPUT"];
+            
             const elements = [...scope.querySelectorAll("*[data-expando='outer']")];
             for (const element of elements) {
-                element.addEventListener("click", (e) => {
-                    if (!excludes.includes(e.target.nodeName)) {
-                        expando(element);
-                        e.preventDefault();
-                    }
-                }, false);
+                setupExpandoElement(element);
             }
         }
 
-        setupExpando();
+        function updateGroup(e, data, group, scope) {
+            const name = e.querySelector(".group-name");
+            name.innerText = group.name;
+            const lights = summarizeLights(group, data);
+            Object.assign(e.dataset, lights);
+            // e.dataset.anyOn = lights.anyOn;
+            // e.dataset.allOn = lights.allOn;
+            // e.dataset.anyUnreachable = lights.anyUnreachable;
+            // e.dataset.allUnreachable = lights.allUnreachable;
+        }
 
+        function createGroup(data, group, scope) {
+            scope = scope || document;
+
+            const e = scope.createElement("div");
+            e.id = `group-${group.id}`;
+            e.classList.add("group");
+            e.dataset.expando = "outer";
+
+            const o = scope.createElement("div");
+            o.dataset.expando = "over";
+
+            const name = scope.createElement("span");
+            name.classList.add("group-name");
+            name.innerText = group.name;
+
+            const btn = scope.createElement("button");
+            btn.class = "group-button";
+
+            o.append(name, btn);
+
+            const i = scope.createElement("div");
+            i.dataset.expando = "inner";
+
+            e.append(o, i);
+
+            for (const period of ["morning", "day", "evening", "night"]) {
+                const periodTitle = period[0].toUpperCase() + period.substring(1);
+                const periodButton = scope.createElement("button");
+                periodButton.dataset.period = period;
+                periodButton.innerText = periodTitle;
+        
+                i.append(periodButton);
+            }
+
+            setupExpandoElement(e);
+
+            return e;
+        }
+
+        function updateGroups(data, groups, scope) {
+            scope = scope || document;
+
+            const container = scope.querySelector("#data");
+
+            const children = [];
+            for (const group of groups) {
+                let e = container.querySelector(`#group-${group.id}`);
+                if (e == undefined) {
+                    e = createGroup(data, group, scope);
+                    container.append(e);
+                }
+                children.push(e);
+
+                updateGroup(e, data, group, scope);
+            }
+
+            for (const ge of [...container.querySelectorAll(".group")]) {
+                if (children.includes(ge)) {
+                    continue;
+                }
+                ge.remove();
+            }
+        }
+    
+        requestData();
     </script>
 </head>
 <body data-page="groups">
@@ -227,7 +353,7 @@
     <hr/>
     <div id="connection"></div>
     <div id="data" data-expando="group">
-        <div class="group" data-expando="outer" data-selected="true">
+        <!--<div class="group" data-expando="outer" data-selected="true">
             <div data-expando="over">
                 <span class="group-name">Bedroom</span>
                 <button>ON</button>
@@ -283,7 +409,7 @@
                 <button>Evening</button>
                 <button>Night</button>
             </div>
-        </div>
+        </div>-->
     </div>
 </body>
 </html>
