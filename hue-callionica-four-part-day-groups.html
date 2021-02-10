@@ -349,8 +349,14 @@
 
             for (const ge of [...container.querySelectorAll(".group")]) {
                 if (children.includes(ge)) {
+                    // Move unreachables to the end
+                    if (ge.dataset.allUnreachable === "true") {
+                        container.appendChild(ge);
+                    }
                     continue;
                 }
+
+                // Remove old groups
                 ge.remove();
             }
         }
