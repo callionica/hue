@@ -207,7 +207,7 @@
                     }
 
                     data = await getAll(connection);
-                } catch (e) {
+                } catch (error) {
                     document.body.dataset.showConnection = true;
 
                     const e = document.querySelector("#connection");
