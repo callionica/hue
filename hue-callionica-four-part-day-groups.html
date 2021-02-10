@@ -131,7 +131,7 @@
             margin-top: calc(-1 * var(--expando-inner-height));
             visibility: hidden;
 
-            transition: height 0.6s ease, margin 0.6s ease, opacity 1.2s ease, visibility 0.6s ease;
+            transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
         }
 
         *[data-expando='outer'][data-selected='true'] > *[data-expando='inner'] {
@@ -171,18 +171,21 @@
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, summarizeLights } from "./hue-callionica.js";
+        import { getAll, summarizeLights, setGroupOn, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         async function ondata(data) {
             // Called when new data arrives
-            updateGroups(data, Object.values(data.groups));
+            const groups = Object.values(data.groups);
+            groups.sort(sortBy(g => g.name));
+            updateGroups(data, groups);
         }
 
         let dataRequestMade;
         let dataTimeoutToken;
         let bridge;
         let connection;
+        let data;
 
         // Call to get new data
         async function requestData() {
@@ -192,8 +195,6 @@
 
             clearTimeout(dataTimeoutToken);
             dataRequestMade = true;
-
-            let data;
 
             try {            
                 try {
@@ -236,6 +237,18 @@
                 container = container.parentNode;
             }
             return container || undefined;
+        }
+
+        function ancestorData(e, name) {
+            const attr = "data-" + name;
+            let container = e.parentNode;
+            while (container) {
+                if (container.hasAttribute(attr)) {
+                    break;
+                }
+                container = container.parentNode;
+            }
+            return container?.getAttribute(attr) || undefined;
         }
 
         function expando(e) {
@@ -296,6 +309,7 @@
 
             const e = scope.createElement("div");
             e.id = `group-${group.id}`;
+            e.dataset.groupId = group.id;
             e.classList.add("group");
             e.dataset.expando = "outer";
 
@@ -322,6 +336,7 @@
                 periodButton.dataset.period = period;
                 periodButton.innerText = periodTitle;
         
+                periodButton.onclick = () => activatePeriodScene(periodButton);
                 i.append(periodButton);
             }
 
@@ -361,6 +376,18 @@
             }
         }
     
+        async function activatePeriodScene(btn) {
+            const dayPartName = btn.dataset.period;
+            const groupID = ancestorData(btn, "group-id");
+
+            const matchingScene = FourPartDay.getScene(data, groupID, dayPartName);
+            if (matchingScene !== undefined) {
+                await setGroupScene(connection, groupID, matchingScene.id);
+            } else {
+                await setGroupOn(connection, groupID, true);
+            }
+        }
+
         requestData();
     </script>
 </head>
