@@ -179,37 +179,47 @@
             updateGroups(data, Object.values(data.groups));
         }
 
+        let dataRequestMade;
         let dataTimeoutToken;
         let bridge;
         let connection;
 
         // Call to get new data
         async function requestData() {
+            if (dataRequestMade) {
+                return;
+            }
+
             clearTimeout(dataTimeoutToken);
+            dataRequestMade = true;
 
             let data;
 
-            try {
-                if (bridge === undefined) {
-                    bridge = loadCurrentBridge();
+            try {            
+                try {
+                    if (bridge === undefined) {
+                        bridge = loadCurrentBridge();
+                    }
+
+                    if (connection === undefined) {
+                        connection = await loadConnection("Callionica", bridge);
+                    }
+
+                    data = await getAll(connection);
+                } catch (e) {
+                    document.body.dataset.showConnection = true;
+
+                    const e = document.querySelector("#connection");
+
+                    if ((bridge === undefined) || (connection === undefined)) {
+                        e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                    } else {
+                        const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                        e.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection</a>`;
+                    }
                 }
-
-                if (connection === undefined) {
-                    connection = await loadConnection("Callionica", bridge);
-                }
-
-                data = await getAll(connection);
-            } catch (e) {
-                document.body.dataset.showConnection = true;
-
-                const e = document.querySelector("#connection");
-
-                if ((bridge === undefined) || (connection === undefined)) {
-                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
-                } else {
-                    const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
-                    e.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection</a>`;
-                }
+            } finally {
+                dataRequestMade = false;
             }
 
             dataTimeoutToken = setTimeout(requestData, 2 * 1000);
