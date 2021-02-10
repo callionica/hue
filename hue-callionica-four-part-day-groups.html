@@ -20,15 +20,15 @@
             font-size: inherit;
         }
 
-        :root {
+        /* :root {
             font-size: 16pt;
-        }
+        } */
 
-        @media (max-width: 720px) {
+        /* @media (max-width: 720px) {
             :root {
                 font-size: 3vw;
             }
-        }
+        } */
 
         body {
             -webkit-text-size-adjust: 100%;
@@ -158,14 +158,27 @@
             color: rgb(var(--text-color));
         }
 
+        #connection {
+            height: 0;
+            visibility: hidden;
+            transition: height 0.6s ease;
+        }
+
+        body[data-show-connection='true'] #connection {
+            visibility: visible;
+            height: 4rem;
+        }
+
         .group-name {
             margin: 0.25rem;
             margin-left: 0.5rem;
             margin-right: 0.5rem;
             padding: 0.2rem;
-            min-width: 25rem;
-            width: 25rem;
+            
             display: inline-block;
+
+            width: 25rem;
+            flex-grow: 1;
         }
 
     </style>
