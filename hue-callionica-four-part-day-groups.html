@@ -187,10 +187,18 @@
         import { getAll, summarizeLights, setGroupOn, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
+        const params = new URLSearchParams(document.location.search);
+
         async function ondata(data) {
             // Called when new data arrives
-            const groups = Object.values(data.groups);
+            let groups = Object.values(data.groups);
+
+            // Basic sort by name
             groups.sort(sortBy(g => g.name));
+
+            // Advanced sort by include, exclude, sort params
+            groups = paramsSort(params, groups);
+
             updateGroups(data, groups);
         }
 
