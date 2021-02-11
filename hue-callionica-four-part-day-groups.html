@@ -357,7 +357,8 @@
 
             e.append(o, i);
 
-            for (const period of ["morning", "day", "evening", "night"]) {
+            const periods = ["morning", "day", "evening", "night"];
+            for (const period of periods) {
                 const periodTitle = period[0].toUpperCase() + period.substring(1);
                 const periodButton = scope.createElement("button");
                 periodButton.dataset.dayPart = period;
@@ -367,7 +368,8 @@
                 i.append(periodButton);
             }
 
-            const scenes = Object.values(data.scenes).filter(scene => scene.group === group.id);
+            const periodScenes = ["first", "morning", "day", "evening", "night", "morning-dark", "day-dark", "evening-light", "night-light"];
+            const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !periodScenes.includes(scene.name.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name));
             for (const scene of scenes) {
                 const button = scope.createElement("button");
                 button.dataset.sceneId = scene.id;
