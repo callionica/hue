@@ -247,7 +247,7 @@
                 if (pred(container)) {
                     break;
                 }
-                container = container.parentNode;
+                container = container.parentElement;
             }
             return container || undefined;
         }
@@ -259,7 +259,19 @@
                 if (container.hasAttribute(attr)) {
                     break;
                 }
-                container = container.parentNode;
+                container = container.parentElement;
+            }
+            return container?.getAttribute(attr) || undefined;
+        }
+
+        function ancestorOrSelfData(e, name) {
+            const attr = "data-" + name;
+            let container = e;
+            while (container) {
+                if (container.hasAttribute(attr)) {
+                    break;
+                }
+                container = container.parentElement;
             }
             return container?.getAttribute(attr) || undefined;
         }
@@ -309,12 +321,12 @@
         function updateGroup(e, data, group, scope) {
             const name = e.querySelector(".group-name");
             name.innerText = group.name;
+            // summarizeLights only treats a light as 'on'
+            // if it is also reachable. So 'anyOn' for the
+            // group means that there is at least one light
+            // that is both on & reachable.
             const lights = summarizeLights(group, data);
             Object.assign(e.dataset, lights);
-            // e.dataset.anyOn = lights.anyOn;
-            // e.dataset.allOn = lights.allOn;
-            // e.dataset.anyUnreachable = lights.anyUnreachable;
-            // e.dataset.allUnreachable = lights.allUnreachable;
         }
 
         function createGroup(data, group, scope) {
@@ -335,6 +347,8 @@
 
             const btn = scope.createElement("button");
             btn.class = "group-button";
+            btn.innerText = "Toggle";
+            btn.onclick = () => toggleFourPartDayScene(btn);
 
             o.append(name, btn);
 
@@ -346,10 +360,10 @@
             for (const period of ["morning", "day", "evening", "night"]) {
                 const periodTitle = period[0].toUpperCase() + period.substring(1);
                 const periodButton = scope.createElement("button");
-                periodButton.dataset.period = period;
+                periodButton.dataset.dayPart = period;
                 periodButton.innerText = periodTitle;
         
-                periodButton.onclick = () => activatePeriodScene(periodButton);
+                periodButton.onclick = () => activateFourPartDayScene(periodButton);
                 i.append(periodButton);
             }
 
@@ -389,15 +403,25 @@
             }
         }
     
-        async function activatePeriodScene(btn) {
-            const dayPartName = btn.dataset.period;
-            const groupID = ancestorData(btn, "group-id");
+        async function activateFourPartDayScene(btn) {
+            const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
+            const groupID = ancestorOrSelfData(btn, "group-id");
 
             const matchingScene = FourPartDay.getScene(data, groupID, dayPartName);
             if (matchingScene !== undefined) {
                 await setGroupScene(connection, groupID, matchingScene.id);
             } else {
                 await setGroupOn(connection, groupID, true);
+            }
+        }
+
+        async function toggleFourPartDayScene(btn) {
+            const on = ancestorOrSelfData(btn, "any-on") === "true";
+            if (on) {
+                const groupID = ancestorOrSelfData(btn, "group-id");
+                await setGroupOn(connection, groupID, false);
+            } else {
+                await activateFourPartDayScene(btn);
             }
         }
 
