@@ -367,6 +367,16 @@
                 i.append(periodButton);
             }
 
+            const scenes = Object.values(data.scenes).filter(scene => scene.group === group.id);
+            for (const scene of scenes) {
+                const button = scope.createElement("button");
+                button.dataset.sceneId = scene.id;
+                button.innerText = scene.name;
+        
+                button.onclick = () => activateFourPartDayScene(button);
+                i.append(button);
+            }
+
             setupExpandoElement(e);
 
             return e;
@@ -404,12 +414,14 @@
         }
     
         async function activateFourPartDayScene(btn) {
-            const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
             const groupID = ancestorOrSelfData(btn, "group-id");
 
-            const matchingScene = FourPartDay.getScene(data, groupID, dayPartName);
-            if (matchingScene !== undefined) {
-                await setGroupScene(connection, groupID, matchingScene.id);
+            const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
+            
+            const sceneID = ancestorOrSelfData(btn, "scene-id") ||FourPartDay.getScene(data, groupID, dayPartName)?.id;
+
+            if (sceneID !== undefined) {
+                await setGroupScene(connection, groupID, sceneID);
             } else {
                 await setGroupOn(connection, groupID, true);
             }
