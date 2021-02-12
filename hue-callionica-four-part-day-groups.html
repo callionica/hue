@@ -53,6 +53,10 @@
             padding-top: 0.25rem;
         }
 
+        a {
+            color: inherit;
+        }
+
         select, button, input {
             border-style: solid;
             border-width: 0.1rem;
@@ -76,7 +80,7 @@
 
         :root {
             --expando-over-height: 2.5rem;
-            --expando-inner-height: 2.5rem;
+            --expando-inner-height: 5rem;
             --expando-color: 55,55,55;
             --expando-text-color: 204,204,204;
         }
@@ -113,7 +117,6 @@
 
         *[data-expando='inner'] {
             height: var(--expando-inner-height);
-            display: flex;
             overflow-y: hidden;
 
             /* Relative positioning with z-index for slide behind */
@@ -191,6 +194,11 @@
             flex-grow: 1;
         }
 
+        .group-scenes, .group-lights {
+            display: flex;
+            width: 100%;
+            overflow-y: scroll;
+        }
 
         div[data-all-unreachable='false'][data-any-on='true'] .group-toggle {
             border-color: rgb(var(--lit-color));
@@ -399,6 +407,9 @@
 
             e.append(o, i);
 
+            const scenesContainer = scope.createElement("div");
+            scenesContainer.classList.add("group-scenes");
+
             const periods = ["morning", "day", "evening", "night"];
             for (const period of periods) {
                 const periodTitle = period[0].toUpperCase() + period.substring(1);
@@ -407,7 +418,7 @@
                 periodButton.innerText = periodTitle;
         
                 periodButton.onclick = () => activateFourPartDayScene(periodButton);
-                i.append(periodButton);
+                scenesContainer.append(periodButton);
             }
 
             const periodScenes = ["first", "morning", "day", "evening", "night", "morning-dark", "day-dark", "evening-light", "night-light"];
@@ -418,8 +429,23 @@
                 button.innerText = scene.name;
         
                 button.onclick = () => activateFourPartDayScene(button);
-                i.append(button);
+                scenesContainer.append(button);
             }
+
+            const lightsContainer = scope.createElement("div");
+            lightsContainer.classList.add("group-lights");
+
+            const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
+            for (const light of lights) {
+                const button = scope.createElement("button");
+                button.dataset.lightId = light.id;
+                button.innerText = light.name;
+        
+                button.onclick = () => alert("Light toggle - Not implemented");
+                lightsContainer.append(button);
+            }
+
+            i.append(scenesContainer, lightsContainer);
 
             setupExpandoElement(e);
 
