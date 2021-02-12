@@ -220,9 +220,14 @@
         let connection;
         let data;
 
+        const wait = "wait";
+        const immediate = "immediate";
+
         // Call to get new data
-        async function requestData() {
-            if (dataRequestMade) {
+        async function requestData(mode) {
+            mode = mode || wait;
+
+            if (dataRequestMade && (mode === wait)) {
                 return;
             }
 
@@ -447,6 +452,8 @@
             } else {
                 await setGroupOn(connection, groupID, true);
             }
+
+            requestData(immediate);
         }
 
         async function toggleFourPartDayScene(btn) {
@@ -457,6 +464,8 @@
             } else {
                 await activateFourPartDayScene(btn);
             }
+
+            requestData(immediate);
         }
 
         requestData();
