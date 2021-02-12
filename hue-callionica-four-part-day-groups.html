@@ -56,7 +56,7 @@
         select, button, input {
             border-style: solid;
             border-width: 0.1rem;
-            border-color: gray;
+            border-color: inherit;
             border-radius: 0.275rem;
             padding: 0.2rem;
             color: inherit;
@@ -156,9 +156,15 @@
             --back-color: 30,30,30;
             --button-color: 45,45,45;
             --text-color: 204,204,204;
+            --lit-color: 240,213,78;
+            --ready-color: 160,220,251;
 
             background-color: rgb(var(--back-color));
             color: rgb(var(--text-color));
+        }
+
+        select, button, input {
+            border-color: rgb(var(--text-color));
         }
 
         #connection {
@@ -185,11 +191,22 @@
             flex-grow: 1;
         }
 
+
+        div[data-all-unreachable='false'][data-any-on='true'] .group-toggle {
+            border-color: rgb(var(--lit-color));
+            color: rgb(var(--lit-color));
+        }
+
+        div[data-all-unreachable='false'][data-any-on='false'] .group-toggle {
+            border-color: rgb(var(--ready-color));
+            color: rgb(var(--ready-color));
+        }
+
         div[data-all-unreachable='true'] {
             color: rgb(var(--back-color));
         }
 
-        div[data-all-unreachable='true'] select, button, input {
+        div[data-all-unreachable='true'] button {
             border-color: rgb(var(--back-color));
         }
 
@@ -371,7 +388,7 @@
             name.innerText = group.name;
 
             const btn = scope.createElement("button");
-            btn.classList.add("group-button");
+            btn.classList.add("group-toggle");
             btn.innerText = "Toggle";
             btn.onclick = () => toggleFourPartDayScene(btn);
 
