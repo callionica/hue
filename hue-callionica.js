@@ -201,6 +201,12 @@ export async function setSensorValue(connection, id, value) {
 //     return put(address, body);
 // }
 
+export async function setLightOn(connection, id, value) {
+    const address = Address(connection, `lights/${id}/state`);
+    const body = { on: value };
+    return put(address, body);
+}
+
 export async function setGroupOn(connection, id, value) {
     const address = Address(connection, `groups/${id}/action`);
     const body = { on: value };

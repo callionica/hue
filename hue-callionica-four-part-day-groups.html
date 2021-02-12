@@ -218,10 +218,20 @@
             border-color: rgb(var(--back-color));
         }
 
+        button[data-on='true'] {
+            border-color: rgb(var(--lit-color));
+            color: rgb(var(--lit-color));
+        }
+
+        button[data-unreachable='true'] {
+            border-color: rgb(var(--back-color));
+            color: rgb(var(--back-color));
+        }
+
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, summarizeLights, setGroupOn, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAll, summarizeLights, setLightOn, setGroupOn, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         const params = new URLSearchParams(document.location.search);
@@ -375,8 +385,44 @@
             // if it is also reachable. So 'anyOn' for the
             // group means that there is at least one light
             // that is both on & reachable.
-            const lights = summarizeLights(group, data);
-            Object.assign(e.dataset, lights);
+            const lightSummary = summarizeLights(group, data);
+            Object.assign(e.dataset, lightSummary);
+
+            const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
+
+            const lightsContainer = e.querySelector(".group-lights");
+
+            const children = [];
+            for (const light of lights) {
+                let lightElement = lightsContainer.querySelector(`*[data-light-id='${light.id}']`);
+                if (lightElement == undefined) {
+                    lightElement = createLight(light, scope);
+                    lightsContainer.append(lightElement);
+                }
+                children.push(lightElement);
+
+                lightElement.dataset.name = light.name;
+                lightElement.dataset.on = light.state.on && light.state.reachable;
+                lightElement.dataset.unreachable = !light.state.reachable;
+            }
+
+            for (const ge of [...lightsContainer.querySelectorAll("*[data-light-id]")]) {
+                if (children.includes(ge)) {
+                    continue;
+                }
+
+                // Remove old lights
+                ge.remove();
+            }
+        }
+
+        function createLight(light, scope) {
+            const button = scope.createElement("button");
+            button.dataset.lightId = light.id;
+            button.innerText = light.name;
+    
+            button.onclick = () => toggleLight(button);
+            return button;
         }
 
         function createGroup(data, group, scope) {
@@ -435,15 +481,15 @@
             const lightsContainer = scope.createElement("div");
             lightsContainer.classList.add("group-lights");
 
-            const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
+            /*const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
             for (const light of lights) {
                 const button = scope.createElement("button");
                 button.dataset.lightId = light.id;
                 button.innerText = light.name;
         
-                button.onclick = () => alert("Light toggle - Not implemented");
+                button.onclick = () => toggleLight(button);
                 lightsContainer.append(button);
-            }
+            }*/
 
             i.append(scenesContainer, lightsContainer);
 
@@ -507,6 +553,14 @@
             } else {
                 await activateFourPartDayScene(btn);
             }
+
+            requestData(immediate);
+        }
+
+        async function toggleLight(btn) {
+            const on = ancestorOrSelfData(btn, "on") === "true";
+            const id = ancestorOrSelfData(btn, "light-id");
+            await setLightOn(connection, id, !on);
 
             requestData(immediate);
         }
