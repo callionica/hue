@@ -261,7 +261,7 @@
                 dataRequestMade = false;
             }
 
-            dataTimeoutToken = setTimeout(requestData, 12 * 1000);
+            dataTimeoutToken = setTimeout(() => requestData(wait), 12 * 1000);
 
             ondata(data);
         }
