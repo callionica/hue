@@ -179,9 +179,14 @@
             padding: 0.2rem;
             
             display: inline-block;
+            line-height: 1.75rem;
 
             width: 25rem;
             flex-grow: 1;
+        }
+
+        div[data-all-unreachable='true'] .group-button {
+            color: darkgray;
         }
 
     </style>
@@ -247,7 +252,7 @@
                 dataRequestMade = false;
             }
 
-            dataTimeoutToken = setTimeout(requestData, 2 * 1000);
+            dataTimeoutToken = setTimeout(requestData, 12 * 1000);
 
             ondata(data);
         }
@@ -357,7 +362,7 @@
             name.innerText = group.name;
 
             const btn = scope.createElement("button");
-            btn.class = "group-button";
+            btn.classList.add("group-button");
             btn.innerText = "Toggle";
             btn.onclick = () => toggleFourPartDayScene(btn);
 
