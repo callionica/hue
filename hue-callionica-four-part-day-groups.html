@@ -426,7 +426,7 @@
             ++flashID;
             const myFlashID = flashID;
             setTimeout(() => {
-                if (flashID == myFlashID) {
+                if (flashID === myFlashID) {
                     flasher.classList.remove("flash");
                 }
             }, 0.35 * 1000);
@@ -455,6 +455,7 @@
                 }
                 children.push(lightElement);
 
+                lightElement.title = light.name;
                 lightElement.dataset.name = light.name;
                 lightElement.dataset.on = light.state.on && light.state.reachable;
                 lightElement.dataset.unreachable = !light.state.reachable;
@@ -515,6 +516,7 @@
                 const periodTitle = period[0].toUpperCase() + period.substring(1);
                 const periodButton = scope.createElement("button");
                 periodButton.dataset.dayPart = period;
+                periodButton.title = periodTitle;
                 periodButton.innerText = periodTitle;
         
                 periodButton.onclick = () => { flash(); activateFourPartDayScene(periodButton); };
@@ -526,6 +528,7 @@
             for (const scene of scenes) {
                 const button = scope.createElement("button");
                 button.dataset.sceneId = scene.id;
+                button.title = scene.name;
                 button.innerText = scene.name;
         
                 button.onclick = () => { flash(); activateFourPartDayScene(button); };
