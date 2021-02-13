@@ -266,6 +266,27 @@
             color: rgb(var(--back-color));
         }
 
+        button.light {
+            width: 2rem;
+            min-width: 2rem;
+            border-radius: 50%;
+            color: rgb(var(--ready-color));
+            border-color: rgb(var(--ready-color));
+            background-color: rgb(var(--ready-color));
+        }
+
+        button.light[data-on='true'] {
+            color: rgb(var(--lit-color));
+            border-color: rgb(var(--lit-color));
+            background-color: rgb(var(--lit-color));
+        }
+
+        button.light[data-unreachable='true'] {
+            color: rgb(var(--back-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--back-color));
+        }
+
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -473,6 +494,7 @@
 
         function createLight(light, scope) {
             const button = scope.createElement("button");
+            button.classList.add("light");
             button.dataset.lightId = light.id;
             button.innerText = light.name;
     
