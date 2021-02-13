@@ -202,17 +202,21 @@
 
         #flasher {
             position: fixed;
-            height: 0.25rem;
-            width: 100vw;
+            height: 1vw;
+            width: 1vw;
+            border-radius: 50%;
+            top: 1vw;
+            left: 98vw;
             pointer-events: none;
             z-index: 5;
             background-color: rgb(var(--lit-color));
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.3s ease;
         }
 
         #flasher.flash {
             opacity: 1.0;
+            transition: opacity 0.2s ease;
         }
 
         .group-name {
@@ -425,7 +429,7 @@
                 if (flashID == myFlashID) {
                     flasher.classList.remove("flash");
                 }
-            }, 0.25 * 1000);
+            }, 0.35 * 1000);
         }
 
         function updateGroup(e, data, group, scope) {
