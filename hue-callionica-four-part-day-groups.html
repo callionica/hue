@@ -270,9 +270,10 @@
             width: 2rem;
             min-width: 2rem;
             border-radius: 50%;
-            color: rgb(var(--ready-color));
+            border-width: 0.25rem;
+            color: rgb(var(--expando-color));
             border-color: rgb(var(--ready-color));
-            background-color: rgb(var(--ready-color));
+            background-color: rgb(var(--expando-color));
         }
 
         button.light[data-on='true'] {
@@ -282,9 +283,10 @@
         }
 
         button.light[data-unreachable='true'] {
-            color: rgb(var(--back-color));
+            border-width: 0.15rem;
+            color: rgb(var(--expando-color));
             border-color: rgb(var(--back-color));
-            background-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
         }
 
     </style>
