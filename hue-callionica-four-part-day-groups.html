@@ -84,7 +84,7 @@
 
         :root {
             --expando-over-height: 2.5rem;
-            --expando-inner-height: 5rem;
+            --expando-inner-height: 6.5rem;
             --expando-color: 55,55,55;
             --expando-text-color: 204,204,204;
         }
@@ -236,9 +236,10 @@
             display: flex;
             width: 100%;
             overflow-y: scroll;
+            margin-top: 0.5rem;
         }
 
-        div[data-all-unreachable='false'][data-any-on='true'] .group-toggle {
+        /* div[data-all-unreachable='false'][data-any-on='true'] .group-toggle {
             border-color: rgb(var(--lit-color));
             color: rgb(var(--lit-color));
         }
@@ -246,7 +247,7 @@
         div[data-all-unreachable='false'][data-any-on='false'] .group-toggle {
             border-color: rgb(var(--ready-color));
             color: rgb(var(--ready-color));
-        }
+        } */
 
         div[data-all-unreachable='true'] {
             color: rgb(var(--back-color));
@@ -256,7 +257,7 @@
             border-color: rgb(var(--back-color));
         }
 
-        button[data-on='true'] {
+        /* button[data-on='true'] {
             border-color: rgb(var(--lit-color));
             color: rgb(var(--lit-color));
         }
@@ -264,7 +265,7 @@
         button[data-unreachable='true'] {
             border-color: rgb(var(--back-color));
             color: rgb(var(--back-color));
-        }
+        } */
 
         button.light {
             width: 2rem;
@@ -274,6 +275,7 @@
             color: rgb(var(--expando-color));
             border-color: rgb(var(--ready-color));
             background-color: rgb(var(--expando-color));
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         button.light[data-on='true'] {
@@ -283,6 +285,30 @@
         }
 
         button.light[data-unreachable='true'] {
+            border-width: 0.15rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
+        button.group-toggle {
+            width: 2rem;
+            min-width: 2rem;
+            border-radius: 50%;
+            border-width: 0.25rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--ready-color));
+            background-color: rgb(var(--expando-color));
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        button.group-toggle[data-on='true'] {
+            color: rgb(var(--lit-color));
+            border-color: rgb(var(--lit-color));
+            background-color: rgb(var(--lit-color));
+        }
+
+        button.group-toggle[data-unreachable='true'] {
             border-width: 0.15rem;
             color: rgb(var(--expando-color));
             border-color: rgb(var(--back-color));
@@ -465,6 +491,10 @@
             const lightSummary = summarizeLights(group, data);
             Object.assign(e.dataset, lightSummary);
 
+            const gt = e.querySelector(".group-toggle");
+            gt.dataset.on = lightSummary.anyOn;
+            gt.dataset.unreachable = lightSummary.allUnreachable;
+
             const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
 
             const lightsContainer = e.querySelector(".group-lights");
@@ -617,7 +647,7 @@
         }
 
         async function toggleFourPartDayScene(btn) {
-            const on = ancestorOrSelfData(btn, "any-on") === "true";
+            const on = ancestorOrSelfData(btn, "on") === "true";
             if (on) {
                 const groupID = ancestorOrSelfData(btn, "group-id");
                 await setGroupOn(connection, groupID, false);
