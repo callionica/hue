@@ -298,7 +298,7 @@
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, summarizeLights, setLightOn, setGroupOn, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAll, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         const params = new URLSearchParams(document.location.search);
@@ -514,6 +514,22 @@
             return button;
         }
 
+        function createDimmer(scope) {
+            scope = scope || document;
+
+            const e = scope.createElement("select");
+
+            const levels = [[1, 0], [5], [10], [30], [50, 127], [70], [90], [95], [100, 254]].reverse();
+            for (const level of levels) {
+                const o = scope.createElement("option");
+                o.value = (level[1] === undefined) ? Math.floor(level[0]/100*254) : level[1];
+                o.innerHTML = level[0];
+                e.appendChild(o);
+            }
+
+            return e;
+        }
+
         function createGroup(data, group, scope) {
             scope = scope || document;
 
@@ -571,6 +587,11 @@
 
             const lightsContainer = scope.createElement("div");
             lightsContainer.classList.add("group-lights");  
+
+            const dimmer = createDimmer(scope);
+            dimmer.onchange = () => { flash(); selectBrightness(dimmer); };
+
+            lightsContainer.appendChild(dimmer);
 
             i.append(scenesContainer, lightsContainer);
 
@@ -642,6 +663,14 @@
             const on = ancestorOrSelfData(btn, "on") === "true";
             const id = ancestorOrSelfData(btn, "light-id");
             await setLightOn(connection, id, !on);
+
+            requestData(immediate);
+        }
+
+        async function selectBrightness(btn) {
+            const groupID = ancestorOrSelfData(btn, "group-id");
+            const brightness = parseInt(btn.value, 10);
+            await setGroupBrightness(connection, groupID, brightness);
 
             requestData(immediate);
         }
