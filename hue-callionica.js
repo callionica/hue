@@ -337,8 +337,26 @@ export async function getScenes(connection) {
     return getCategory_(connection, "scenes");
 }
 
-export async function getSceneComplete(connection, sceneID) {
-    return getCategory(connection, `scenes/${sceneID}`);
+const bridgeSceneCache = {};
+
+export async function getSceneComplete(connection, sceneID, lastUpdated) {
+    const bridgeID = connection.bridge.id;
+    let sceneCache = bridgeSceneCache[bridgeID];
+    if (sceneCache === undefined) {
+        sceneCache = {};
+        bridgeSceneCache[bridgeID] = sceneCache;
+    }
+
+    let scene = sceneCache[sceneID];
+    if ((scene !== undefined) && (scene.lastupdated === lastUpdated)) {
+        return scene;
+    }
+
+    scene = await getCategory(connection, `scenes/${sceneID}`);
+
+    sceneCache[sceneID] = scene;
+
+    return scene;
 }
 
 export async function getScene(connection, groupID, name) {
