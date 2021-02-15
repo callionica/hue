@@ -2234,6 +2234,16 @@ export async function getAll(connection) {
     return data;
 }
 
+/* Same as getAll plus all the scene details (using the scene cache) */
+export async function getAllPlus(connection) {
+    const data = await getAll(connection);
+    for (const scene of Object.values(data.scenes)) {
+        const completeScene = await getSceneComplete(connection, scene.id, scene.lastupdated);
+        scene.lightstates = completeScene.lightstates;
+    }
+    return data;
+}
+
 export function getConnectedComponents(component, data) {
     return Object.values(data.components).filter(c => c.connections.find(cn => cn.item === component));
 }

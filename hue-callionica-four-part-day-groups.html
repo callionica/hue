@@ -298,7 +298,7 @@
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAll, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         const params = new URLSearchParams(document.location.search);
@@ -346,7 +346,7 @@
                         connection = await loadConnection("Callionica", bridge);
                     }
 
-                    data = await getAll(connection);
+                    data = await getAllPlus(connection);
 
                     delete document.body.dataset.showConnection;
                 } catch (error) {
@@ -365,7 +365,7 @@
                 dataRequestMade = false;
             }
 
-            dataTimeoutToken = setTimeout(() => requestData(wait), 12 * 1000);
+            dataTimeoutToken = setTimeout(() => requestData(wait), 2 * 1000);
 
             ondata(data);
         }
@@ -426,7 +426,7 @@
             }
         }
     
-        const expandoExcludes = ["A", "BUTTON", "INPUT"];
+        const expandoExcludes = ["A", "BUTTON", "INPUT", "SELECT"];
 
         function setupExpandoElement(element) {
             element.addEventListener("click", (e) => {
