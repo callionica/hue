@@ -352,9 +352,19 @@ export async function getSceneComplete(connection, sceneID, lastUpdated) {
         return scene;
     }
 
+    const key = `{bridge:"${bridgeID}",scene:"${sceneID}"}`;
+    const s = sessionStorage.getItem(key);
+    if (s != undefined) {
+        scene = JSON.parse(s);
+        if (scene.lastupdated === lastUpdated) {
+            return scene;
+        }
+    }
+
     scene = await getCategory(connection, `scenes/${sceneID}`);
 
     sceneCache[sceneID] = scene;
+    sessionStorage.setItem(key, JSON.stringify(scene, null, 2));
 
     return scene;
 }
