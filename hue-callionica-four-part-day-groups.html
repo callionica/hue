@@ -585,12 +585,12 @@
 
             const periods = ["morning", "day", "evening", "night"];
             for (const period of periods) {
-                const title = period[0].toUpperCase();// + period.substring(1);
+                const title = period[0].toUpperCase() + period.substring(1);
                 const button = scope.createElement("button");
                 button.classList.add("four-part-day");
                 button.dataset.dayPart = period;
                 button.title = title;
-                button.innerText = title;
+                button.innerText = title[0];
         
                 button.onclick = () => { flash(); activateFourPartDayScene(button); };
                 scenesContainer.append(button);
