@@ -298,7 +298,7 @@
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAllPlus, summarizeLights, getActiveScenes, setLightOn, setGroupOn, setGroupBrightness, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         const params = new URLSearchParams(document.location.search);
@@ -471,8 +471,12 @@
             const lightSummary = summarizeLights(group, data);
             Object.assign(e.dataset, lightSummary);
 
+            const offScenes = FourPartDay.getOffScenes(data, group.id);
+            const activeOffScenes = getActiveScenes(data, offScenes);
+            const isUsingOffScene = activeOffScenes.length > 0;
+
             const gt = e.querySelector(".group-toggle");
-            gt.dataset.on = lightSummary.anyOn;
+            gt.dataset.on = !isUsingOffScene && lightSummary.anyOn;
             gt.dataset.unreachable = lightSummary.allUnreachable;
 
             const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
@@ -636,7 +640,7 @@
 
             const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
             
-            const sceneID = ancestorOrSelfData(btn, "scene-id") ||FourPartDay.getScene(data, groupID, dayPartName)?.id;
+            const sceneID = ancestorOrSelfData(btn, "scene-id") || FourPartDay.getScene(data, groupID, dayPartName)?.id;
 
             if (sceneID !== undefined) {
                 await setGroupScene(connection, groupID, sceneID);
@@ -651,7 +655,14 @@
             const on = ancestorOrSelfData(btn, "on") === "true";
             if (on) {
                 const groupID = ancestorOrSelfData(btn, "group-id");
-                await setGroupOn(connection, groupID, false);
+                const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
+                const sceneID = ancestorOrSelfData(btn, "off-scene-id") || FourPartDay.getOffScene(data, groupID, dayPartName)?.id;
+
+                if (sceneID !== undefined) {
+                    await setGroupScene(connection, groupID, sceneID);
+                } else {
+                    await setGroupOn(connection, groupID, false);
+                }
             } else {
                 await activateFourPartDayScene(btn);
             }

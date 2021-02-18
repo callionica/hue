@@ -301,9 +301,58 @@ export const FourPartDay = (()=>{
         return matchingScene;
     }
 
+    // Returns the 'off' scene associated with the group, time of day, lighting conditions
+    // or undefined if there's no matching 'off' scene.
+    function getOffScene(data, groupID, partName, lightDark) {
+        partName = partName || getPart(data).name;
+        lightDark = lightDark || getDaylight(data)?.value || "dark";
+
+        const l1 = "off";
+        const l2 = `off-${partName}`;
+        const l3 = `off-${partName}-${lightDark}`;
+
+        const possibleScenes = [l3, l2, l1];
+        const groupScenes = Object.values(data.scenes).filter(scene => scene.group === groupID);
+
+        let matchingScene;
+        for (const possibleScene of possibleScenes) {
+            for (const scene of groupScenes) {
+                const name = scene.name.toLowerCase();
+                if (name === possibleScene) {
+                    matchingScene = scene;
+                    break;
+                }
+            }
+
+            if (matchingScene !== undefined) {
+                break;
+            }
+        }
+
+        return matchingScene;
+    }
+
+    // Returns an array of 'off' scenes associated with the group
+    // or an empty array if no 'off' scenes are found.
+    function getOffScenes(data, groupID) {
+
+        const l1 = "off";
+        const names = [l1];
+        for (const dayPart of parts) {
+            const l2 = `${l1}-${dayPart}`;
+            names.push(l2);
+            for (const lightDark of ["light", "dark"]) {
+                const l3 = `${l2}-${lightDark}`;
+                names.push(l3);
+            }
+        }
+
+        return Object.values(data.scenes).filter(scene => scene.group === groupID && names.includes(scene.name.toLowerCase()));
+    }
+
     return {
         parts, adjustments, rules, scenes, daylight, forward, standardRules,
-        getRules, setRules, getManual, setManual, removeManual, getLastAction, setLastAction, getPartFromTime, adjustPart, getPart, getScene
+        getRules, setRules, getManual, setManual, removeManual, getLastAction, setLastAction, getPartFromTime, adjustPart, getPart, getScene, getOffScene, getOffScenes
     };
 })();
 
