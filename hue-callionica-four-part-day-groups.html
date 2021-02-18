@@ -597,7 +597,12 @@
             }
 
             const periodScenes = ["first", "morning", "day", "evening", "night", "morning-dark", "day-dark", "evening-light", "night-light", "off", "off-morning", "off-day", "off-evening", "off-night"];
-            const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !periodScenes.includes(scene.name.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name));
+
+            function isRecoveryScene(scene) {
+                return scene.name.toLowerCase().includes("recoveryscene");
+            }
+
+            const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !periodScenes.includes(scene.name.toLowerCase()) && !isRecoveryScene(scene)).sort((a,b) => a.name.localeCompare(b.name));
             for (const scene of scenes) {
                 const button = scope.createElement("button");
                 button.dataset.sceneId = scene.id;
