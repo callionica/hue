@@ -101,6 +101,7 @@
                 const file = URL.createObjectURL(blob);
 
                 const btn = document.querySelector("#bridge-async");
+                btn.download = `hue-bridge-data-${data.config.name}-${data.config.localtime}.json`;
                 btn.href = file;
 
                 const btnBridge = document.querySelector("#bridge");
