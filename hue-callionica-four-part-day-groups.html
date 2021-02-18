@@ -480,6 +480,15 @@
             const lightSummary = summarizeLights(group, data);
             Object.assign(e.dataset, lightSummary);
 
+            const bri = e.querySelector(".group-brightness");
+            for (const o of [...bri.querySelectorAll("option")]) {
+                const v = parseInt(o.value, 10);
+                if (lightSummary.maximumBrightness >= v) {
+                    o.selected = true;
+                    break;
+                }
+            }
+
             const offScenes = FourPartDay.getOffScenes(data, group.id);
             const activeOffScenes = getActiveScenes(data, offScenes);
             const isUsingOffScene = activeOffScenes.length > 0;
@@ -603,6 +612,7 @@
             lightsContainer.classList.add("group-lights");  
 
             const dimmer = createDimmer(scope);
+            dimmer.classList.add("group-brightness");
             dimmer.onchange = () => { flash(); selectBrightness(dimmer); };
 
             lightsContainer.appendChild(dimmer);

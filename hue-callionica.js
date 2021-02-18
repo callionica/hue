@@ -2529,6 +2529,7 @@ export function summarizeLights(group, data) {
     let allOn = true;
     let anyUnreachable = false;
     let allUnreachable = true;
+    let maximumBrightness = 0;
 
     for (const lightID of group.lights) {
         const light = data.lights[lightID];
@@ -2538,6 +2539,9 @@ export function summarizeLights(group, data) {
 
         if (on) {
             anyOn = true;
+            if (light.state.bri > maximumBrightness) {
+                maximumBrightness = light.state.bri;
+            }
         }
 
         allOn = allOn && on;
@@ -2549,7 +2553,7 @@ export function summarizeLights(group, data) {
         allUnreachable = allUnreachable && unreachable;
     }
 
-    return { anyOn, allOn, anyUnreachable, allUnreachable };
+    return { anyOn, allOn, anyUnreachable, allUnreachable, maximumBrightness };
 }
 
 // Scenes need to be complete with lightstates for this to work
