@@ -2551,3 +2551,41 @@ export function summarizeLights(group, data) {
 
     return { anyOn, allOn, anyUnreachable, allUnreachable };
 }
+
+// Scenes need to be complete with lightstates for this to work
+export function getActiveScenes(data, scenes) {
+    const possibleScenes = [];
+    for (const scene of scenes) {
+        const states = Object.entries(scene.lightstates);
+        let same = true;
+        for (const [lightID, sceneState] of states) {
+            const light = data.lights[lightID];
+            const lightState = light.state;
+            if (!lightState.reachable) {
+                same = false;
+                break;
+            }
+            for (const [prop, sceneValue] of Object.entries(sceneState))  {
+                if (["transitiontime"].includes(prop)) {
+                    break;
+                }
+                const lightValue = lightState[prop];
+                if (lightValue !== sceneValue) {
+                    // Bright scene triggers this condition
+                    const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
+                    if (!ignore) {
+                        same = false;
+                        break;
+                    }
+                }
+            }
+            if (!same) {
+                break;
+            }
+        }
+        if (same) {
+            possibleScenes.push(scene);
+        }
+    }
+    return possibleScenes;
+}

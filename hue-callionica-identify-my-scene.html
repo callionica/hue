@@ -25,7 +25,7 @@
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { sortBy, getAll, getSceneComplete } from "./hue-callionica.js";
+        import { sortBy, getAllPlus, getActiveScenes } from "./hue-callionica.js";
         import { localizeDateTime } from "./hue-callionica-ui.js";
 
         let bridge;
@@ -39,7 +39,7 @@
             bridge = loadCurrentBridge();
             connection = await loadConnection("Callionica", bridge);
 
-            const data = await getAll(connection);
+            const data = await getAllPlus(connection);
 
             function grp(scene) {
                 if (scene.group !== undefined) {
@@ -55,47 +55,10 @@
             e.innerHTML = `<p>Please wait while we read the scenes...</p>`;
 
             const scenes = Object.values(data.scenes);
-            for (const scene of scenes) {
-                const completeScene = await getSceneComplete(connection, scene.id);
-                scene.lightstates = completeScene.lightstates;
-            }
 
             e.innerHTML = `<p>Please wait while we analyze the lighting...</p>`;
 
-            const possibleScenes = [];
-            for (const scene of scenes) {
-                const states = Object.entries(scene.lightstates);
-                let same = true;
-                for (const [lightID, sceneState] of states) {
-                    const light = data.lights[lightID];
-                    const lightState = light.state;
-                    if (!lightState.reachable) {
-                        same = false;
-                        break;
-                    }
-                    for (const [prop, sceneValue] of Object.entries(sceneState))  {
-                        if (["transitiontime"].includes(prop)) {
-                            break;
-                        }
-                        const lightValue = lightState[prop];
-                        if (lightValue !== sceneValue) {
-                            // Bright scene triggers this condition
-                            const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
-                            if (!ignore) {
-                                same = false;
-                                console.log("DIFF", grp(scene), scene.name, light.name, prop, sceneValue, lightValue);
-                                break;
-                            }
-                        }
-                    }
-                    if (!same) {
-                        break;
-                    }
-                }
-                if (same) {
-                    possibleScenes.push(scene);
-                }
-            }
+            const possibleScenes = getActiveScenes(data, scenes);
 
             e.innerHTML = `<p>Please wait while we present the results...</p>`;
 
