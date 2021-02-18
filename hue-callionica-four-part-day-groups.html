@@ -159,6 +159,10 @@
             overflow-y: hidden;
         }
 
+        select {
+            margin: 0.25rem;
+        }
+
         :root {
             --back-color: 30,30,30;
             --button-color: 45,45,45;
@@ -293,6 +297,11 @@
             color: rgb(var(--expando-color));
             border-color: rgb(var(--back-color));
             background-color: rgb(var(--expando-color));
+        }
+
+        button.four-part-day {
+            width: 2rem;
+            min-width: 2rem;
         }
 
     </style>
@@ -567,14 +576,15 @@
 
             const periods = ["morning", "day", "evening", "night"];
             for (const period of periods) {
-                const periodTitle = period[0].toUpperCase() + period.substring(1);
-                const periodButton = scope.createElement("button");
-                periodButton.dataset.dayPart = period;
-                periodButton.title = periodTitle;
-                periodButton.innerText = periodTitle;
+                const title = period[0].toUpperCase();// + period.substring(1);
+                const button = scope.createElement("button");
+                button.classList.add("four-part-day");
+                button.dataset.dayPart = period;
+                button.title = title;
+                button.innerText = title;
         
-                periodButton.onclick = () => { flash(); activateFourPartDayScene(periodButton); };
-                scenesContainer.append(periodButton);
+                button.onclick = () => { flash(); activateFourPartDayScene(button); };
+                scenesContainer.append(button);
             }
 
             const periodScenes = ["first", "morning", "day", "evening", "night", "morning-dark", "day-dark", "evening-light", "night-light", "off", "off-morning", "off-day", "off-evening", "off-night"];
