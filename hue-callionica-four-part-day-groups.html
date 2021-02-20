@@ -278,7 +278,7 @@
         button.group-toggle {
             width: 2rem;
             min-width: 2rem;
-            border-radius: 50%;
+            border-radius: 25%;
             border-width: 0.25rem;
             color: rgb(var(--expando-color));
             border-color: rgb(var(--ready-color));
@@ -294,6 +294,12 @@
 
         button.group-toggle[data-unreachable='true'] {
             border-width: 0.15rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
+        .group-brightness[data-unreachable='true'] {
             color: rgb(var(--expando-color));
             border-color: rgb(var(--back-color));
             background-color: rgb(var(--expando-color));
@@ -494,6 +500,7 @@
             Object.assign(e.dataset, lightSummary);
 
             const bri = e.querySelector(".group-brightness");
+            bri.dataset.unreachable = lightSummary.allUnreachable;
             for (const o of [...bri.querySelectorAll("option")]) {
                 const v = parseInt(o.value, 10);
                 if (lightSummary.maximumBrightness >= v) {
