@@ -304,6 +304,17 @@
             min-width: 2rem;
         }
 
+        #current-period-delete {
+            background: none;
+            visibility: hidden;
+        }
+        body[data-manual] #current-period-delete {
+            visibility: visible;
+            width: unset;
+            min-width: unset;
+            border: none;
+        }
+
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -323,6 +334,7 @@
             groups = paramsSort(params, groups);
 
             updateGroups(data, groups);
+            updateManual(data);
         }
 
         let dataRequestMade;
@@ -660,6 +672,36 @@
             }
         }
     
+        function onManualChange() {
+            const current = document.querySelector("#current-period");
+            const name = current.value;
+            FourPartDay.setManual({ name, start: new Date() });
+            document.body.dataset.manual = true;
+        }
+
+        function onManualRemove() {
+            FourPartDay.removeManual();
+            updateManual(data);
+        }
+
+        function updateManual(data) {
+            const current = document.querySelector("#current-period");
+            const part = FourPartDay.getPart(data);
+            current.value = part.name;
+            if (part.kind === "manual") {
+                document.body.dataset.manual = true;
+            } else {
+                delete document.body.dataset.manual;
+            }
+
+            if (current.onchange == undefined) {
+                current.onchange = onManualChange;
+
+                const clear = document.querySelector("#current-period-delete");
+                clear.onclick = onManualRemove;
+            }
+        }
+
         async function activateFourPartDayScene(btn) {
             const groupID = ancestorOrSelfData(btn, "group-id");
 
@@ -721,7 +763,14 @@
     <hr/>
     <div id="connection"></div>
     <div id="data" data-expando="group"></div>
-    <a href="hue-callionica-four-part-day.html">Settings...</a>
+    <p><select id="current-period">
+        <option value="morning">Morning</option>
+        <option value="day" selected>Day</option>
+        <option value="evening">Evening</option>
+        <option value="night">Night</option>
+    </select><button id="current-period-delete" title="Remove manual override">ⓧ</button></p>
+    <p><a href="hue-callionica-four-part-day.html">Settings...</a></p>
+    <p></p>
 </div>
 </body>
 </html>
