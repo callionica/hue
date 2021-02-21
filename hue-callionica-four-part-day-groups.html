@@ -603,17 +603,19 @@
             const scenesContainer = scope.createElement("div");
             scenesContainer.classList.add("group-scenes");
 
-            const periods = ["morning", "day", "evening", "night"];
-            for (const period of periods) {
-                const title = period[0].toUpperCase() + period.substring(1);
-                const button = scope.createElement("button");
-                button.classList.add("four-part-day");
-                button.dataset.dayPart = period;
-                button.title = title;
-                button.innerText = title[0];
-        
-                button.onclick = () => { flash(); activateFourPartDayScene(button); };
-                scenesContainer.append(button);
+            if (false) {
+                const periods = ["morning", "day", "evening", "night"];
+                for (const period of periods) {
+                    const title = period[0].toUpperCase() + period.substring(1);
+                    const button = scope.createElement("button");
+                    button.classList.add("four-part-day");
+                    button.dataset.dayPart = period;
+                    button.title = title;
+                    button.innerText = title[0];
+            
+                    button.onclick = () => { flash(); activateFourPartDayScene(button); };
+                    scenesContainer.append(button);
+                }
             }
 
             const periodScenes = ["first", "morning", "day", "evening", "night", "morning-dark", "day-dark", "evening-light", "night-light", "off", "off-morning", "off-day", "off-evening", "off-night", "off-morning-dark", "off-day-dark", "off-evening-light", "off-night-light"];
@@ -767,12 +769,12 @@
 <body data-page="groups">
 <div id="flasher"></div>
 <div id="content">
-    <h1>Rooms & Zones <select id="current-period">
+    <h1 style="display: flex; height: 2.75rem;"><div style="text-overflow: ellipsis; overflow: hidden; max-height: 2.75rem; line-height: 2.75rem; flex-shrink: 1;">Rooms & Zones</div><div style="flex-grow: 1;"><select id="current-period" >
         <option value="morning">Morning</option>
         <option value="day" selected>Day</option>
         <option value="evening">Evening</option>
         <option value="night">Night</option>
-    </select><button id="current-period-delete" title="Remove manual override">ⓧ</button></h1>
+    </select><button id="current-period-delete" title="Remove manual override">ⓧ</button></div></h1>
     <hr/>
     <div id="connection"></div>
     <div id="data" data-expando="group"></div>
