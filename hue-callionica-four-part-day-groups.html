@@ -255,9 +255,9 @@
             width: 2rem;
             min-width: 2rem;
             border-radius: 50%;
-            border-width: 0.25rem;
+            border-width: 0.15rem;
             color: rgb(var(--expando-color));
-            border-color: rgb(var(--ready-color));
+            border-color: rgb(var(--text-color)); /*rgb(var(--ready-color));*/
             background-color: rgb(var(--expando-color));
             transition: background-color 0.4s ease, color 0.4s ease;
         }
@@ -769,7 +769,7 @@
 <body data-page="groups">
 <div id="flasher"></div>
 <div id="content">
-    <h1 style="display: flex; height: 2.75rem;"><div style="text-overflow: ellipsis; overflow: hidden; max-height: 2.75rem; line-height: 2.75rem; flex-shrink: 1;">Rooms & Zones</div><div style="flex-grow: 1; display: flex;"><select id="current-period" >
+    <h1 style="display: flex; height: 2.75rem;"><div style="text-overflow: ellipsis; overflow-x: hidden; max-height: 2.75rem; line-height: 2.75rem; flex-shrink: 1;">Rooms & Zones</div><div style="flex-grow: 1; display: flex;"><select id="current-period" >
         <option value="morning">Morning</option>
         <option value="day" selected>Day</option>
         <option value="evening">Evening</option>
