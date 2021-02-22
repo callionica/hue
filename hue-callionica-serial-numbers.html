@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Zones">
+    <link rel="apple-touch-icon" href="apple-touch-icon-precomposed.png">
+
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Serial Numbers</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        body {
+            -webkit-text-size-adjust: 100%;
+            width: 100vw;
+            
+            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        #content {
+            padding: 0.25rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            padding-top: 0.25rem;
+        }
+        h2 {
+            font-size: 1.2rem;
+            padding-top: 0.25rem;
+        }
+        h3 {
+            font-size: 1.1rem;
+            padding-top: 0.25rem;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        select, button, input {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: inherit;
+            border-radius: 0.275rem;
+            padding: 0.2rem;
+            color: inherit;
+            background-color: inherit;
+        }
+
+        hr {
+            overflow: visible; /* For IE */
+            padding: 0;
+            margin-bottom: 0.4rem;
+            margin-top: 0.4rem;
+            border: none;
+            border-top: medium double #333;
+            color: #333;
+            text-align: center;
+        }
+
+        :root {
+            --expando-over-height: 2.5rem;
+            --expando-inner-height: 6.5rem;
+            --expando-color: 55,55,55;
+            --expando-text-color: 204,204,204;
+        }
+
+        *[data-expando='outer'] {
+            /* Have to use a fixed height to get a smooth transition */
+            height: var(--expando-over-height);
+            overflow: hidden;
+            transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
+
+            color: rgb(var(--expando-text-color));
+            background-color: rgb(var(--expando-color));
+
+            /*margin-left: 0.25rem;
+            margin-right: 0.25rem;*/
+            margin-bottom: 0.75rem;
+
+            border-radius: 0.3rem;
+
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+        }
+
+        *[data-expando='over'] {
+            height: var(--expando-over-height);
+            display: flex;
+
+            /* Opaque background and relative positioning with z-index for slide behind */
+            background-color: rgb(var(--expando-color));
+            position: relative;
+            z-index: 2;
+        }
+
+        *[data-expando='inner'] {
+            height: var(--expando-inner-height);
+            overflow-y: hidden;
+
+            /* Relative positioning with z-index for slide behind */
+            position: relative;
+            z-index: 1;
+            /* background-color: darkorange; */
+
+            transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        *[data-expando='outer'][data-selected='true'] {
+            /* Have to use a fixed height to get a smooth transition */
+            height: calc(var(--expando-over-height) + var(--expando-inner-height));
+        }
+
+        *[data-expando='outer'] > *[data-expando='inner'] {
+            opacity: 0;
+            margin-top: calc(-1 * var(--expando-inner-height));
+            visibility: hidden;
+
+            transition: height 0.6s ease, margin 0.6s ease, opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        *[data-expando='outer'][data-selected='true'] > *[data-expando='inner'] {
+            opacity: 1;
+            margin-top: 0rem;
+            visibility: unset;
+        }
+
+        button {
+            margin: 0.25rem;
+            height: 2rem;
+            width: 6rem;
+            min-width: 6rem;
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        select {
+            margin: 0.25rem;
+        }
+
+        :root {
+            --back-color: 30,30,30;
+            --button-color: 45,45,45;
+            --text-color: 204,204,204;
+            --lit-color: 240,213,78;
+            --ready-color: 160,220,251;
+
+            background-color: rgb(var(--back-color));
+            color: rgb(var(--text-color));
+        }
+
+        select, button, input {
+            border-color: rgb(var(--text-color));
+        }
+
+        #connection {
+            transition: height 0.6s ease, padding 0.6s ease, visibility 0s ease;;
+
+            visibility: hidden;
+            height: 0;
+
+            position: sticky;
+            top: 0;
+            z-index: 10;
+
+            background-color: rgb(var(--back-color));
+
+            padding-bottom: 0rem;
+            padding-top: 0rem;
+        }
+
+        body[data-show-connection='true'] #connection {
+            transition: height 0.6s ease, padding 0.6s ease, visibility 0s ease;;
+
+            visibility: visible;
+            height: 2.5rem;
+
+            padding-bottom: 0.5rem;
+            padding-top: 0.5rem;
+        }
+
+        #flasher {
+            position: fixed;
+            height: 0.75rem;
+            width: 0.75rem;
+            border-radius: 50%;
+            top: 0.5rem;
+            right: 0.5rem;
+            pointer-events: none;
+            z-index: 5;
+            background-color: rgb(var(--lit-color));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #flasher.flash {
+            opacity: 1.0;
+            transition: opacity 0.2s ease;
+        }
+
+        .group-name {
+            margin: 0.25rem;
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+            padding: 0.2rem;
+            
+            display: inline-block;
+            line-height: 1.75rem;
+
+            width: 25rem;
+            flex-grow: 1;
+        }
+
+        .group-scenes, .group-lights {
+            display: flex;
+            width: 100%;
+            overflow-y: scroll;
+            margin-top: 0.5rem;
+        }
+
+        div[data-all-unreachable='true'] {
+            color: rgb(var(--back-color));
+        }
+
+        div[data-all-unreachable='true'] button {
+            border-color: rgb(var(--back-color));
+        }
+
+        button.light {
+            width: 2rem;
+            min-width: 2rem;
+            border-radius: 50%;
+            border-width: 0.15rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--text-color)); /*rgb(var(--ready-color));*/
+            background-color: rgb(var(--expando-color));
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        button.light[data-on='true'] {
+            color: rgb(var(--lit-color));
+            border-color: rgb(var(--lit-color));
+            background-color: rgb(var(--lit-color));
+        }
+
+        button.light[data-unreachable='true'] {
+            border-width: 0.15rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
+        button.group-toggle {
+            width: 2rem;
+            min-width: 2rem;
+            border-radius: 25%;
+            border-width: 0.15rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--text-color)); /*rgb(var(--ready-color));*/
+            background-color: rgb(var(--expando-color));
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        button.group-toggle[data-on='true'] {
+            color: rgb(var(--lit-color));
+            border-color: rgb(var(--lit-color));
+            background-color: rgb(var(--lit-color));
+        }
+
+        button.group-toggle[data-unreachable='true'] {
+            border-width: 0.15rem;
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
+        .group-brightness[data-unreachable='true'] {
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
+        .group-color-temperature[data-unreachable='true'] {
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
+        button.four-part-day {
+            width: 2rem;
+            min-width: 2rem;
+        }
+
+        #current-period-delete {
+            width: unset;
+            min-width: unset;
+            border: none;
+
+            background: none;
+            visibility: hidden;
+        }
+        body[data-manual] #current-period-delete {
+            visibility: visible;
+        }
+
+        .group-brightness {
+            width: 6rem;
+            min-width: 6rem;
+        }
+
+        .group-color-temperature {
+            width: 6rem;
+            min-width: 6rem;
+        }
+
+    </style>
+    
+    <script type="module">
+        import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
+        import { getAllPlus, summarizeLights, getActiveScenes, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
+
+        const params = new URLSearchParams(document.location.search);
+
+        async function ondata(data) {
+            updateLights(data);
+        }
+
+        let dataRequestMade;
+        let dataTimeoutToken;
+        let bridge;
+        let connection;
+        let data;
+
+        const wait = "wait";
+        const immediate = "immediate";
+
+        // Call to get new data
+        async function requestData(mode) {
+            mode = mode || wait;
+
+            if (dataRequestMade && (mode === wait)) {
+                return;
+            }
+
+            clearTimeout(dataTimeoutToken);
+            dataRequestMade = true;
+
+            try {            
+                try {
+                    if (bridge === undefined) {
+                        bridge = loadCurrentBridge();
+                    }
+
+                    if (connection === undefined) {
+                        connection = await loadConnection("Callionica", bridge);
+                    }
+
+                    data = await getAllPlus(connection);
+
+                    delete document.body.dataset.showConnection;
+                } catch (error) {
+                    document.body.dataset.showConnection = true;
+
+                    const e = document.querySelector("#connection");
+
+                    if ((bridge === undefined) || (connection === undefined)) {
+                        e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                    } else {
+                        const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                        e.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection</a>`;
+                    }
+                }
+            } finally {
+                dataRequestMade = false;
+            }
+
+            dataTimeoutToken = setTimeout(() => requestData(wait), 2 * 1000);
+
+            ondata(data);
+        }
+
+        function ancestor(e, pred) {
+            let container = e.parentNode;
+            while (container) {
+                if (pred(container)) {
+                    break;
+                }
+                container = container.parentElement;
+            }
+            return container || undefined;
+        }
+
+        function ancestorData(e, name) {
+            const attr = "data-" + name;
+            let container = e.parentNode;
+            while (container) {
+                if (container.hasAttribute(attr)) {
+                    break;
+                }
+                container = container.parentElement;
+            }
+            return container?.getAttribute(attr) || undefined;
+        }
+
+        function ancestorOrSelfData(e, name) {
+            const attr = "data-" + name;
+            let container = e;
+            while (container) {
+                if (container.hasAttribute(attr)) {
+                    break;
+                }
+                container = container.parentElement;
+            }
+            return container?.getAttribute(attr) || undefined;
+        }
+
+        function expando(e) {
+            
+            const removeSelection = (e.dataset.selected === "true");
+
+            let container = e.closest("[data-expando='group']");
+            if (container == undefined) {
+                return;
+            }
+
+            const selected = container.querySelectorAll("[data-selected='true']");
+            for (const s of selected) {
+                delete s.dataset.selected;
+            }
+
+            if (!removeSelection) {
+                e.dataset.selected = true;
+            } else {
+                delete e.dataset.selected;
+            }
+        }
+    
+        const expandoExcludes = ["A", "BUTTON", "INPUT", "SELECT"];
+
+        function setupExpandoElement(element) {
+            element.addEventListener("click", (e) => {
+                if (!expandoExcludes.includes(e.target.nodeName)) {
+                    expando(element);
+                    e.preventDefault();
+                }
+            }, false);
+        }
+
+        function setupExpando(scope) {
+            scope = scope || document;
+
+            const elements = [...scope.querySelectorAll("*[data-expando='outer']")];
+            for (const element of elements) {
+                setupExpandoElement(element);
+            }
+        }
+
+        let flashID = 0;
+
+        function flash() {
+            const flasher = document.querySelector("#flasher");
+            flasher.classList.add("flash");
+            ++flashID;
+            const myFlashID = flashID;
+            setTimeout(() => {
+                if (flashID === myFlashID) {
+                    flasher.classList.remove("flash");
+                }
+            }, 0.35 * 1000);
+        }
+
+        let state = [];
+
+        function clearLights() {
+            // Reset state to nothing
+            state = [];
+        }
+
+        function updateLights(data) {
+            // Fresh data from bridge
+
+            const bridge = {
+                id: data.config.bridgeid,
+                name: data.config.name,
+            };
+
+            for (const light of Object.values(data.lights)) {
+                const light2 = { ...light, bridge };
+                const existing = state.find(l => l.uniqueid === light2.uniqueid);
+                if (existing !== undefined) {
+                    Object.assign(existing, light2);
+                } else {
+                    state.push({ ...light2, _callionica: {} });
+                }
+            }
+
+            updateUI();
+        }
+
+        function loadLights(lights) {
+            // Fresh data from file
+        
+            for (const light of lights) {
+                const existing = state.find(l => l.uniqueid === light.uniqueid);
+                if (existing !== undefined) {
+                    if (existing._callionica.serialno === undefined) {
+                        Object.asign(existing._callionica, light._callionica);
+                    }
+                } else {
+                    state.push({...light});
+                }
+            }
+
+            updateUI();
+        }
+
+        function saveLights() {
+            // Save state to file
+        }
+
+        function updateUI() {
+            const container = document.querySelector("#data");
+            for (const light of state) {
+                let e = container.querySelector(`[id='${light.uniqueid}']`);
+                if (e != undefined) {
+                    // Nothing to do here
+                } else {
+                    e = document.createElement("div");
+                    e.id = light.uniqueid;
+
+                    const n = document.createElement("div");
+                    n.classList.add("light-name");
+
+                    e.append(n);
+
+                    container.append(e);
+                }
+
+                const name = e.querySelector(`.light-name`);
+                name.innerText = light.name;
+            }
+        }
+
+        requestData();
+    </script>
+</head>
+<body data-page="serial-numbers">
+<div id="flasher"></div>
+<div id="content">
+    <h1>Serial Numbers</h1>
+    <hr/>
+    <div id="connection"></div>
+    <div id="data"></div>
+    <button id="load">Load</button>
+    <button id="save">Save</button>
+    <p>&nbsp;</p>
+</div>
+</body>
+</html>
