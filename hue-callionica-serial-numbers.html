@@ -519,7 +519,7 @@
             for (const light of lights) {
                 const existing = state.find(l => l.uniqueid === light.uniqueid);
                 if (existing !== undefined) {
-                    if (existing._callionica.serialno === undefined) {
+                    if (existing._callionica.serialNumber === undefined) {
                         Object.asign(existing._callionica, light._callionica);
                     }
                 } else {
@@ -534,26 +534,44 @@
             // Save state to file
         }
 
+        function changeSerial(e) {
+            const id = ancestorOrSelfData(e, "id");
+            const existing = state.find(l => l.uniqueid === id);
+            if (existing !== undefined) {
+                existing._callionica.serialNumber = e.value;
+            }
+        }
+
         function updateUI() {
             const container = document.querySelector("#data");
             for (const light of state) {
-                let e = container.querySelector(`[id='${light.uniqueid}']`);
+                let e = container.querySelector(`[data-id='${light.uniqueid}']`);
                 if (e != undefined) {
                     // Nothing to do here
                 } else {
                     e = document.createElement("div");
-                    e.id = light.uniqueid;
+                    e.dataset.id = light.uniqueid;
 
                     const n = document.createElement("div");
                     n.classList.add("light-name");
 
-                    e.append(n);
+                    const s = document.createElement("input");
+                    s.classList.add("light-serial-number");
+                    s.type = "text";
+                    s.onchange = () => { changeSerial(s); };
+
+                    e.append(n, s);
 
                     container.append(e);
                 }
 
                 const name = e.querySelector(`.light-name`);
                 name.innerText = light.name;
+
+                const serial = e.querySelector(`.light-serial-number`);
+                if (light._callionica.serialNumber !== undefined) {
+                    serial.innerText = light._callionica.serialNumber;
+                }
             }
         }
 
