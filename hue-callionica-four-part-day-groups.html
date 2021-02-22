@@ -322,10 +322,19 @@
             visibility: visible;
         }
 
+        .group-brightness {
+            width: 6rem;
+        }
+
+        .group-color-temperature {
+            width: 6rem;
+        }
+
     </style>
+    <!-- 1800 to 6600 -->
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAllPlus, summarizeLights, getActiveScenes, setLightOn, setGroupOn, setGroupBrightness, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAllPlus, summarizeLights, getActiveScenes, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         const params = new URLSearchParams(document.location.search);
@@ -565,7 +574,20 @@
             for (const level of levels) {
                 const o = scope.createElement("option");
                 o.value = (level[1] === undefined) ? Math.floor(level[0]/100*254) : level[1];
-                o.innerHTML = level[0];
+                o.innerHTML = level[0] + " %";
+                e.appendChild(o);
+            }
+
+            return e;
+        }
+
+        function createCT(scope) {
+            const e = scope.createElement("select");
+
+            for (let k = 1800; k <= 6600; k += 100) {
+                const o = scope.createElement("option");
+                o.value = Math.floor(1000000/k);
+                o.innerHTML = `${k} K`;
                 e.appendChild(o);
             }
 
@@ -643,6 +665,12 @@
             dimmer.onchange = () => { flash(); selectBrightness(dimmer); };
 
             lightsContainer.appendChild(dimmer);
+
+            const ct = createCT(scope);
+            ct.classList.add("group-color-temperature");
+            ct.onchange = () => { flash(); selectCT(ct); };
+
+            lightsContainer.appendChild(ct);
 
             i.append(scenesContainer, lightsContainer);
 
@@ -759,6 +787,14 @@
             const groupID = ancestorOrSelfData(btn, "group-id");
             const brightness = parseInt(btn.value, 10);
             await setGroupBrightness(connection, groupID, brightness);
+
+            requestData(immediate);
+        }
+
+        async function selectCT(btn) {
+            const groupID = ancestorOrSelfData(btn, "group-id");
+            const ct = parseInt(btn.value, 10);
+            await setGroupCT(connection, groupID, ct);
 
             requestData(immediate);
         }

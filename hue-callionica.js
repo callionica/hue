@@ -219,6 +219,12 @@ export async function setGroupBrightness(connection, id, value) {
     return put(address, body);
 }
 
+export async function setGroupCT(connection, id, value) {
+    const address = Address(connection, `groups/${id}/action`);
+    const body = { ct: value };
+    return put(address, body);
+}
+
 export async function setGroupScene(connection, id, sceneID) {
     const address = Address(connection, `groups/${id}/action`);
     const body = { scene: sceneID };
