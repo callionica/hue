@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Zones">
+    <meta name="apple-mobile-web-app-title" content="Serial Numbers">
     <link rel="apple-touch-icon" href="apple-touch-icon-precomposed.png">
 
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -213,119 +213,8 @@
             transition: opacity 0.2s ease;
         }
 
-        .group-name {
-            margin: 0.25rem;
-            margin-left: 0.5rem;
-            margin-right: 0.5rem;
-            padding: 0.2rem;
-            
-            display: inline-block;
-            line-height: 1.75rem;
-
-            width: 25rem;
-            flex-grow: 1;
-        }
-
-        .group-scenes, .group-lights {
+        .light {
             display: flex;
-            width: 100%;
-            overflow-y: scroll;
-            margin-top: 0.5rem;
-        }
-
-        div[data-all-unreachable='true'] {
-            color: rgb(var(--back-color));
-        }
-
-        div[data-all-unreachable='true'] button {
-            border-color: rgb(var(--back-color));
-        }
-
-        button.light {
-            width: 2rem;
-            min-width: 2rem;
-            border-radius: 50%;
-            border-width: 0.15rem;
-            color: rgb(var(--expando-color));
-            border-color: rgb(var(--text-color)); /*rgb(var(--ready-color));*/
-            background-color: rgb(var(--expando-color));
-            transition: background-color 0.4s ease, color 0.4s ease;
-        }
-
-        button.light[data-on='true'] {
-            color: rgb(var(--lit-color));
-            border-color: rgb(var(--lit-color));
-            background-color: rgb(var(--lit-color));
-        }
-
-        button.light[data-unreachable='true'] {
-            border-width: 0.15rem;
-            color: rgb(var(--expando-color));
-            border-color: rgb(var(--back-color));
-            background-color: rgb(var(--expando-color));
-        }
-
-        button.group-toggle {
-            width: 2rem;
-            min-width: 2rem;
-            border-radius: 25%;
-            border-width: 0.15rem;
-            color: rgb(var(--expando-color));
-            border-color: rgb(var(--text-color)); /*rgb(var(--ready-color));*/
-            background-color: rgb(var(--expando-color));
-            transition: background-color 0.4s ease, color 0.4s ease;
-        }
-
-        button.group-toggle[data-on='true'] {
-            color: rgb(var(--lit-color));
-            border-color: rgb(var(--lit-color));
-            background-color: rgb(var(--lit-color));
-        }
-
-        button.group-toggle[data-unreachable='true'] {
-            border-width: 0.15rem;
-            color: rgb(var(--expando-color));
-            border-color: rgb(var(--back-color));
-            background-color: rgb(var(--expando-color));
-        }
-
-        .group-brightness[data-unreachable='true'] {
-            color: rgb(var(--expando-color));
-            border-color: rgb(var(--back-color));
-            background-color: rgb(var(--expando-color));
-        }
-
-        .group-color-temperature[data-unreachable='true'] {
-            color: rgb(var(--expando-color));
-            border-color: rgb(var(--back-color));
-            background-color: rgb(var(--expando-color));
-        }
-
-        button.four-part-day {
-            width: 2rem;
-            min-width: 2rem;
-        }
-
-        #current-period-delete {
-            width: unset;
-            min-width: unset;
-            border: none;
-
-            background: none;
-            visibility: hidden;
-        }
-        body[data-manual] #current-period-delete {
-            visibility: visible;
-        }
-
-        .group-brightness {
-            width: 6rem;
-            min-width: 6rem;
-        }
-
-        .group-color-temperature {
-            width: 6rem;
-            min-width: 6rem;
         }
 
     </style>
@@ -513,14 +402,25 @@
             updateUI();
         }
 
-        function loadLights(lights) {
+        function loadLights(name, text) {
             // Fresh data from file
+
+            let lights;
+            
+            try {
+                lights = JSON.parse(text);
+            } catch (e) {
+            }
+
+            if (lights === undefined) {
+                alert(`${name} does not contain serial number data or is corrupted.`);
+            }
         
             for (const light of lights) {
                 const existing = state.find(l => l.uniqueid === light.uniqueid);
                 if (existing !== undefined) {
                     if (existing._callionica.serialNumber === undefined) {
-                        Object.asign(existing._callionica, light._callionica);
+                        Object.assign(existing._callionica, light._callionica);
                     }
                 } else {
                     state.push({...light});
@@ -551,6 +451,7 @@
                 } else {
                     e = document.createElement("div");
                     e.dataset.id = light.uniqueid;
+                    e.classList.add("light");
 
                     const n = document.createElement("div");
                     n.classList.add("light-name");
@@ -566,14 +467,39 @@
                 }
 
                 const name = e.querySelector(`.light-name`);
-                name.innerText = light.name;
+                if (name.innerText !== light.name) {
+                    name.innerText = light.name;
+                }
 
                 const serial = e.querySelector(`.light-serial-number`);
                 if (light._callionica.serialNumber !== undefined) {
-                    serial.innerText = light._callionica.serialNumber;
+                    serial.value = light._callionica.serialNumber;
                 }
             }
         }
+
+        function saveFile() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+	        const file = URL.createObjectURL(blob);
+
+            const app = document.querySelector("#save");
+            app.href = file;
+        }
+
+        const load = document.querySelector("#load");
+        const loadInput = document.querySelector("#load-data");
+        load.onclick = () => { loadInput.value = null; loadInput.click(); };
+        loadInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file !== undefined) {
+                    const fr = new FileReader();
+                    fr.addEventListener("load", ()=>{ loadLights(file.name, fr.result); });
+                    fr.readAsText(file);
+                }
+            };
+
+        const save = document.querySelector("#save");
+        save.onclick = () => saveFile();
 
         requestData();
     </script>
@@ -585,8 +511,10 @@
     <hr/>
     <div id="connection"></div>
     <div id="data"></div>
-    <button id="load">Load</button>
-    <button id="save">Save</button>
+<p>
+    <a id="load" href="#load">Load</a><input id="load-data" type="file" accept=".json,application/json" style="display: none;">
+    <a id="save" href="#save" download="hue-serial-numbers.json">Save</a>
+</p>
     <p>&nbsp;</p>
 </div>
 </body>
