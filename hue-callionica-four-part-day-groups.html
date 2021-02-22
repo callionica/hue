@@ -305,6 +305,12 @@
             background-color: rgb(var(--expando-color));
         }
 
+        .group-color-temperature[data-unreachable='true'] {
+            color: rgb(var(--expando-color));
+            border-color: rgb(var(--back-color));
+            background-color: rgb(var(--expando-color));
+        }
+
         button.four-part-day {
             width: 2rem;
             min-width: 2rem;
@@ -518,6 +524,16 @@
                 }
             }
 
+            const ct = e.querySelector(".group-color-temperature");
+            ct.dataset.unreachable = lightSummary.allUnreachable;
+            for (const o of [...ct.querySelectorAll("option")]) {
+                const v = parseInt(o.value, 10);
+                if (lightSummary.maximumColorTemperature >= v) {
+                    o.selected = true;
+                    break;
+                }
+            }
+
             const offScenes = FourPartDay.getOffScenes(data, group.id);
             const activeOffScenes = getActiveScenes(data, offScenes);
             const isUsingOffScene = activeOffScenes.length > 0;
@@ -569,6 +585,7 @@
             scope = scope || document;
 
             const e = scope.createElement("select");
+            e.title = "Brightness";
 
             const levels = [[1, 0], [2], [3], [4], [5], [6], [7], [8], [9], [10], [20], [30], [40], [50, 127], [60], [70], [80], [90], [95], [100, 254]].reverse();
             for (const level of levels) {
@@ -582,7 +599,10 @@
         }
 
         function createCT(scope) {
+            scope = scope || document;
+
             const e = scope.createElement("select");
+            e.title = "Color temperature";
 
             for (let k = 1800; k <= 6600; k += 100) {
                 const o = scope.createElement("option");
