@@ -237,13 +237,13 @@
             width: 6rem;
         }
 
-        .light-socket {
+        .light-connector {
             margin-left: 1rem;
             width: 6rem;
         }
 
         @media (max-width: 720px) {
-            .light-socket {
+            .light-connector {
                 display: none;
             }
         }
@@ -493,14 +493,14 @@
             }
         }
 
-        function changeSocket(e) {
+        function changeConnector(e) {
             const id = ancestorOrSelfData(e, "id");
             const existing = state.find(l => l.uniqueid === id);
             if (existing !== undefined) {
                 if (e.value.length === 0) {
-                    delete existing._callionica.socket;    
+                    delete existing._callionica.connector;    
                 } else {
-                    existing._callionica.socket = e.value;
+                    existing._callionica.connector = e.value;
                 }
             }
         }
@@ -568,14 +568,14 @@
                     serialE.title = "Serial No.";
                     serialE.onchange = () => { changeSerial(serialE); };
 
-                    const socketE = document.createElement("input");
-                    socketE.classList.add("light-socket");
-                    socketE.type = "text";
-                    socketE.setAttribute("list", "socket-types");
-                    socketE.title = "Socket";
-                    socketE.onchange = () => { changeSocket(socketE); };
+                    const connectorE = document.createElement("input");
+                    connectorE.classList.add("light-connector");
+                    connectorE.type = "text";
+                    connectorE.setAttribute("list", "connector-types");
+                    connectorE.title = "Connector";
+                    connectorE.onchange = () => { changeConnector(connectorE); };
 
-                    e.append(nameE, roomE, serialE, socketE);
+                    e.append(nameE, roomE, serialE, connectorE);
 
                     container.append(e);
                 }
@@ -611,11 +611,11 @@
                     }
                 }
 
-                const socket = e.querySelector(`.light-socket`);
-                if (light._callionica.socket !== undefined) {
-                    const keep = (socket === document.activeElement) && (mode === "bridge");
-                    if (!keep && (socket.value !== light._callionica.socket)) {
-                        socket.value = light._callionica.socket;
+                const connector = e.querySelector(`.light-connector`);
+                if (light._callionica.connector !== undefined) {
+                    const keep = (connector === document.activeElement) && (mode === "bridge");
+                    if (!keep && (connector.value !== light._callionica.connector)) {
+                        connector.value = light._callionica.connector;
                     }
                 }
             }
@@ -648,13 +648,11 @@
     </script>
 </head>
 <body data-page="serial-numbers">
-    <datalist id="socket-types">
+    <datalist id="connector-types">
         <option value="B22"></option>
         <option value="E27"></option>
         <option value="GU10"></option>
         <option value="E14"></option>
-    </datalist>
-    <datalist id="socket-adapter-types">
         <option value="B22-E27"></option>
         <option value="E27-B22"></option>
         <option value="GU10-B22"></option>
