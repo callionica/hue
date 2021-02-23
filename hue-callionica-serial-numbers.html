@@ -217,6 +217,27 @@
             display: flex;
         }
 
+        .light:not([data-manufacturer='Signify']) {
+            color: gray;
+        }
+
+        .light-serial-number {
+            width: 6rem;
+        }
+
+        #load, #save {
+            display: inline-block;
+            min-width: 6rem;
+            width: 6rem;
+            margin-right: 1rem;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 0.2rem;
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: rgb(var(--text-color));
+        }
+
     </style>
     
     <script type="module">
@@ -379,6 +400,8 @@
         function clearLights() {
             // Reset state to nothing
             state = [];
+
+            updateUI();
         }
 
         function updateLights(data) {
@@ -389,8 +412,11 @@
                 name: data.config.name,
             };
 
+            const rooms = Object.values(data.groups).filter(room => room.type === "Room");
+
             for (const light of Object.values(data.lights)) {
-                const light2 = { ...light, bridge };
+                const room = rooms.find(room => room.lights.includes(light.id))?.name;
+                const light2 = { ...light, bridge, room };
                 const existing = state.find(l => l.uniqueid === light2.uniqueid);
                 if (existing !== undefined) {
                     Object.assign(existing, light2);
@@ -442,9 +468,37 @@
             }
         }
 
+        function mf(name) {
+            if (name.startsWith("Signify")) {
+                return "Signify";
+            }
+
+            if (name.startsWith("IKEA")) {
+                return "IKEA";
+            }
+
+            return name;
+        }
+    
         function updateUI() {
+            const sortedLights = state.sort((a, b) => {
+                const mfA = mf(a.manufacturername);
+                const mfB = mf(b.manufacturername);
+                if (mfA !== mfB) {
+                    if (mfA === "Signify") {
+                        return -1;
+                    }
+                    if (mfB === "Signify") {
+                        return +1;
+                    }
+                    return mfA.localeCompare(mfB);
+                }
+
+                return a.name.localeCompare(b.name);
+            });
+
             const container = document.querySelector("#data");
-            for (const light of state) {
+            for (const light of sortedLights) {
                 let e = container.querySelector(`[data-id='${light.uniqueid}']`);
                 if (e != undefined) {
                     // Nothing to do here
@@ -464,6 +518,11 @@
                     e.append(n, s);
 
                     container.append(e);
+                }
+
+                e.dataset.manufacturer = mf(light.manufacturername);
+                if (light.room !== undefined) {
+                    e.dataset.room = light.room;
                 }
 
                 const name = e.querySelector(`.light-name`);
@@ -510,11 +569,12 @@
     <h1>Serial Numbers</h1>
     <hr/>
     <div id="connection"></div>
+    <p>
+        <a id="load" href="#load">Load</a><input id="load-data" type="file" accept=".json,application/json" style="display: none;">
+        <a id="save" href="#save" download="hue-serial-numbers.json">Save</a>
+    </p>
+    <hr/>
     <div id="data"></div>
-<p>
-    <a id="load" href="#load">Load</a><input id="load-data" type="file" accept=".json,application/json" style="display: none;">
-    <a id="save" href="#save" download="hue-serial-numbers.json">Save</a>
-</p>
     <p>&nbsp;</p>
 </div>
 </body>
