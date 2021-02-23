@@ -229,6 +229,10 @@
             width: 12rem;
         }
 
+        .light-room {
+            width: 12rem;
+        }
+
         .light-serial-number {
             width: 6rem;
         }
@@ -502,6 +506,18 @@
                     return mfA.localeCompare(mfB);
                 }
 
+                if (a.room !== b.room) {
+                    if (a.room === undefined) {
+                        return +1;
+                    }
+
+                    if (b.room === undefined) {
+                        return -1;
+                    }
+
+                    return a.room.localeCompare(b.room);
+                }
+
                 return a.name.localeCompare(b.name);
             });
 
@@ -518,12 +534,15 @@
                     const n = document.createElement("div");
                     n.classList.add("light-name");
 
+                    const r = document.createElement("div");
+                    r.classList.add("light-room");
+
                     const s = document.createElement("input");
                     s.classList.add("light-serial-number");
                     s.type = "text";
                     s.onchange = () => { changeSerial(s); };
 
-                    e.append(n, s);
+                    e.append(n, r, s);
 
                     container.append(e);
                 }
@@ -544,6 +563,11 @@
                 const name = e.querySelector(`.light-name`);
                 if (name.innerText !== light.name) {
                     name.innerText = light.name;
+                }
+
+                const room = e.querySelector(`.light-room`);
+                if ((light.room !== undefined) && (room.innerText !== light.room)) {
+                    room.innerText = light.room;
                 }
 
                 const serial = e.querySelector(`.light-serial-number`);
