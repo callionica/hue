@@ -221,6 +221,14 @@
             color: gray;
         }
 
+        .light[data-on='true'] {
+            color: rgb(var(--lit-color));
+        }
+
+        .light-name {
+            width: 12rem;
+        }
+
         .light-serial-number {
             width: 6rem;
         }
@@ -519,6 +527,14 @@
 
                     container.append(e);
                 }
+
+                let liveLight = data.lights[light.id];
+                if (liveLight.uniqueid !== light.uniqueid) {
+                    liveLight = undefined;
+                }
+
+                e.dataset.on = liveLight?.state.on && liveLight?.state.reachable;
+                e.dataset.reachable = liveLight?.state.reachable;
 
                 e.dataset.manufacturer = mf(light.manufacturername);
                 if (light.room !== undefined) {
