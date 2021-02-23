@@ -237,6 +237,17 @@
             width: 6rem;
         }
 
+        .light-socket {
+            margin-left: 1rem;
+            width: 6rem;
+        }
+
+        @media (max-width: 720px) {
+            .light-socket {
+                display: none;
+            }
+        }
+
         #load, #save {
             display: inline-block;
             min-width: 6rem;
@@ -413,7 +424,7 @@
             // Reset state to nothing
             state = [];
 
-            updateUI();
+            updateUI("action");
         }
 
         function updateLights(data) {
@@ -425,9 +436,13 @@
             };
 
             const rooms = Object.values(data.groups).filter(room => room.type === "Room");
+            const zones = Object.values(data.groups).filter(room => room.type !== "Room");
 
             for (const light of Object.values(data.lights)) {
-                const room = rooms.find(room => room.lights.includes(light.id))?.name;
+                let room = rooms.find(room => room.lights.includes(light.id))?.name;
+                if (room === undefined) {
+                    room = zones.find(room => room.lights.includes(light.id))?.name;
+                }
                 const light2 = { ...light, bridge, room };
                 const existing = state.find(l => l.uniqueid === light2.uniqueid);
                 if (existing !== undefined) {
@@ -437,7 +452,7 @@
                 }
             }
 
-            updateUI();
+            updateUI("bridge");
         }
 
         function loadLights(name, text) {
@@ -465,7 +480,7 @@
                 }
             }
 
-            updateUI();
+            updateUI("action");
         }
 
         function saveLights() {
@@ -477,6 +492,18 @@
             const existing = state.find(l => l.uniqueid === id);
             if (existing !== undefined) {
                 existing._callionica.serialNumber = e.value;
+            }
+        }
+
+        function changeSocket(e) {
+            const id = ancestorOrSelfData(e, "id");
+            const existing = state.find(l => l.uniqueid === id);
+            if (existing !== undefined) {
+                if (e.value.length === 0) {
+                    delete existing._callionica.socket;    
+                } else {
+                    existing._callionica.socket = e.value;
+                }
             }
         }
 
@@ -492,7 +519,7 @@
             return name;
         }
     
-        function updateUI() {
+        function updateUI(mode) {
             const sortedLights = state.sort((a, b) => {
                 const mfA = mf(a.manufacturername);
                 const mfB = mf(b.manufacturername);
@@ -531,18 +558,26 @@
                     e.dataset.id = light.uniqueid;
                     e.classList.add("light");
 
-                    const n = document.createElement("div");
-                    n.classList.add("light-name");
+                    const nameE = document.createElement("div");
+                    nameE.classList.add("light-name");
 
-                    const r = document.createElement("div");
-                    r.classList.add("light-room");
+                    const roomE = document.createElement("div");
+                    roomE.classList.add("light-room");
 
-                    const s = document.createElement("input");
-                    s.classList.add("light-serial-number");
-                    s.type = "text";
-                    s.onchange = () => { changeSerial(s); };
+                    const serialE = document.createElement("input");
+                    serialE.classList.add("light-serial-number");
+                    serialE.type = "text";
+                    serialE.title = "Serial No.";
+                    serialE.onchange = () => { changeSerial(serialE); };
 
-                    e.append(n, r, s);
+                    const socketE = document.createElement("input");
+                    socketE.classList.add("light-socket");
+                    socketE.type = "text";
+                    socketE.setAttribute("list", "socket-types");
+                    socketE.title = "Socket";
+                    socketE.onchange = () => { changeSocket(socketE); };
+
+                    e.append(nameE, roomE, serialE, socketE);
 
                     container.append(e);
                 }
@@ -574,6 +609,11 @@
                 if (light._callionica.serialNumber !== undefined) {
                     serial.value = light._callionica.serialNumber;
                 }
+
+                const socket = e.querySelector(`.light-socket`);
+                if (light._callionica.socket !== undefined) {
+                    socket.value = light._callionica.socket;
+                }
             }
         }
 
@@ -604,6 +644,17 @@
     </script>
 </head>
 <body data-page="serial-numbers">
+    <datalist id="socket-types">
+        <option value="B22"></option>
+        <option value="E27"></option>
+        <option value="GU10"></option>
+    </datalist>
+    <datalist id="socket-adapter-types">
+        <option value="B22-E27"></option>
+        <option value="E27-B22"></option>
+        <option value="GU10-B22"></option>
+        <option value="GU10-E27"></option>
+    </datalist>
 <div id="flasher"></div>
 <div id="content">
     <h1>Serial Numbers</h1>
