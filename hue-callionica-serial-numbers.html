@@ -472,9 +472,7 @@
             for (const light of lights) {
                 const existing = state.find(l => l.uniqueid === light.uniqueid);
                 if (existing !== undefined) {
-                    if (existing._callionica.serialNumber === undefined) {
-                        Object.assign(existing._callionica, light._callionica);
-                    }
+                    Object.assign(existing._callionica, light._callionica);
                 } else {
                     state.push({...light});
                 }
@@ -607,12 +605,18 @@
 
                 const serial = e.querySelector(`.light-serial-number`);
                 if (light._callionica.serialNumber !== undefined) {
-                    serial.value = light._callionica.serialNumber;
+                    const keep = (serial === document.activeElement) && (mode === "bridge");
+                    if (!keep && (serial.value !== light._callionica.serialNumber)) {
+                        serial.value = light._callionica.serialNumber;
+                    }
                 }
 
                 const socket = e.querySelector(`.light-socket`);
                 if (light._callionica.socket !== undefined) {
-                    socket.value = light._callionica.socket;
+                    const keep = (socket === document.activeElement) && (mode === "bridge");
+                    if (!keep && (socket.value !== light._callionica.socket)) {
+                        socket.value = light._callionica.socket;
+                    }
                 }
             }
         }
@@ -648,6 +652,7 @@
         <option value="B22"></option>
         <option value="E27"></option>
         <option value="GU10"></option>
+        <option value="E14"></option>
     </datalist>
     <datalist id="socket-adapter-types">
         <option value="B22-E27"></option>
