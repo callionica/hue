@@ -292,6 +292,10 @@
             background-color: rgb(var(--lit-color));
         }
 
+        button.group-toggle[data-light-on='true'] {
+            border-color: rgb(var(--lit-color));
+        }
+
         button.group-toggle[data-unreachable='true'] {
             border-width: 0.15rem;
             color: rgb(var(--expando-color));
@@ -542,6 +546,7 @@
 
             const gt = e.querySelector(".group-toggle");
             gt.dataset.on = !isUsingOffScene && lightSummary.anyOn;
+            gt.dataset.lightOn = lightSummary.anyOn;
             gt.dataset.unreachable = lightSummary.allUnreachable;
 
             const lights = group.lights.map(lightID => data.lights[lightID]).sort((a,b) => a.name.localeCompare(b.name));
