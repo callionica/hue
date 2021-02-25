@@ -213,9 +213,9 @@ export async function setGroupOn(connection, id, value) {
     return put(address, body);
 }
 
-export async function setGroupBrightness(connection, id, value) {
+export async function setGroupBrightness(connection, id, value, extras) {
     const address = Address(connection, `groups/${id}/action`);
-    const body = { bri: value };
+    const body = extras ? { bri: value, ...extras } : { bri: value };
     return put(address, body);
 }
 
@@ -2535,8 +2535,8 @@ export function summarizeLights(group, data) {
     let allOn = true;
     let anyUnreachable = false;
     let allUnreachable = true;
-    let maximumBrightness = 0;
-    let maximumColorTemperature = 0;
+    let maximumBrightness = -1;
+    let maximumColorTemperature = -1;
 
     for (const lightID of group.lights) {
         const light = data.lights[lightID];

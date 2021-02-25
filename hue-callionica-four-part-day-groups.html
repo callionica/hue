@@ -523,7 +523,7 @@
             const bri = e.querySelector(".group-brightness");
             bri.dataset.unreachable = lightSummary.allUnreachable;
             for (const o of [...bri.querySelectorAll("option")]) {
-                const v = parseInt(o.value, 10);
+                const v = (o.value === "off") ? -1 : parseInt(o.value, 10);
                 if (lightSummary.maximumBrightness >= v) {
                     o.selected = true;
                     break;
@@ -588,17 +588,17 @@
             return button;
         }
 
-        function createDimmer(scope) {
+        function createBrightness(scope) {
             scope = scope || document;
 
             const e = scope.createElement("select");
             e.title = "Brightness";
 
-            const levels = [[1, 0], [2], [3], [4], [5], [6], [7], [8], [9], [10], [20], [30], [40], [50, 127], [60], [70], [80], [90], [95], [100, 254]].reverse();
+            const levels = [["Off", "off"], [1, 0], [2], [3], [4], [5], [6], [7], [8], [9], [10], [20], [30], [40], [50, 127], [60], [70], [80], [90], [95], [100, 254]].reverse();
             for (const level of levels) {
                 const o = scope.createElement("option");
                 o.value = (level[1] === undefined) ? Math.floor(level[0]/100*254) : level[1];
-                o.innerHTML = level[0] + " %";
+                o.innerHTML = (level[1] === "off") ? level[0] : level[0] + " %";
                 e.appendChild(o);
             }
 
@@ -616,6 +616,10 @@
                 o.value = Math.floor(1000000/k);
                 o.innerHTML = `${k} K`;
                 e.appendChild(o);
+
+                if (k === 2800) {
+                    o.setAttribute("selected", true);
+                }
             }
 
             return e;
@@ -687,7 +691,7 @@
             const lightsContainer = scope.createElement("div");
             lightsContainer.classList.add("group-lights");  
 
-            const dimmer = createDimmer(scope);
+            const dimmer = createBrightness(scope);
             dimmer.classList.add("group-brightness");
             dimmer.onchange = () => { flash(); selectBrightness(dimmer); };
 
@@ -812,8 +816,25 @@
 
         async function selectBrightness(btn) {
             const groupID = ancestorOrSelfData(btn, "group-id");
+
+            // If user has selected OFF, turn the group off (don't use the off-scene)
+            if (btn.value === "off") {
+                await setGroupOn(connection, groupID, false);
+                requestData(immediate);
+                return;
+            }
+
             const brightness = parseInt(btn.value, 10);
-            await setGroupBrightness(connection, groupID, brightness);
+            const on = ancestorOrSelfData(btn, "any-on") === "true";
+
+            const ctE = btn.closest(".group").querySelector(".group-color-temperature");
+            const ct = parseInt(ctE.value, 10);
+
+            // If any lights are on, we just change the brightness
+            // If no lights are on, we turn on the group (don't use the on-scene)
+            // using the color temperature of the nearby CT control
+            const extras = !on ? { on: true, ct } : undefined;
+            await setGroupBrightness(connection, groupID, brightness, extras);
 
             requestData(immediate);
         }
