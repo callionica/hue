@@ -352,6 +352,10 @@
         const params = new URLSearchParams(document.location.search);
 
         async function ondata(data) {
+            if (data === undefined) {
+                return;
+            }
+            
             // Called when new data arrives
             let groups = Object.values(data.groups);
 
