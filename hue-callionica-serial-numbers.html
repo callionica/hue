@@ -581,7 +581,7 @@
                 }
 
                 let liveLight = data.lights[light.id];
-                if (liveLight.uniqueid !== light.uniqueid) {
+                if ((liveLight !== undefined) && (liveLight.uniqueid !== light.uniqueid)) {
                     liveLight = undefined;
                 }
 
