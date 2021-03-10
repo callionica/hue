@@ -392,7 +392,14 @@
             try {            
                 try {
                     if (bridge === undefined) {
-                        bridge = loadCurrentBridge();
+                        const id = params.get("bridge") || undefined;
+                        if (id !== undefined) {
+                            bridge = { id };
+                        }
+
+                        if (bridge === undefined) {
+                            bridge = loadCurrentBridge();
+                        }
                     }
 
                     if (connection === undefined) {
