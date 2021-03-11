@@ -372,7 +372,7 @@
         let dataRequestMade;
         let dataTimeoutToken;
         let bridge;
-        let connection;
+        let connections = {};
         let data;
 
         const wait = "wait";
@@ -402,8 +402,10 @@
                         }
                     }
 
+                    let connection = connections[bridge.id];
                     if (connection === undefined) {
                         connection = await loadConnection("Callionica", bridge);
+                        connections[bridge.id] = connection;
                     }
 
                     data = await getAllPlus(connection);
@@ -414,9 +416,10 @@
 
                     const e = document.querySelector("#connection");
 
-                    if ((bridge === undefined) || (connection === undefined)) {
+                    if ((bridge === undefined) || (connections[bridge.id] === undefined)) {
                         e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                     } else {
+                        const connection = connections[bridge.id];
                         const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
                         e.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection</a>`;
                     }
@@ -639,9 +642,13 @@
         function createGroup(data, group, scope) {
             scope = scope || document;
 
+            const bridge = data.config.bridgeid.toLowerCase();
+
             const e = scope.createElement("div");
-            e.id = `group-${group.id}`;
+            e.id = `group-${bridge}-${group.id}`;
+            e.dataset.bridgeId = bridge;
             e.dataset.groupId = group.id;
+
             e.classList.add("group");
             e.dataset.expando = "outer";
 
@@ -724,11 +731,13 @@
         function updateGroups(data, groups, scope) {
             scope = scope || document;
 
+            const bridge = data.config.bridgeid.toLowerCase();
+
             const container = scope.querySelector("#data");
 
             const children = [];
             for (const group of groups) {
-                let e = container.querySelector(`#group-${group.id}`);
+                let e = container.querySelector(`#group-${bridge}-${group.id}`);
                 if (e == undefined) {
                     e = createGroup(data, group, scope);
                     container.append(e);
@@ -784,6 +793,7 @@
 
         async function activateFourPartDayScene(btn) {
             const groupID = ancestorOrSelfData(btn, "group-id");
+            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
 
             const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
             
@@ -801,6 +811,7 @@
         async function toggleFourPartDayScene(btn) {
             const on = ancestorOrSelfData(btn, "on") === "true";
             if (on) {
+                const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
                 const groupID = ancestorOrSelfData(btn, "group-id");
                 const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
                 const sceneID = ancestorOrSelfData(btn, "off-scene-id") || FourPartDay.getOffScene(data, groupID, dayPartName)?.id;
@@ -818,6 +829,7 @@
         }
 
         async function toggleLight(btn) {
+            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
             const on = ancestorOrSelfData(btn, "on") === "true";
             const id = ancestorOrSelfData(btn, "light-id");
             await setLightOn(connection, id, !on);
@@ -826,6 +838,7 @@
         }
 
         async function selectBrightness(btn) {
+            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
             const groupID = ancestorOrSelfData(btn, "group-id");
 
             // If user has selected OFF, turn the group off (don't use the off-scene)
@@ -851,6 +864,7 @@
         }
 
         async function selectCT(btn) {
+            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
             const groupID = ancestorOrSelfData(btn, "group-id");
             const ct = parseInt(btn.value, 10);
             await setGroupCT(connection, groupID, ct);
