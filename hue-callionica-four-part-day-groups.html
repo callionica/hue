@@ -351,13 +351,16 @@
 
         const params = new URLSearchParams(document.location.search);
 
-        async function ondata(data) {
-            if (data === undefined) {
-                return;
-            }
+        async function ondata(datas) {
             
-            // Called when new data arrives
-            let groups = Object.values(data.groups);
+            let groups = Object.values(datas).flatMap(data => {
+                const bridge = data.config.bridgeid.toLowerCase();
+
+                // Add bridge to each group
+                const groups = Object.values(data.groups).map(group => ({...group, bridge}));
+
+                return groups;
+            });
 
             // Basic sort by name
             groups.sort(sortBy(g => g.name));
@@ -365,8 +368,8 @@
             // Advanced sort by include, exclude, sort params
             groups = paramsSort(params, groups);
 
-            updateGroups(data, groups);
-            updateManual(data);
+            updateGroups(groups);
+            updateManual(Object.values(datas)[0]);
         }
 
         let dataRequestMade;
@@ -441,9 +444,7 @@
 
             dataTimeoutToken = setTimeout(() => requestData(wait), 2 * 1000);
 
-            for (const data of Object.values(datas)) {
-                ondata(data);
-            }
+            ondata(datas);
         }
 
         function ancestor(e, pred) {
@@ -537,7 +538,8 @@
             }, 0.35 * 1000);
         }
 
-        function updateGroup(e, data, group, scope) {
+        function updateGroup(e, group, scope) {
+            const data = datas[group.bridge];
             const name = e.querySelector(".group-name");
             name.innerText = group.name;
             // summarizeLights only treats a light as 'on'
@@ -652,10 +654,11 @@
             return e;
         }
 
-        function createGroup(data, group, scope) {
+        function createGroup(group, scope) {
             scope = scope || document;
 
-            const bridge = data.config.bridgeid.toLowerCase();
+            const bridge = group.bridge;
+            const data = datas[bridge];
 
             const e = scope.createElement("div");
             e.id = `group-${bridge}-${group.id}`;
@@ -741,26 +744,24 @@
             return e;
         }
 
-        function updateGroups(data, groups, scope) {
+        function updateGroups(groups, scope) {
             scope = scope || document;
-
-            const bridge = data.config.bridgeid.toLowerCase();
 
             const container = scope.querySelector("#data");
 
             const children = [];
             for (const group of groups) {
-                let e = container.querySelector(`#group-${bridge}-${group.id}`);
+                let e = container.querySelector(`#group-${group.bridge}-${group.id}`);
                 if (e == undefined) {
-                    e = createGroup(data, group, scope);
+                    e = createGroup(group, scope);
                     container.append(e);
                 }
                 children.push(e);
 
-                updateGroup(e, data, group, scope);
+                updateGroup(e, group, scope);
             }
 
-            for (const ge of [...container.querySelectorAll(`.group[data-bridge-id='${bridge}']`)]) {
+            for (const ge of [...container.querySelectorAll(`.group`)]) {
                 if (children.includes(ge)) {
                     // Move unreachables to the end
                     if (ge.dataset.allUnreachable === "true") {
