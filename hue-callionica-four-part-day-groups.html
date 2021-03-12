@@ -345,7 +345,7 @@
     </style>
     <!-- 1800 to 6600 -->
     <script type="module">
-        import { loadCurrentBridge, loadConnection, loadConnections } from "./hue-callionica-connect.js";
+        import { loadCurrentBridges, loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, summarizeLights, getActiveScenes, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
@@ -414,7 +414,7 @@
                         }
 
                         if (bridges === undefined) {
-                            bridges = [loadCurrentBridge()];
+                            bridges = loadCurrentBridges();
                         }
                     }
 
