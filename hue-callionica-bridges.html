@@ -22,7 +22,7 @@
         }
     </style>
     <script type="module">
-        import { loadConnections, loadCurrentBridges, storeCurrentBridge } from "./hue-callionica-connect.js";
+        import { loadConnections, loadCurrentBridges, storeCurrentBridges } from "./hue-callionica-connect.js";
 
         const connections = loadConnections().sort(sortBy(c => c.bridge.name));
         let currentBridges = loadCurrentBridges();
@@ -43,7 +43,8 @@
                 // Add to end
                 currentBridges = [...otherBridges, bridge];
             } else if (newRole === "inactive") {
-                // Nothing to do    
+                // Don't add
+                currentBridges = otherBridges;  
             } else {
                 // Unexpected
             }
@@ -52,6 +53,8 @@
                 const role = getRole(connection.bridge.id);
                 updateConnection(connection, role);
             }
+
+            storeCurrentBridges(currentBridges);
         }
 
         function createRole(scope) {

@@ -46,17 +46,39 @@ function storeBridge(bridge) {
 }
 
 export function storeCurrentBridge(bridge) {
-    const key = KEY_BRIDGE;
-    const data = JSON.stringify(bridge);
-    localStorage.setItem(key, data);
+    let currentBridges = loadCurrentBridges();
+    if (currentBridges !== undefined) {
+        const otherBridges = currentBridges.filter(b => b.id !== bridge.id);
+        currentBridges = [bridge, ...otherBridges];
+        storeCurrentBridges(currentBridges);
+    } else {
+        storeCurrentBridges([bridge]);
+    }
 }
 
-export function loadCurrentBridge() {
+function loadCurrentBridge_() {
     const key = KEY_BRIDGE;
     const json = localStorage.getItem(key);
     if (json) {
         return JSON.parse(json);
     }
+}
+
+export function loadCurrentBridge() {
+    const bridges = loadCurrentBridges();
+    const bridge = bridges[0];
+
+    if (bridge !== undefined) {
+        return bridge;
+    }
+
+    return loadCurrentBridge_();
+}
+
+export function storeCurrentBridges(bridges) {
+    const key = KEY_BRIDGES;
+    const data = JSON.stringify(bridges);
+    localStorage.setItem(key, data);
 }
 
 export function loadCurrentBridges() {
@@ -66,7 +88,7 @@ export function loadCurrentBridges() {
         return JSON.parse(json);
     }
 
-    const bridge = loadCurrentBridge();
+    const bridge = loadCurrentBridge_();
     if (bridge !== undefined) {
         return [bridge];
     }
