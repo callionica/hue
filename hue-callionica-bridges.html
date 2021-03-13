@@ -99,11 +99,13 @@
         function updateConnection(connection, role, scope) {
             scope = scope || document;
 
+            const tokenDisplay = connection.token.substring(0, 6) + "..." + connection.token.slice(-6);
+
             const e = scope.querySelector(`#${connection.bridge.id}`);
             e.querySelector(".bridgename").innerText = connection.bridge.name;
             e.querySelector(".bridgeid").innerText = connection.bridge.id;
             e.querySelector(".bridgeip").innerText = connection.bridge.ip;
-            e.querySelector(".token").innerText = connection.token;
+            e.querySelector(".token").innerText = tokenDisplay; //connection.token;
             e.querySelector(".role-select").value = role;
         }
 
