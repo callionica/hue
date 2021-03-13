@@ -6,8 +6,103 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hue Bridges</title>
     <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        select, button, input {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: inherit;
+            border-radius: 0.275rem;
+            padding: 0.2rem;
+            color: inherit;
+            background-color: inherit;
+        }
+
+        .role-select {
+            font-weight: bold;
+        }
+    </style>
     <script type="module">
-        import { loadConnections, loadCurrentBridge, storeCurrentBridge } from "./hue-callionica-connect.js";
+        import { loadConnections, loadCurrentBridges, storeCurrentBridge } from "./hue-callionica-connect.js";
+
+        const connections = loadConnections().sort(sortBy(c => c.bridge.name));
+        let currentBridges = loadCurrentBridges();
+
+        function onRoleChange(id, newRole) {
+            const oldRole = getRole(id);
+            console.log(id, oldRole, newRole);
+
+            const bridge = connections.find(c => c.bridge.id === id).bridge;
+
+            // Remove bridge from current bridges
+            const otherBridges = currentBridges.filter(b => b.id !== bridge.id);
+
+            if (newRole === "primary") {
+                // Add to start
+                currentBridges = [bridge, ...otherBridges];
+            } else if (newRole === "active") {
+                // Add to end
+                currentBridges = [...otherBridges, bridge];
+            } else if (newRole === "inactive") {
+                // Nothing to do    
+            } else {
+                // Unexpected
+            }
+
+            for (const connection of connections) {
+                const role = getRole(connection.bridge.id);
+                updateConnection(connection, role);
+            }
+        }
+
+        function createRole(scope) {
+            scope = scope || document;
+
+            const e = scope.createElement("select");
+            e.title = "Role";
+            e.classList.add("role-select");
+
+            for (const role of ["Primary", "Active", "Inactive"]) {
+                const o = scope.createElement("option");
+                o.value = role.toLowerCase();
+                o.innerHTML = role;
+                e.appendChild(o);
+            }
+
+            return e;
+        }
+
+        function createConnection(id, scope) {
+            scope = scope || document;
+
+            const e = scope.createElement("div");
+            e.id = id;
+            e.classList.add("connection");
+
+            e.innerHTML = `
+            <p><span class="bridgename"></span></p>
+            <p>ID: <span class="bridgeid"></p>
+            <p>Address: <span class="bridgeip"></span></p>
+            <p>Password: <span class="token"></span></p>
+            <p>Role: <span class="role"></span></p>`;
+            
+            const r = e.querySelector(".role");
+            const role = createRole(scope);
+            r.appendChild(role);
+
+            role.onchange = () => { onRoleChange(id, role.value); };
+            return e;
+        }
+
+        function updateConnection(connection, role, scope) {
+            scope = scope || document;
+
+            const e = scope.querySelector(`#${connection.bridge.id}`);
+            e.querySelector(".bridgename").innerText = connection.bridge.name;
+            e.querySelector(".bridgeid").innerText = connection.bridge.id;
+            e.querySelector(".bridgeip").innerText = connection.bridge.ip;
+            e.querySelector(".token").innerText = connection.token;
+            e.querySelector(".role-select").value = role;
+        }
 
         function sortBy(keyFn) {
             return function sorter(a, b) {
@@ -19,30 +114,28 @@
             }
         }
 
-        const connections = loadConnections().sort(sortBy(c => c.bridge.name));
-        const currentBridge = loadCurrentBridge();
-
-        function onclick(evt) {
-            const src = evt.srcElement;
-            const op = src.getAttribute("data-op");
-            if (op === "set-default") {
-                const id = src.getAttribute("data-id");
-                const connection = connections.find(c => c.bridge.id === id);
-                if (connection) {
-                    storeCurrentBridge(connection.bridge);
-                    document.location = document.location;
-                }
+        function getRole(bridgeID) {
+            const index = currentBridges.findIndex(b => b.id === bridgeID);
+            if (index < 0) {
+                return "inactive";
             }
+            if (index === 0) {
+                return "primary";
+            }
+            return "active";
         }
 
         async function main() {
-            document.onclick = onclick;
+            const container = document.getElementById("connections");
 
-            const html = connections.map(connection => {
-                const isDefault = connection.bridge.id === currentBridge.id;
-                return `<div id="${connection.bridge.id}" class="connection"><p><span class="bridgename">${connection.bridge.name}</span></p><p>ID: <span class="bridgeid">${connection.bridge.id}</p><p>Address: <span class="bridgeip">${connection.bridge.ip}</span></p><p>Password: <span class="token">${connection.token}</span></p><p><button data-id="${connection.bridge.id}" data-op="set-default" ${isDefault ? "disabled" : ""}>Set as default</button></p></div>`
-            }).join("\n");
-            document.getElementById("connections").innerHTML = html;
+            for (const connection of connections) {
+                const role = getRole(connection.bridge.id);
+                
+                const e = createConnection(connection.bridge.id);
+                container.appendChild(e);
+
+                updateConnection(connection, role);
+            }
         }
 
         main().then(x => console.log("Done"));
