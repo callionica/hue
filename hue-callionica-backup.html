@@ -33,7 +33,7 @@
         let connection;
 
         function getAppData() {
-            const excluded = ["hue-callionica-disclaimer", "hue-bridges", "hue-bridge-current"];
+            const excluded = ["hue-callionica-disclaimer", "hue-bridges", "hue-bridge-current", "hue-bridges-current"];
             const o = {};
             for (const key of Object.keys(localStorage).filter(key => key.startsWith("hue-"))) {
                 if (!key.startsWith("hue-connection:")) {
@@ -47,7 +47,7 @@
 
         function getAppConnections() {
             const o = {};
-            for (const key of Object.keys(localStorage).filter(key => ["hue-bridges", "hue-bridge-current"].includes(key) || key.startsWith("hue-connection:"))) {
+            for (const key of Object.keys(localStorage).filter(key => ["hue-bridges", "hue-bridges-current"].includes(key) || key.startsWith("hue-connection:"))) {
                 o[key] = localStorage[key];
             }
             return o;
