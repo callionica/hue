@@ -111,6 +111,36 @@ export async function bridgeByIP(ip) {
     return { id: config.bridgeid.toLowerCase(), ip, name: config.name };
 }
 
+// Return the bridge name and serial number obtained from the description XML over HTTP
+// This method avoids certificate issues by relying on HTTP only
+export async function bridgeFromDescriptionXML(address) {
+    const response = await fetch(`http://${address}/description.xml`);
+    const data = await response.text();
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(data, "application/xml");
+    let serialNumber = dom.querySelector("serialNumber").textContent.toLowerCase();
+    const id = serialNumber.substring(0, 6) + "fffe" + serialNumber.substring(6);
+    const name = dom.querySelector("friendlyName").textContent;
+    const bridge = { id, ip: address, name };
+    return bridge;
+}
+
+export async function bridgeFromAddress(address) {
+    try {
+        const bridge = await bridgeByIP(address);
+        return { bridge, status: "reachable" };
+    } catch (e) {
+    }
+
+    try {
+        const bridge = await bridgeFromDescriptionXML(address);
+        return { bridge, status: "certificate-failure" };
+    } catch (e) {
+    }
+
+    return { status: "unreachable" };
+}
+
 async function jsonFetch(address) {
     var result;
     try {
