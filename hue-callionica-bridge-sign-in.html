@@ -24,9 +24,15 @@
     <script type="module">
         import { loadConnections, loadCurrentBridges, storeCurrentBridges } from "./hue-callionica-connect.js";
 
+        function getBridge(id) {
+            const key = `hue-bridge:${id}`;
+            const bridge = JSON.parse(sessionStorage.getItem(key) || localStorage.getItem(key)) || undefined;
+            return bridge;
+        }
+
         const params = new URLSearchParams(document.location.search);
         const bridgeID = params.get("bridge") || undefined;
-        const bridge = JSON.parse(sessionStorage.getItem(bridgeID)) || undefined;
+        const bridge = getBridge(bridgeID);
 
         function createConnection(id, scope) {
             scope = scope || document;
@@ -39,9 +45,9 @@
             <form action="#">
             <p><span class="bridgename"></span></p>
             <p>ID: <span class="bridgeid"></span></p>
-            <input id="manual-bridge" type="hidden" name="username" value="">
+            <input id="manual-bridge" type="text" name="username" style="display:none">
             <p>Address: <span class="bridgeip"></span></p>
-            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Password)" autocomplete="current-password" value=""></p>
+            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Password)" autocomplete="current-password" value=""> <button>Generate</button></p>
             <p><input type="submit" value="Sign in"></p>
             </form>
             `;
@@ -76,7 +82,7 @@
 </head>
 <body>
     <h1>Hue Bridge › Sign In</h1>
-    <p>Enter the existing password for this bridge.</p>
+    <p>Sign in to the Hue bridge by entering an existing password or generating a new one.</p>
     <hr/>
     <div id="connections"></div>
 </body>
