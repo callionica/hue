@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hue Bridge Sign In</title>
+    <link rel="stylesheet" href="hue-callionica.css">
+    <style>
+        select, button, input {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: inherit;
+            border-radius: 0.275rem;
+            padding: 0.2rem;
+            color: inherit;
+            background-color: inherit;
+        }
+
+        .role-select {
+            font-weight: bold;
+        }
+    </style>
+    <script type="module">
+        import { loadConnections, loadCurrentBridges, storeCurrentBridges } from "./hue-callionica-connect.js";
+
+        const params = new URLSearchParams(document.location.search);
+        const bridgeID = params.get("bridge") || undefined;
+        const bridge = JSON.parse(sessionStorage.getItem(bridgeID)) || undefined;
+
+        function createConnection(id, scope) {
+            scope = scope || document;
+
+            const e = scope.createElement("div");
+            e.id = id;
+            e.classList.add("connection");
+
+            e.innerHTML = `
+            <form action="#">
+            <p><span class="bridgename"></span></p>
+            <p>ID: <span class="bridgeid"></span></p>
+            <input id="manual-bridge" type="hidden" name="username" value="">
+            <p>Address: <span class="bridgeip"></span></p>
+            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Password)" autocomplete="current-password" value=""></p>
+            <p><input type="submit" value="Sign in"></p>
+            </form>
+            `;
+
+            return e;
+        }
+
+        function updateConnection(connection, scope) {
+            scope = scope || document;
+
+            const e = scope.querySelector(`#${connection.bridge.id}`);
+            e.querySelector(".bridgename").innerText = connection.bridge.name;
+            e.querySelector(".bridgeid").innerText = connection.bridge.id;
+            e.querySelector(".bridgeip").innerText = connection.bridge.ip;
+
+            e.querySelector("#manual-bridge").value = connection.bridge.name;
+            e.querySelector("#manual-token").value = connection.token;
+        }
+
+        async function main() {
+            const container = document.getElementById("connections");
+
+            const token = "";
+            const connection = { bridge, token };
+            const e = createConnection(connection.bridge.id);
+            container.appendChild(e);
+            updateConnection(connection);
+        }
+
+        main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <h1>Hue Bridge › Sign In</h1>
+    <p>Enter the existing password for this bridge.</p>
+    <hr/>
+    <div id="connections"></div>
+</body>
+</html>
