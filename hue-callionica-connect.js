@@ -130,15 +130,19 @@ export async function bridgeFromAddress(address) {
         const bridge = await bridgeByIP(address);
         return { bridge, status: "reachable" };
     } catch (e) {
+        console.log(e);
     }
 
-    try {
-        const bridge = await bridgeFromDescriptionXML(address);
-        return { bridge, status: "certificate-failure" };
-    } catch (e) {
-    }
+    return { status: "certificate-failure" };
 
-    return { status: "unreachable" };
+    // MIXED CONTENT ERROR PRODUCED BY CODE BELOW SO CAN'T USE
+    // try {
+    //     const bridge = await bridgeFromDescriptionXML(address);
+    //     return { bridge, status: "certificate-failure" };
+    // } catch (e) {
+    // }
+
+    // return { status: "unreachable" };
 }
 
 async function jsonFetch(address) {
