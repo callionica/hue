@@ -37,19 +37,18 @@
         function createConnection(id, scope) {
             scope = scope || document;
 
-            const e = scope.createElement("div");
+            const e = scope.createElement("form");
             e.id = id;
+            e.action = "#";
             e.classList.add("connection");
 
             e.innerHTML = `
-            <form action="#">
             <p><span class="bridgename"></span></p>
             <p>ID: <span class="bridgeid"></span></p>
             <input id="manual-bridge" name="username" type="text" maxlength="128" placeholder="(Username)" autocomplete="username" style="display:none">
             <p>Address: <span class="bridgeip"></span></p>
             <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Password)" autocomplete="current-password" value=""> <button>Generate</button></p>
             <p><input type="submit" value="Sign in"></p>
-            </form>
             `;
 
             return e;
@@ -65,6 +64,12 @@
 
             e.querySelector("#manual-bridge").value = connection.bridge.name;
             e.querySelector("#manual-token").value = connection.token;
+
+            e.onsubmit = () => {
+                const token = e.querySelector("#manual-token").value;
+                alert(`${connection.bridge.ip}###${token}`);
+                return false;
+            };
         }
 
         async function main() {
