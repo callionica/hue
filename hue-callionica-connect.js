@@ -43,6 +43,8 @@ function storeBridge(bridge) {
 
     const data = JSON.stringify(list);
     localStorage.setItem(key, data);
+
+    localStorage.setItem(`hue-bridge:${bridge.id}`, JSON.stringify(bridge, null, 2));
 }
 
 export function storeCurrentBridge(bridge) {
