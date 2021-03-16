@@ -331,8 +331,8 @@
                 const ipInput = document.getElementById("manual-ip");
                 const ip = ipInput.value;
 
-                const tokenInput = document.getElementById("manual-token");
-                const token = tokenInput.value || undefined;
+                const tokenInput = document.getElementById("manual-token") || undefined;
+                const token = tokenInput?.value || undefined;
 
                 connector.addIP(ip, undefined, undefined, token);
                 return;
