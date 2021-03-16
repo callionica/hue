@@ -17,12 +17,25 @@
             background-color: inherit;
         }
 
-        .role-select {
-            font-weight: bold;
+        input[type='submit'] {
+            background-color: rgb(24, 103, 184);
+            color: white;
+        }
+
+        input[type='submit']:hover {
+            background-color: rgb(0, 93, 166);
+            color: white;
+        }
+
+        body > p {
+            margin-left: 0.8rem;
+        }
+        #auto-token {
+            margin-right: 0.8rem;
         }
     </style>
     <script type="module">
-        import { testConnection, storeConnection } from "./hue-callionica-connect.js";
+        import { testConnection, storeConnection, register } from "./hue-callionica-connect.js";
 
         function getBridge(id) {
             const key = `hue-bridge:${id}`;
@@ -30,10 +43,38 @@
             return bridge;
         }
 
+        const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
         const bridgeID = params.get("bridge") || undefined;
         const bridge = getBridge(bridgeID);
 
+        async function registerUnconnected(bridge, app) {
+
+            let connection;
+            try {
+                connection = await register(bridge, app);
+            } catch (e) {
+            }
+
+            if (connection !== undefined) {
+                return connection;
+            }
+
+            const doIt = confirm(`Press the button on top of bridge "${bridge.name}" to create a new password then press OK.`);
+            if (!doIt) {
+                return;
+            }
+
+            try {
+                connection = await register(bridge, app);
+            } catch (e) {
+            }
+
+            if (connection !== undefined) {
+                return connection;
+            }
+        }
+        
         function createConnection(id, scope) {
             scope = scope || document;
 
@@ -47,12 +88,24 @@
             <p>ID: <span class="bridgeid"></span></p>
             <input id="manual-bridge" name="username" type="text" maxlength="128" placeholder="(Username)" autocomplete="username" style="display:none">
             <p>Address: <span class="bridgeip"></span></p>
-            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Password)" autocomplete="current-password" value=""> <button>Generate</button></p>
+            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Optional)" autocomplete="current-password" value=""></p>
             <p><input type="submit" value="Sign in"></p>
-            <p><span class="error"></span></p>
             `;
 
+            const autoToken = document.querySelector("#auto-token");
+            autoToken.onclick = () => {
+                navigator.clipboard.writeText(autoToken.innerText);
+                return false;
+            };
+
+            const autoTokenCopy = document.querySelector("#auto-token-copy");
+            autoTokenCopy.onclick = autoToken.onclick;
+
             return e;
+        }
+
+        function message(text) {
+            document.querySelector("#message").innerText = text;
         }
 
         function updateConnection(connection, scope) {
@@ -64,32 +117,59 @@
             e.querySelector(".bridgeip").innerText = connection.bridge.ip;
 
             e.querySelector("#manual-bridge").value = connection.bridge.name;
-            e.querySelector("#manual-token").value = connection.token;
 
-            e.onsubmit = () => {
-                const token = e.querySelector("#manual-token").value.trim();
-                const conn = { ...connection, token };
+            const pwd = e.querySelector("#manual-token");
 
-                testConnection(conn).then(succeeded => {
-                    if (succeeded) {
-                        storeConnection(conn);
-                        e.querySelector(".error").innerText = "";
-                        
-                        alert(`Signed in to ${conn.bridge.name}`);
-                        window.history.back();
-                    } else {
-                        e.querySelector(".error").innerText = "Wrong password";
-                    }
-                });
-                
-                return false;
-            };
+            pwd.value = connection.token;
+            pwd.oninput = () => message("");
+
+            if (e.onsubmit == undefined) {
+                e.onsubmit = () => {
+                    (async function(){
+                        message("");
+
+                        const token = pwd.value.trim();
+
+                        let conn;
+
+                        if (token === "") {
+                            conn = await registerUnconnected(connection.bridge, connection.app);
+                            if (conn !== undefined) {
+                                document.querySelector("#auto-token").innerText = conn.token;
+                                document.querySelector("#auto-token-container").style = "display: initial;";
+                                pwd.placeholder = "Paste password here";
+                                message("Copy the new password.");
+                            } else {
+                                message("Password not created.");
+                            }
+                            return;
+                        } else {
+                            conn = { ...connection, token };
+                        }
+
+                        if (conn === undefined) {
+                            return;
+                        }
+
+                        const succeeded = await testConnection(conn);
+                        if (succeeded) {
+                            // console.log(conn);
+                            storeConnection(conn);
+                            alert(`Signed in to ${conn.bridge.name}`);
+                            window.history.back();
+                        } else {
+                            message("Wrong password");
+                        }
+
+                    })();
+                    return false;
+                };
+            }
         }
 
         async function main() {
             const container = document.getElementById("connections");
 
-            const app = "Callionica";
             const token = "";
             const connection = { bridge, app, token };
             const e = createConnection(connection.bridge.id);
@@ -102,8 +182,9 @@
 </head>
 <body>
     <h1>Hue Bridge › Sign In</h1>
-    <p>Sign in to the Hue bridge by entering an existing password or generating a new one.</p>
     <hr/>
     <div id="connections"></div>
+    <p id="auto-token-container" style="display: none;"><span id="auto-token"></span><button id="auto-token-copy">Copy</button></p>
+    <p><span id="message"></span></p>
 </body>
 </html>
