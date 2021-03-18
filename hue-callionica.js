@@ -2253,10 +2253,17 @@ export async function getAll(connection) {
 /* Same as getAll plus all the scene details (using the scene cache) */
 export async function getAllPlus(connection) {
     const data = await getAll(connection);
-    for (const scene of Object.values(data.scenes)) {
+    const scenes = Object.values(data.scenes);
+    
+    for (const scene of scenes) {
         const completeScene = await getSceneComplete(connection, scene.id, scene.lastupdated);
         scene.lightstates = completeScene.lightstates;
     }
+
+    for (const scene of scenes) {
+        scene.active = isActiveScene(data, scene);
+    }
+
     return data;
 }
 
@@ -2566,75 +2573,67 @@ export function summarizeLights(group, data) {
     return { anyOn, allOn, anyUnreachable, allUnreachable, maximumBrightness, maximumColorTemperature };
 }
 
+function eq(a, b) {
+    // Array equality means each element is equal
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) {
+            return false;
+        }
+        return a.every((v, i) => eq(v, b[i]));
+    }
+
+    // Check numeric equality to 3 DP
+    if (Number.isFinite(a) && Number.isFinite(b)) {
+        return Math.round(a * 1000) === Math.round(b * 1000);
+    }
+
+    return a === b;
+}
+
 // Scenes need to have finished their transitions for this to work.
 // Only scenes that contain a light with a matching light state will match.
 // By default, an unreachable light will not disqualify a scene.
-export function getActiveScenes(data, scenes, options = { allowUnreachable: true }) {
+function isActiveScene(data, scene, options = { allowUnreachable: true }) {
+    let same = true;
+    let matchedSceneValue = false;
+    let unreachable = false;
 
-    function eq(a, b) {
-        // Array equality means each element is equal
-        if (Array.isArray(a) && Array.isArray(b)) {
-            if (a.length !== b.length) {
-                return false;
+    const states = Object.entries(scene.lightstates);
+    for (const [lightID, sceneState] of states) {
+
+        const light = data.lights[lightID];
+        const lightState = light.state;
+
+        if (!lightState.reachable) {
+            unreachable = true;
+            if (!options.allowUnreachable) {
+                same = false;
+                break;
+            } else {
+                continue;
             }
-            return a.every((v, i) => eq(v, b[i]));
         }
 
-        // Check numeric equality to 3 DP
-        if (Number.isFinite(a) && Number.isFinite(b)) {
-            return Math.round(a * 1000) === Math.round(b * 1000);
-        }
-
-        return a === b;
-    }
-
-    const possibleScenes = [];
-    for (const scene of scenes) {
-        
-        let same = true;
-        let matchedSceneValue = false;
-        let unreachable = false;
-
-        const states = Object.entries(scene.lightstates);
-        for (const [lightID, sceneState] of states) {
-
-            const light = data.lights[lightID];
-            const lightState = light.state;
-
-            if (!lightState.reachable) {
-                unreachable = true;
-                if (!options.allowUnreachable) {
-                    same = false;
-                    break;
-                } else {
-                    continue;
-                }
-            }
-
-            for (const [prop, sceneValue] of Object.entries(sceneState))  {
-                if (["transitiontime"].includes(prop)) {
-                    break;
-                }
-                const lightValue = lightState[prop];
-                if (!eq(lightValue, sceneValue)) {
-                    // Bright scene triggers this condition
-                    const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
-                    if (!ignore) {
-                        same = false;
-                        break;
-                    }
-                }
-                matchedSceneValue = true;
-            }
-
-            if (!same) {
+        for (const [prop, sceneValue] of Object.entries(sceneState))  {
+            if (["transitiontime"].includes(prop)) {
                 break;
             }
+            const lightValue = lightState[prop];
+            if (!eq(lightValue, sceneValue)) {
+                // Bright scene triggers this condition
+                const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
+                if (!ignore) {
+                    same = false;
+                    break;
+                }
+            }
+            matchedSceneValue = true;
         }
 
-        if (same && matchedSceneValue) {
-            possibleScenes.push(scene);
+        if (!same) {
+            break;
         }
     }
-    return possibleScenes;
+
+    return same && matchedSceneValue;
 }

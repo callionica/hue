@@ -342,11 +342,16 @@
             min-width: 6rem;
         }
 
+        button[data-scene-id][data-active] {
+            color: rgb(var(--lit-color));
+            border-color: rgb(var(--lit-color));
+        }
+
     </style>
     <!-- 1800 to 6600 -->
     <script type="module">
         import { loadCurrentBridges, loadConnection, loadConnections } from "./hue-callionica-connect.js";
-        import { getAllPlus, summarizeLights, getActiveScenes, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
 
         const params = new URLSearchParams(document.location.search);
@@ -578,7 +583,7 @@
             }
 
             const offScenes = FourPartDay.getOffScenes(data, group.id);
-            const activeOffScenes = getActiveScenes(data, offScenes);
+            const activeOffScenes = offScenes.filter(scene => scene.active);
             const isUsingOffScene = activeOffScenes.length > 0;
 
             const gt = e.querySelector(".group-toggle");
@@ -612,6 +617,16 @@
 
                 // Remove old lights
                 ge.remove();
+            }
+
+            const sceneElements = [...e.querySelectorAll("button[data-scene-id]")];
+            for (const sceneElement of sceneElements) {
+                const scene = data.scenes[sceneElement.dataset.sceneId];
+                if (scene.active) {
+                    sceneElement.dataset.active = true;
+                } else {
+                    delete sceneElement.dataset.active;
+                }
             }
         }
 

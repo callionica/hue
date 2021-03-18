@@ -25,7 +25,7 @@
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { sortBy, getAllPlus, getActiveScenes } from "./hue-callionica.js";
+        import { sortBy, getAllPlus } from "./hue-callionica.js";
         import { localizeDateTime } from "./hue-callionica-ui.js";
 
         let bridge;
@@ -58,7 +58,7 @@
 
             e.innerHTML = `<p>Please wait while we analyze the lighting...</p>`;
 
-            const possibleScenes = getActiveScenes(data, scenes);
+            const possibleScenes = scenes.filter(scene => scene.active);
 
             e.innerHTML = `<p>Please wait while we present the results...</p>`;
 
