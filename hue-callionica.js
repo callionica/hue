@@ -2570,13 +2570,21 @@ export function summarizeLights(group, data) {
 // Only scenes that contain a light with a matching light state will match.
 // By default, an unreachable light will not disqualify a scene.
 export function getActiveScenes(data, scenes, options = { allowUnreachable: true }) {
+
     function eq(a, b) {
+        // Array equality means each element is equal
         if (Array.isArray(a) && Array.isArray(b)) {
             if (a.length !== b.length) {
                 return false;
             }
-            return a.every((v, i) => v === b[i]);
+            return a.every((v, i) => eq(v, b[i]));
         }
+
+        // Check numeric equality to 3 DP
+        if (Number.isFinite(a) && Number.isFinite(b)) {
+            return Math.round(a * 1000) === Math.round(b * 1000);
+        }
+
         return a === b;
     }
 
