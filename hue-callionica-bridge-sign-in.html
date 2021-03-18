@@ -88,8 +88,8 @@
             <p>ID: <span class="bridgeid"></span></p>
             <input id="manual-bridge" name="username" type="text" maxlength="128" placeholder="(Username)" autocomplete="username" style="display:none">
             <p>Address: <span class="bridgeip"></span></p>
-            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="(Optional)" autocomplete="current-password" value=""></p>
-            <p><input type="submit" value="Sign in"></p>
+            <p><label for="manual-token">Password:</label> <input id="manual-token" name="password" type="password" maxlength="128" placeholder="Generate or enter" autocomplete="current-password" value=""></p>
+            <p><input type="submit" value="Generate password"></p>
             `;
 
             const autoToken = document.querySelector("#auto-token");
@@ -119,9 +119,17 @@
             e.querySelector("#manual-bridge").value = connection.bridge.name;
 
             const pwd = e.querySelector("#manual-token");
+            const btn = e.querySelector("input[type='submit']");
 
             pwd.value = connection.token;
-            pwd.oninput = () => message("");
+            pwd.oninput = () => {
+                message("");
+                if (pwd.value.trim().length === 0) {
+                    btn.value = "Generate password";
+                } else {
+                    btn.value = "Sign in";
+                }
+            };
 
             if (e.onsubmit == undefined) {
                 e.onsubmit = () => {
