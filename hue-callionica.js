@@ -2566,25 +2566,49 @@ export function summarizeLights(group, data) {
     return { anyOn, allOn, anyUnreachable, allUnreachable, maximumBrightness, maximumColorTemperature };
 }
 
-// Scenes need to be complete with lightstates for this to work
-export function getActiveScenes(data, scenes) {
+// Scenes need to have finished their transitions for this to work.
+// Only scenes that contain a light with a matching light state will match.
+// By default, an unreachable light will not disqualify a scene.
+export function getActiveScenes(data, scenes, options = { allowUnreachable: true }) {
+    function eq(a, b) {
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) {
+                return false;
+            }
+            return a.every((v, i) => v === b[i]);
+        }
+        return a === b;
+    }
+
     const possibleScenes = [];
     for (const scene of scenes) {
-        const states = Object.entries(scene.lightstates);
+        
         let same = true;
+        let matchedSceneValue = false;
+        let unreachable = false;
+
+        const states = Object.entries(scene.lightstates);
         for (const [lightID, sceneState] of states) {
+
             const light = data.lights[lightID];
             const lightState = light.state;
+
             if (!lightState.reachable) {
-                same = false;
-                break;
+                unreachable = true;
+                if (!options.allowUnreachable) {
+                    same = false;
+                    break;
+                } else {
+                    continue;
+                }
             }
+
             for (const [prop, sceneValue] of Object.entries(sceneState))  {
                 if (["transitiontime"].includes(prop)) {
                     break;
                 }
                 const lightValue = lightState[prop];
-                if (lightValue !== sceneValue) {
+                if (!eq(lightValue, sceneValue)) {
                     // Bright scene triggers this condition
                     const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
                     if (!ignore) {
@@ -2592,12 +2616,15 @@ export function getActiveScenes(data, scenes) {
                         break;
                     }
                 }
+                matchedSceneValue = true;
             }
+
             if (!same) {
                 break;
             }
         }
-        if (same) {
+
+        if (same && matchedSceneValue) {
             possibleScenes.push(scene);
         }
     }
