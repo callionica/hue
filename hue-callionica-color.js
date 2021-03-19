@@ -27,7 +27,7 @@ function isBelow(point, line) {
 function closestPointOnLine(point, line) {
     const [a, b] = line;
 
-    const AP = new Point(p.x - a.x, p.y - a.y);
+    const AP = new Point(point.x - a.x, point.y - a.y);
     const AB = new Point(b.x - a.x, b.y - a.y);
 
     const ab2 = AB.x * AB.x + AB.y * AB.y;
@@ -47,7 +47,7 @@ function closestPointOnLine(point, line) {
 function distance(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.Sqrt(dx * dx + dy * dy);
+    return Math.sqrt(dx * dx + dy * dy);
 }
 
 export function ctToXY(ct) {
@@ -120,7 +120,7 @@ export class Gamut {
 
         const closest = lines.map(line => {
             const pt = closestPointOnLine(point, line);
-            const dist = distance(point, p);
+            const dist = distance(point, pt);
             return { pt, dist };
         }).reduce((previous, current) => current.dist < previous.dist ? current : previous).pt;
 
@@ -129,7 +129,7 @@ export class Gamut {
 
     nearestFromCT(ct) {
         const xy = ctToXY(ct);
-        console.log("ct-xy", xy);
+        // console.log("ct-xy", xy);
         return this.nearest(xy);
     }
 }

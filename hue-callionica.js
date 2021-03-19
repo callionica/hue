@@ -2623,7 +2623,7 @@ function isActiveScene(data, scene, options = { allowUnreachable: true }) {
             if (prop === "ct") {
                 const xyLight = lightXY(light);
                 const xyScene = ctToLightXY(sceneValue, light);
-                console.log("ct", xyLight, xyScene);
+                // console.log("ct", xyLight, xyScene);
                 if (!eq(xyLight.x, xyScene.x) || !eq(xyLight.y, xyScene.y)) {
                     same = false;
                     break;
@@ -2631,7 +2631,7 @@ function isActiveScene(data, scene, options = { allowUnreachable: true }) {
             } else if (prop === "xy") {
                 const xyLight = lightXY(light);
                 const xyScene = xyToLightXY(sceneValue, light);
-                console.log("xy", xyLight, xyScene);
+                // console.log("xy", xyLight, xyScene);
                 if (!eq(xyLight.x, xyScene.x) || !eq(xyLight.y, xyScene.y)) {
                     same = false;
                     break;
