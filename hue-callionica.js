@@ -1,5 +1,6 @@
 "use strict";
 
+import { lightXY, ctToLightXY, xyToLightXY } from "./hue-callionica-color.js";
 
 // Hope this works!
 export function uuid() {
@@ -2616,17 +2617,37 @@ function isActiveScene(data, scene, options = { allowUnreachable: true }) {
 
         for (const [prop, sceneValue] of Object.entries(sceneState))  {
             if (["transitiontime"].includes(prop)) {
-                break;
+                continue;
             }
-            const lightValue = lightState[prop];
-            if (!eq(lightValue, sceneValue)) {
-                // Bright scene triggers this condition
-                const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
-                if (!ignore) {
+
+            if (prop === "ct") {
+                const xyLight = lightXY(light);
+                const xyScene = ctToLightXY(sceneValue, light);
+                console.log("ct", xyLight, xyScene);
+                if (!eq(xyLight.x, xyScene.x) || !eq(xyLight.y, xyScene.y)) {
                     same = false;
                     break;
                 }
+            } else if (prop === "xy") {
+                const xyLight = lightXY(light);
+                const xyScene = xyToLightXY(sceneValue, light);
+                console.log("xy", xyLight, xyScene);
+                if (!eq(xyLight.x, xyScene.x) || !eq(xyLight.y, xyScene.y)) {
+                    same = false;
+                    break;
+                }
+            } else {
+                const lightValue = lightState[prop];
+                if (!eq(lightValue, sceneValue)) {
+                    // Bright scene triggers this condition
+                    const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
+                    if (!ignore) {
+                        same = false;
+                        break;
+                    }
+                }
             }
+
             matchedSceneValue = true;
         }
 

@@ -144,3 +144,32 @@ export const WideGamut = new Gamut([
     [0.135503, 0.039879]
 ]);
 
+export function lightXY(light) {
+    if (light.state?.colormode === "xy") {
+        return new Point(light.state.xy[0], light.state.xy[1]);
+    }
+
+    if (light.state?.colormode === "ct") {
+        const ct = light.state.ct;
+        const xy = ctToXY(ct);
+        // TODO - do we need to conform to the gamut here?
+        return xy;
+    }
+
+    return undefined;
+}
+
+export function ctToLightXY(ct, light) {
+    const g = light.capabilities?.control?.colorgamut;
+    const gamut = (g !== undefined) ? new Gamut(g) : WideGamut;
+    const xy = gamut.nearestFromCT(ct);
+    return xy;
+}
+
+export function xyToLightXY(xy, light) {
+    xy = Array.isArray(xy) ? new Point(xy[0], xy[1]) : xy;
+    const g = light?.capabilities?.control?.colorgamut;
+    const gamut = (g !== undefined) ? new Gamut(g) : WideGamut;
+    const xy2 = gamut.nearest(xy);
+    return xy2;
+}
