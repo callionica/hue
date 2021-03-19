@@ -50,6 +50,44 @@ function distance(a, b) {
     return Math.Sqrt(dx * dx + dy * dy);
 }
 
+export function ctToXY(ct) {
+    const kelvin = 1000000 / ct;
+    let x, y;
+
+    if (kelvin < 4000) {
+        x = 11790 +
+            57520658 / kelvin +
+            -15358885888 / kelvin / kelvin +
+            -17440695910400 / kelvin / kelvin / kelvin;
+    } else {
+        x = 15754 +
+            14590587 / kelvin +
+            138086835814 / kelvin / kelvin +
+            -198301902438400 / kelvin / kelvin / kelvin;
+    }
+    if (kelvin < 2222) {
+        y = -3312 +
+            35808 * x / 0x10000 +
+            -22087 * x * x / 0x100000000 +
+            -18126 * x * x * x / 0x1000000000000;
+    } else if (kelvin < 4000) {
+        y = -2744 +
+            34265 * x / 0x10000 +
+            -22514 * x * x / 0x100000000 +
+            -15645 * x * x * x / 0x1000000000000;
+    } else {
+        y = -6062 +
+            61458 * x / 0x10000 +
+            -96229 * x * x / 0x100000000 +
+            50491 * x * x * x / 0x1000000000000;
+    }
+    y *= 4;
+    x /= 0xFFFF;
+    y /= 0xFFFF;
+
+    return new Point(Math.round(x * 10000) / 10000, Math.round(y * 10000) / 10000);
+}
+
 export class Point {
     constructor(x, y) {
         this.x = x;
@@ -87,6 +125,12 @@ export class Gamut {
         }).reduce((previous, current) => current.dist < previous.dist ? current : previous).pt;
 
         return closest;
+    }
+
+    nearestFromCT(ct) {
+        const xy = ctToXY(ct);
+        console.log("ct-xy", xy);
+        return this.nearest(xy);
     }
 }
 
