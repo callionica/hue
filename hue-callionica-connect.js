@@ -94,6 +94,8 @@ export function loadCurrentBridges() {
     if (bridge !== undefined) {
         return [bridge];
     }
+
+    return Object.keys(localStorage).filter(key => key.startsWith("hue-bridge:")).map(key => JSON.parse(localStorage[key]));
 }
 
 export function storeConnection(connection) {
