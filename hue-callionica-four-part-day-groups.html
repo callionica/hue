@@ -426,6 +426,10 @@
                         }
                     }
 
+                    if (bridges.length === 0) {
+                        throw "No bridges";
+                    }
+
                     for (const bridge of bridges) {
                         let connection = connections[bridge.id];
                         if (connection === undefined) {
@@ -444,7 +448,7 @@
 
                     const e = document.querySelector("#connection");
 
-                    const missingConnection = (bridges === undefined) || bridges.some(bridge => connections[bridge.id] === undefined);
+                    const missingConnection = (bridges === undefined) || (bridges.length === 0) || bridges.some(bridge => connections[bridge.id] === undefined);
                     if (missingConnection) {
                         e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                     } else {
