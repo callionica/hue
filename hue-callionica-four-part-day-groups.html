@@ -356,6 +356,9 @@
 
         const params = new URLSearchParams(document.location.search);
 
+        let pauseData = false;
+        let pauseUpdates = false;
+
         async function ondata(datas) {
             
             let groups = Object.values(datas).flatMap(data => {
@@ -430,7 +433,9 @@
                             connections[bridge.id] = connection;
                         }
 
-                        datas[bridge.id] = await getAllPlus(connection);
+                        if (!pauseData) {
+                            datas[bridge.id] = await getAllPlus(connection);
+                        }
                     }
 
                     delete document.body.dataset.showConnection;
@@ -439,8 +444,8 @@
 
                     const e = document.querySelector("#connection");
 
-                    const missingConnection = bridges.some(bridge => connections[bridge.id] === undefined);
-                    if ((bridges === undefined) || missingConnection) {
+                    const missingConnection = (bridges === undefined) || bridges.some(bridge => connections[bridge.id] === undefined);
+                    if (missingConnection) {
                         e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                     } else {
                         const links = Object.values(connections).map(connection => {
@@ -457,7 +462,9 @@
 
             dataTimeoutToken = setTimeout(() => requestData(wait), 2 * 1000);
 
-            ondata(datas);
+            if (!pauseUpdates) {
+                ondata(datas);
+            }
         }
 
         function ancestor(e, pred) {
