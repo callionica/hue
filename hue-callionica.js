@@ -1,6 +1,6 @@
 "use strict";
 
-import { lightXY, ctToLightXY, xyToLightXY } from "./hue-callionica-color.js";
+import { lightXY, ctToXY, ctToLightXY, xyToLightXY, Point } from "./hue-callionica-color.js";
 
 // Hope this works!
 export function uuid() {
@@ -2591,10 +2591,22 @@ function eq(a, b) {
     return a === b;
 }
 
+function eqXY(a, b) {
+    const e = (p) => Math.abs(Math.round(a[p] * 1000) - Math.round(b[p] * 1000)) < 2;
+    return e("x") && e("y");
+}
+
 // Scenes need to have finished their transitions for this to work.
 // Only scenes that contain a light with a matching light state will match.
 // By default, an unreachable light will not disqualify a scene.
 function isActiveScene(data, scene, options = { allowUnreachable: true }) {
+
+    // if (!(scene.name === "Nightlight" && scene.group === "2")) {
+    //     return false;
+    // }
+
+    // console.log(scene.name, scene.group);
+
     let same = true;
     let matchedSceneValue = false;
     let unreachable = false;
@@ -2620,31 +2632,26 @@ function isActiveScene(data, scene, options = { allowUnreachable: true }) {
                 continue;
             }
 
-            if (prop === "ct") {
-                const xyLight = lightXY(light);
-                const xyScene = ctToLightXY(sceneValue, light);
-                // console.log("ct", xyLight, xyScene);
-                if (!eq(xyLight.x, xyScene.x) || !eq(xyLight.y, xyScene.y)) {
-                    same = false;
-                    break;
+            if (["ct", "xy"].includes(prop)) {
+                if (light.state?.colormode === undefined) {
+                    // If the light is not color-capable, it won't have a colormode
+                    // and we can ignore any attempts by the scene to change color
+                    continue;
                 }
-            } else if (prop === "xy") {
+
                 const xyLight = lightXY(light);
-                const xyScene = xyToLightXY(sceneValue, light);
-                // console.log("xy", xyLight, xyScene);
-                if (!eq(xyLight.x, xyScene.x) || !eq(xyLight.y, xyScene.y)) {
+                const xyScene = (prop === "ct") ? ctToXY(sceneValue) : new Point(sceneValue[0], sceneValue[1]);
+                if (!eqXY(xyLight, xyScene)) {
+                    // console.log(prop, light.name, xyLight, xyScene, sceneValue);
                     same = false;
                     break;
                 }
             } else {
                 const lightValue = lightState[prop];
                 if (!eq(lightValue, sceneValue)) {
-                    // Bright scene triggers this condition
-                    const ignore = (prop === "ct" && sceneValue === 367 && lightValue === 366);
-                    if (!ignore) {
-                        same = false;
-                        break;
-                    }
+                    // console.log(prop, light.name, lightValue, sceneValue);
+                    same = false;
+                    break;
                 }
             }
 
