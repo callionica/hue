@@ -68,7 +68,7 @@ function loadCurrentBridge_() {
 
 export function loadCurrentBridge() {
     const bridges = loadCurrentBridges();
-    const bridge = bridges[0];
+    const bridge = bridges?.[0];
 
     if (bridge !== undefined) {
         return bridge;
