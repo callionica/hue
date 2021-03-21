@@ -430,13 +430,18 @@
                         throw "No bridges";
                     }
 
+                    // Load connections for the specified bridges
                     for (const bridge of bridges) {
                         let connection = connections[bridge.id];
                         if (connection === undefined) {
                             connection = await loadConnection("Callionica", bridge);
                             connections[bridge.id] = connection;
                         }
+                    }
 
+                    // Get the data for the specified bridges
+                    for (const bridge of bridges) {
+                        let connection = connections[bridge.id];
                         if (!pauseData) {
                             datas[bridge.id] = await getAllPlus(connection);
                         }

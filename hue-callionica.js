@@ -9,6 +9,27 @@ export function uuid() {
     );
 }
 
+function delay(ms) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, ms);
+    });
+}
+
+async function retry(fn, delays) {
+    try {
+        return await fn();
+    } catch (e) {
+        if (delays.length === 0) {
+            throw e;
+        }
+        // console.log("RETRY", new Date(), delays[0]);
+        await delay(delays[0]);
+        return await retry(fn, delays.slice(1));
+    }
+}
+
 // Component classid for use in resourcelinks
 const COMPONENT_CLASSID = 9090;
 
@@ -2256,8 +2277,10 @@ export async function getAllPlus(connection) {
     const data = await getAll(connection);
     const scenes = Object.values(data.scenes);
     
+    // Use retries here because otherwise we hit throttling limit
     for (const scene of scenes) {
-        const completeScene = await getSceneComplete(connection, scene.id, scene.lastupdated);
+        const get = () => getSceneComplete(connection, scene.id, scene.lastupdated);
+        const completeScene = await retry(get, [25, 100, 200]);
         scene.lightstates = completeScene.lightstates;
     }
 
