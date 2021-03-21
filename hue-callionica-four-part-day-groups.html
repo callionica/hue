@@ -747,7 +747,7 @@
             const periodScenes = ["first", "morning", "day", "evening", "night", "morning-dark", "day-dark", "evening-light", "night-light", "off", "off-morning", "off-day", "off-evening", "off-night", "off-morning-dark", "off-day-dark", "off-evening-light", "off-night-light"];
 
             function isRecoveryScene(scene) {
-                return scene.name.toLowerCase().includes("recoveryscene");
+                return scene.name.replace(" ", "").toLowerCase().includes("recoveryscene");
             }
 
             const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !periodScenes.includes(scene.name.toLowerCase()) && !isRecoveryScene(scene)).sort((a,b) => a.name.localeCompare(b.name));
