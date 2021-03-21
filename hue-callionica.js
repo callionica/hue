@@ -9,7 +9,7 @@ export function uuid() {
     );
 }
 
-function delay(ms) {
+export function delay(ms) {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve();
@@ -17,7 +17,7 @@ function delay(ms) {
     });
 }
 
-async function retry(fn, delays) {
+export async function retry(fn, delays) {
     try {
         return await fn();
     } catch (e) {
@@ -226,6 +226,12 @@ export async function setSensorValue(connection, id, value) {
 export async function setLightOn(connection, id, value) {
     const address = Address(connection, `lights/${id}/state`);
     const body = { on: value };
+    return put(address, body);
+}
+
+export async function setLightCT(connection, id, value) {
+    const address = Address(connection, `lights/${id}/state`);
+    const body = { ct: value };
     return put(address, body);
 }
 
