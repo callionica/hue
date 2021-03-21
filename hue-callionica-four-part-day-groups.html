@@ -442,7 +442,7 @@
                     // Get the data for the specified bridges
                     for (const bridge of bridges) {
                         let connection = connections[bridge.id];
-                        if (!pauseData) {
+                        if (!pauseData && !document.hidden && navigator.onLine) {
                             datas[bridge.id] = await getAllPlus(connection);
                         }
                     }
@@ -471,7 +471,7 @@
 
             dataTimeoutToken = setTimeout(() => requestData(wait), 2 * 1000);
 
-            if (!pauseUpdates) {
+            if (!pauseUpdates && !document.hidden && navigator.onLine) {
                 ondata(datas);
             }
         }
