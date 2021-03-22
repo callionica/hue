@@ -1,6 +1,6 @@
 "use strict";
 
-import { lightXY, ctToXY, ctToLightXY, xyToLightXY, Point } from "./hue-callionica-color.js";
+import { lightXY, lightCT, ctToXY, Point } from "./hue-callionica-color.js";
 
 // Hope this works!
 export function uuid() {
@@ -2587,7 +2587,7 @@ export function summarizeLights(group, data) {
                 maximumBrightness = light.state.bri;
             }
             if (light.state.ct > maximumColorTemperature) {
-                maximumColorTemperature = light.state.ct;
+                maximumColorTemperature = lightCT(light);
             }
         }
 

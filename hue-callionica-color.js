@@ -5,10 +5,10 @@ export class Point {
     }
 }
 
-// These values push 100K values towards the ct values that are used
+// These values set 100K values to the ct values that are used
 // by the standard Hue scenes.
 const k_ct_friendly = {
-    6400: 250, // Used by the Energize scene
+    6400: 156, // Used by the Energize scene
     4300: 233, // Used by the Concentrate scene
     2900: 346, // Used by the Read scene
     2700: 367, // Used by the Bright scene
@@ -1634,6 +1634,22 @@ const ct_xy = {
     ]
 };
 
+function xyToCT(xy) {
+
+    function d2(a) {
+        const dx = a[0] - xy[0];
+        const dy = a[1] - xy[1];
+        return dx * dx + dy * dy;
+    }
+
+    const closest = Object.entries(ct_xy).map(([ct, xy]) => {
+        const dist2 = d2(xy);
+        return { ct, dist2 };
+    }).reduce((previous, current) => current.dist2 < previous.dist2 ? current : previous).ct;
+
+    return parseInt(closest, 10);
+}
+
 function relationOfPointToLine(point, line) {
     const [a, b] = line;
     const slope = (a.y - b.y) / (a.x - b.x);
@@ -1734,58 +1750,6 @@ export function ctToXY(ct) {
     return new Point(Math.round(x * 10000) / 10000, Math.round(y * 10000) / 10000);
 }
 
-
-export class Gamut {
-    constructor(gamut, name){
-        const [pointR, pointG, pointB] = gamut;
-        this.r = new Point(pointR[0], pointR[1]);
-        this.g = new Point(pointG[0], pointG[1]);
-        this.b = new Point(pointB[0], pointB[1]);
-        this.name = name;
-    }
-
-    contains(point) {
-        const result =
-            isBelow(point, [this.r, this.g]) &&
-            isBelow(point, [this.g, this.b]) &&
-            isAbove(point, [this.b, this.r]);
-        return result;
-    }
-
-    nearest(point) {
-        if (this.contains(point)) {
-            return point;
-        }
-
-        const lines = [[this.r, this.g], [this.g, this.b], [this.b, this.r]];
-
-        const closest = lines.map(line => {
-            const pt = closestPointOnLine(point, line);
-            const dist2 = distance2(point, pt);
-            return { pt, dist2 };
-        }).reduce((previous, current) => current.dist2 < previous.dist2 ? current : previous).pt;
-
-        return new Point(Math.round(closest.x * 10000) / 10000, Math.round(closest.y * 10000) / 10000);;
-    }
-
-    nearestFromCT(ct) {
-        const unconformed = ctToXY(ct);
-        const conformed = this.nearest(unconformed);
-        // console.log("ct-xy", ct, unconformed, conformed, this.name);
-        return conformed;
-    }
-}
-
-const WhiteD65 = new Point(0.312713, 0.329016);
-
-export const White = new Point(0.322727, 0.32902);
-
-export const WideGamut = new Gamut([
-    [0.700607, 0.299301],
-    [0.172416, 0.746797],
-    [0.135503, 0.039879]
-], "WideGamut");
-
 export function lightXY(light) {
     if (light.state?.colormode === "xy") {
         return new Point(light.state.xy[0], light.state.xy[1]);
@@ -1794,29 +1758,89 @@ export function lightXY(light) {
     if (light.state?.colormode === "ct") {
         const ct = light.state.ct;
         const unconformed = ctToXY(ct); // This converts directly
-
-        // const conformed = ctToLightXY(ct, light); // This converts and conforms to the gamut
-        // if ((unconformed.x !== conformed.x) || (unconformed.y !== conformed.y)) {
-        //     console.log(light.name, "unc", unconformed, "con", conformed);
-        // }
-
         return unconformed;
     }
 
     return undefined;
 }
 
-export function ctToLightXY(ct, light) {
-    const g = light.capabilities?.control?.colorgamut;
-    const gamut = (g !== undefined) ? new Gamut(g, light.name) : WideGamut;
-    const xy = gamut.nearestFromCT(ct);
-    return xy;
+export function lightCT(light) {
+    if (light.state?.colormode === "ct") {
+        return light.state.ct;
+    }
+
+    if (light.state?.colormode === "xy") {
+        const xy = light.state.xy;
+        const unconformed = xyToCT(xy);
+        return unconformed;
+    }
+
+    return undefined;
 }
 
-export function xyToLightXY(xy, light) {
-    xy = Array.isArray(xy) ? new Point(xy[0], xy[1]) : xy;
-    const g = light?.capabilities?.control?.colorgamut;
-    const gamut = (g !== undefined) ? new Gamut(g) : WideGamut;
-    const xy2 = gamut.nearest(xy);
-    return xy2;
-}
+// export class Gamut {
+//     constructor(gamut, name){
+//         const [pointR, pointG, pointB] = gamut;
+//         this.r = new Point(pointR[0], pointR[1]);
+//         this.g = new Point(pointG[0], pointG[1]);
+//         this.b = new Point(pointB[0], pointB[1]);
+//         this.name = name;
+//     }
+
+//     contains(point) {
+//         const result =
+//             isBelow(point, [this.r, this.g]) &&
+//             isBelow(point, [this.g, this.b]) &&
+//             isAbove(point, [this.b, this.r]);
+//         return result;
+//     }
+
+//     nearest(point) {
+//         if (this.contains(point)) {
+//             return point;
+//         }
+
+//         const lines = [[this.r, this.g], [this.g, this.b], [this.b, this.r]];
+
+//         const closest = lines.map(line => {
+//             const pt = closestPointOnLine(point, line);
+//             const dist2 = distance2(point, pt);
+//             return { pt, dist2 };
+//         }).reduce((previous, current) => current.dist2 < previous.dist2 ? current : previous).pt;
+
+//         return new Point(Math.round(closest.x * 10000) / 10000, Math.round(closest.y * 10000) / 10000);;
+//     }
+
+//     nearestFromCT(ct) {
+//         const unconformed = ctToXY(ct);
+//         const conformed = this.nearest(unconformed);
+//         // console.log("ct-xy", ct, unconformed, conformed, this.name);
+//         return conformed;
+//     }
+// }
+
+// const WhiteD65 = new Point(0.312713, 0.329016);
+
+// export const White = new Point(0.322727, 0.32902);
+
+// export const WideGamut = new Gamut([
+//     [0.700607, 0.299301],
+//     [0.172416, 0.746797],
+//     [0.135503, 0.039879]
+// ], "WideGamut");
+
+
+// export function ctToLightXY(ct, light) {
+//     const g = light.capabilities?.control?.colorgamut;
+//     const gamut = (g !== undefined) ? new Gamut(g, light.name) : WideGamut;
+//     const xy = gamut.nearestFromCT(ct);
+//     return xy;
+// }
+
+// export function xyToLightXY(xy, light) {
+//     xy = Array.isArray(xy) ? new Point(xy[0], xy[1]) : xy;
+//     const g = light?.capabilities?.control?.colorgamut;
+//     const gamut = (g !== undefined) ? new Gamut(g) : WideGamut;
+//     const xy2 = gamut.nearest(xy);
+//     return xy2;
+// }
