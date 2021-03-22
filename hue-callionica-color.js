@@ -5,6 +5,24 @@ export class Point {
     }
 }
 
+// These values push 100K values towards the ct values that are used
+// by the standard Hue scenes.
+const k_ct_friendly = {
+    6400: 250, // Used by the Energize scene
+    4300: 233, // Used by the Concentrate scene
+    2900: 346, // Used by the Read scene
+    2700: 367, // Used by the Bright scene
+    2200: 447, // Used by the Nightlight scene
+};
+
+export function friendlyKToCT(k) {
+    const value = k_ct_friendly[k];
+    if (value !== undefined) {
+        return value;
+    }
+    return Math.round(1000000/k);
+}
+
 const ct_xy = {
     "153": [
         0.312,

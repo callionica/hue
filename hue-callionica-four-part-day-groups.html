@@ -353,6 +353,7 @@
         import { loadCurrentBridges, loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
+        import { friendlyKToCT } from "./hue-callionica-color.js";
 
         const params = new URLSearchParams(document.location.search);
 
@@ -672,7 +673,8 @@
             const e = scope.createElement("select");
             e.title = "Brightness";
 
-            const levels = [["Off", "off"], [1, 0], [2], [3], [4], [5], [6], [7], [8], [9], [10], [20], [30], [40], [50, 127], [60], [70], [80], [90], [95], [100, 254]].reverse();
+            // Dimmed scene uses bri: 77
+            const levels = [["Off", "off"], [1, 1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [20], [30, 77], [40], [50, 127], [60], [70], [80], [90], [95], [100, 254]].reverse();
             for (const level of levels) {
                 const o = scope.createElement("option");
                 o.value = (level[1] === undefined) ? Math.floor(level[0]/100*254) : level[1];
@@ -691,7 +693,7 @@
 
             for (let k = 1800; k <= 6600; k += 100) {
                 const o = scope.createElement("option");
-                o.value = Math.round(1000000/k);
+                o.value = friendlyKToCT(k);
                 o.innerHTML = `${k} K`;
                 e.appendChild(o);
 
