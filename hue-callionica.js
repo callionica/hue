@@ -181,7 +181,7 @@ export async function send(method, address, body) {
         throw { body, e };
     }
 
-    if (Array.isArray(bridgeResult) && (bridgeResult.length === 1) && bridgeResult[0].success) {
+    if (Array.isArray(bridgeResult) && (bridgeResult.length >= 1) && bridgeResult[0].success) {
         return bridgeResult;
     }
 
