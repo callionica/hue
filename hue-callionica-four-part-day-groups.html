@@ -590,12 +590,22 @@
 
             const ct = e.querySelector(".group-color-temperature");
             ct.dataset.unreachable = lightSummary.allUnreachable;
+            let previous;
             for (const o of [...ct.querySelectorAll("option")]) {
                 const v = parseInt(o.value, 10);
                 if (lightSummary.maximumColorTemperature >= v) {
+                    if (previous) {
+                        const d = Math.abs(lightSummary.maximumColorTemperature - v);
+                        const pd = Math.abs(lightSummary.maximumColorTemperature - previous.v);
+                        if (pd < d) {
+                            previous.o.selected = true;        
+                            break;
+                        }
+                    }
                     o.selected = true;
                     break;
                 }
+                previous = { o, v };
             }
 
             const offScenes = FourPartDay.getOffScenes(data, group.id);
@@ -681,11 +691,11 @@
 
             for (let k = 1800; k <= 6600; k += 100) {
                 const o = scope.createElement("option");
-                o.value = Math.floor(1000000/k);
+                o.value = Math.round(1000000/k);
                 o.innerHTML = `${k} K`;
                 e.appendChild(o);
 
-                if (k === 2800) {
+                if (k === 2700) {
                     o.setAttribute("selected", true);
                 }
             }
