@@ -350,7 +350,7 @@
     </style>
     <!-- 1800 to 6600 -->
     <script type="module">
-        import { loadCurrentBridges, loadConnection, loadConnections } from "./hue-callionica-connect.js";
+        import { loadCurrentBridges, loadConnection, loadConnections, testConnection } from "./hue-callionica-connect.js";
         import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
@@ -471,7 +471,8 @@
                     if (missingConnection) {
                         e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                     } else {
-                        const links = Object.values(connections).map(connection => {
+                        const failedConnections = Object.values(connections).filter(c => !testConnection(c));
+                        const links = failedConnections.map(connection => {
                             const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
                             return `<p><a href="${link}" rel="noopener">Refresh your Hue bridge connection (${connection.bridge.name})</a></p>`;
                         });
