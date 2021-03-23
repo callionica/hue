@@ -396,6 +396,7 @@
 
         // Call to get new data
         async function requestData(mode) {
+            // console.log("requestData");
             mode = mode || wait;
 
             if (dataRequestMade && (mode === wait)) {
@@ -403,6 +404,7 @@
             }
 
             clearTimeout(dataTimeoutToken);
+            dataTimeoutToken = undefined;
             dataRequestMade = true;
 
             try {            
@@ -494,6 +496,16 @@
                 ondata(datas);
             }
         }
+
+        window.addEventListener('pageshow', (event) => {
+            // console.log("pageshow");
+            const backOrForward = event.persisted || (window.performance?.navigation?.type === 2);
+            if (backOrForward) {
+                // console.log("history");
+                requestData(immediate);
+            }
+            // console.log("end-pageshow");
+        });
 
         function ancestor(e, pred) {
             let container = e.parentNode;
