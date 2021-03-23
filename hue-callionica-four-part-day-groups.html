@@ -378,7 +378,11 @@
             groups = paramsSort(params, groups);
 
             updateGroups(groups);
-            updateManual(Object.values(datas)[0]);
+
+            const data = Object.values(datas)[0];
+            if (data !== undefined) {
+                updateManual(data);
+            }
         }
 
         let dataRequestMade;
@@ -441,11 +445,20 @@
                     }
 
                     // Get the data for the specified bridges
+                    let missingConnection = false;
                     for (const bridge of bridges) {
                         let connection = connections[bridge.id];
+                        if (connection === undefined) {
+                            missingConnection = true;
+                            continue;
+                        }
                         if (!pauseData && !document.hidden && navigator.onLine) {
                             datas[bridge.id] = await getAllPlus(connection);
                         }
+                    }
+
+                    if (missingConnection) {
+                        throw "Missing connection";
                     }
 
                     delete document.body.dataset.showConnection;
