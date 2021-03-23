@@ -471,13 +471,17 @@
                     if (missingConnection) {
                         e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                     } else {
-                        const failedConnections = Object.values(connections).filter(c => !testConnection(c));
-                        const links = failedConnections.map(connection => {
-                            const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
-                            return `<p><a href="${link}" rel="noopener">Refresh your Hue bridge connection (${connection.bridge.name})</a></p>`;
-                        });
-                        
-                        e.innerHTML = links.join("\n");
+                        e.innerHTML = "";
+
+                        for (const connection of Object.values(connections)) {
+                            const valid = await testConnection(connection);
+                            if (!valid) {
+                                const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                                const p = document.createElement("p");
+                                p.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection (${connection.bridge.name})</a>`;
+                                e.append(p);
+                            }
+                        }
                     }
                 }
             } finally {
