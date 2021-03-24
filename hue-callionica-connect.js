@@ -1,5 +1,5 @@
 "use strict";
-import { getConfig, delay, TimeoutExpired } from "./hue-callionica.js";
+import { getConfig, delay, TimeoutExpired, fetch } from "./hue-callionica.js";
 
 // bridge: { id, ip, name }
 // connection: { bridge, app, token }
@@ -176,10 +176,10 @@ export async function bridgeFromAddress(address) {
     // return { status: "unreachable" };
 }
 
-async function jsonFetch(address) {
+async function jsonFetch(address, ms) {
     var result;
     try {
-        const fetchResult = await fetch(address);
+        const fetchResult = await fetch(address, undefined, ms);
         result = await fetchResult.json();
     } catch (e) {
         console.log(e);
@@ -192,7 +192,7 @@ async function jsonFetch(address) {
 // Philips Hue bridges report internal IP addresses to meethue
 // The server will send you back the internal IP addresses of any bridges whose public IP matches the public IP address of your request
 export async function bridgesByRemoteDiscovery() {
-    const result = await jsonFetch("https://discovery.meethue.com");
+    const result = await jsonFetch("https://discovery.meethue.com", 6000);
     return result.map(item => { return { id: item.id, ip: item.internalipaddress }; });
 }
 

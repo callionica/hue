@@ -9,23 +9,60 @@ export function uuid() {
     );
 }
 
-export class TimeoutExpired {}
+export class Timeout {}
+export class TimeoutExpired extends Timeout {}
+export class TimeoutCanceled extends Timeout {}
 
-export function delay(ms) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
+// Timeout expiry and timeout cancelation are not errors
+export function delay(ms, signal) {
+    let timeoutHandle;
+    let resolve;
+
+    if (signal !== undefined) {
+        signal.addEventListener("abort", () => {
+            if (timeoutHandle !== undefined) {
+                clearTimeout(timeoutHandle);
+                timeoutHandle = undefined;
+                resolve(new TimeoutCanceled());
+            }
+        });
+    }
+
+    return new Promise((res) => {
+        resolve = res;
+
+        timeoutHandle = setTimeout(() => {
+            timeoutHandle = undefined;
             resolve(new TimeoutExpired());
         }, ms);
     });
 }
 
-export async function fetchTO(input, init = undefined, timeoutMS = 2000) {
-    const result = await Promise.race([fetch(input, init), delay(timeoutMS)]);
+const old = (() => {
+    const fetch = globalThis.fetch.bind(globalThis);
+
+    return { fetch };
+})();
+
+export async function fetch_(input, init = undefined, timeoutMS = 2000) {
+    const fetchController = new AbortController();
+    const signal = fetchController.signal;
+
+    // Race the fetch and the timeout
+    const result = await Promise.race([old.fetch(input, { ...init, signal }), delay(timeoutMS)]);
+
+    // If the winner of the race was the timeout, 
+    // abort the fetch and convert the result to an exception
     if (result instanceof TimeoutExpired) {
+        fetchController.abort();
         throw result;
     }
+
+    // Otherwise the winner of the race was the fetch, so return the result
     return result;
 }
+
+export const fetch = fetch_;
 
 export async function retry(fn, delays) {
     try {
@@ -183,7 +220,7 @@ export async function send(method, address, body) {
 
     let bridgeResult;
     try {
-        const result = await fetchTO(address, { method, body });
+        const result = await fetch(address, { method, body });
         bridgeResult = await result.json();
     } catch (e) {
         console.log(body);
@@ -293,37 +330,37 @@ export async function createResourceLink(connection, body) {
 export async function deleteRule(connection, id) {
     const address = Address(connection, `rules/${id}`);
     const method = "DELETE";
-    return fetchTO(address, { method });
+    return fetch(address, { method });
 }
 
 export async function deleteResourceLink(connection, id) {
     const address = Address(connection, `resourcelinks/${id}`);
     const method = "DELETE";
-    return fetchTO(address, { method });
+    return fetch(address, { method });
 }
 
 export async function deleteSensor(connection, id) {
     const address = Address(connection, `sensors/${id}`);
     const method = "DELETE";
-    return fetchTO(address, { method });
+    return fetch(address, { method });
 }
 
 export async function deleteSchedule(connection, id) {
     const address = Address(connection, `schedules/${id}`);
     const method = "DELETE";
-    return fetchTO(address, { method });
+    return fetch(address, { method });
 }
 
 export async function deleteGroup(connection, id) {
     const address = Address(connection, `groups/${id}`);
     const method = "DELETE";
-    return fetchTO(address, { method });
+    return fetch(address, { method });
 }
 
 export async function deleteScene(connection, id) {
     const address = Address(connection, `scenes/${id}`);
     const method = "DELETE";
-    return fetchTO(address, { method });
+    return fetch(address, { method });
 }
 
 export async function getCategory(connection, category) {
@@ -331,7 +368,7 @@ export async function getCategory(connection, category) {
 
     var bridgeResult;
     try {
-        const result = await fetchTO(address);
+        const result = await fetch(address);
         bridgeResult = await result.json();
     } catch (e) {
         console.log(e);
