@@ -9,10 +9,12 @@ export function uuid() {
     );
 }
 
+class TimeoutExpired {}
+
 export function delay(ms) {
     return new Promise((resolve) => {
         setTimeout(() => {
-            resolve();
+            resolve(new TimeoutExpired());
         }, ms);
     });
 }
