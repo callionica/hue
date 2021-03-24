@@ -407,7 +407,7 @@ export async function getSceneComplete(connection, sceneID, lastUpdated) {
     }
 
     // Store some scenes for each bridge to localStorage for performance
-    const maxStoredScenes = 25;
+    const maxStoredScenes = 200;
     if (localStorage.getItem(key) || storedSceneCount(localStorage, bridgeID) < maxStoredScenes) {
         localStorage.setItem(key, storableValue);
     }
