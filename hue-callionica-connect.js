@@ -1,5 +1,5 @@
 "use strict";
-import { getConfig } from "./hue-callionica.js";
+import { getConfig, delay, TimeoutExpired } from "./hue-callionica.js";
 
 // bridge: { id, ip, name }
 // connection: { bridge, app, token }
@@ -113,6 +113,33 @@ export async function bridgeByIP(ip) {
     const connection = { bridge: {ip}, token: "unauthenticated" };
     const config = await getConfig(connection);
     return { id: config.bridgeid.toLowerCase(), ip, name: config.name };
+}
+
+export async function diagnoseConnection(connection) {
+    try {
+        const result = await getConfig(connection);
+
+        const id = result.bridgeid?.toLowerCase();
+
+        if (id === undefined) {
+            return "not-a-bridge-error";
+        }
+
+        if (id !== connection.bridge.id) {
+            return "wrong-bridge-error";
+        }
+
+        if (result.whitelist === undefined) {
+            return "authentication-error";
+        }
+
+        return "success";
+    } catch (error) {
+        if (error.e instanceof TimeoutExpired) {
+            return "unreachable";
+        }
+        return "certificate-error";
+    }
 }
 
 // Return the bridge name and serial number obtained from the description XML over HTTP
