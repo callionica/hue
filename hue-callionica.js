@@ -9,7 +9,7 @@ export function uuid() {
     );
 }
 
-class TimeoutExpired {}
+export class TimeoutExpired {}
 
 export function delay(ms) {
     return new Promise((resolve) => {
@@ -17,6 +17,14 @@ export function delay(ms) {
             resolve(new TimeoutExpired());
         }, ms);
     });
+}
+
+export async function fetchTO(input, init = undefined, timeoutMS = 2000) {
+    const result = await Promise.race([fetch(input, init), delay(timeoutMS)]);
+    if (result instanceof TimeoutExpired) {
+        throw result;
+    }
+    return result;
 }
 
 export async function retry(fn, delays) {
@@ -175,7 +183,7 @@ export async function send(method, address, body) {
 
     let bridgeResult;
     try {
-        const result = await fetch(address, { method, body });
+        const result = await fetchTO(address, { method, body });
         bridgeResult = await result.json();
     } catch (e) {
         console.log(body);
@@ -285,37 +293,37 @@ export async function createResourceLink(connection, body) {
 export async function deleteRule(connection, id) {
     const address = Address(connection, `rules/${id}`);
     const method = "DELETE";
-    return fetch(address, { method });
+    return fetchTO(address, { method });
 }
 
 export async function deleteResourceLink(connection, id) {
     const address = Address(connection, `resourcelinks/${id}`);
     const method = "DELETE";
-    return fetch(address, { method });
+    return fetchTO(address, { method });
 }
 
 export async function deleteSensor(connection, id) {
     const address = Address(connection, `sensors/${id}`);
     const method = "DELETE";
-    return fetch(address, { method });
+    return fetchTO(address, { method });
 }
 
 export async function deleteSchedule(connection, id) {
     const address = Address(connection, `schedules/${id}`);
     const method = "DELETE";
-    return fetch(address, { method });
+    return fetchTO(address, { method });
 }
 
 export async function deleteGroup(connection, id) {
     const address = Address(connection, `groups/${id}`);
     const method = "DELETE";
-    return fetch(address, { method });
+    return fetchTO(address, { method });
 }
 
 export async function deleteScene(connection, id) {
     const address = Address(connection, `scenes/${id}`);
     const method = "DELETE";
-    return fetch(address, { method });
+    return fetchTO(address, { method });
 }
 
 export async function getCategory(connection, category) {
@@ -323,7 +331,7 @@ export async function getCategory(connection, category) {
 
     var bridgeResult;
     try {
-        const result = await fetch(address);
+        const result = await fetchTO(address);
         bridgeResult = await result.json();
     } catch (e) {
         console.log(e);
