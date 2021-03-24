@@ -391,6 +391,7 @@ export async function getSceneComplete(connection, sceneID, lastUpdated) {
     if (s !== undefined) {
         scene = JSON.parse(s);
         if (scene.lastupdated === lastUpdated) {
+            sceneCache[sceneID] = scene;
             return scene;
         }
     }
