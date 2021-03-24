@@ -473,17 +473,23 @@
 
                         const missingConnection = (bridges === undefined) || (bridges.length === 0) || bridges.some(bridge => connections[bridge.id] === undefined);
                         if (missingConnection) {
-                            e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                            const existing = e.querySelector(`a[href='hue-callionica-connect.html']`);
+                            if (!existing) {
+                                e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                            }
                         } else {
-                            e.innerHTML = "";
-
                             for (const connection of Object.values(connections)) {
                                 const valid = await testConnection(connection);
+                                const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                                const existing = e.querySelector(`a[href='${link}']`);
                                 if (!valid) {
-                                    const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
-                                    const p = document.createElement("p");
-                                    p.innerHTML = `<a href="${link}" rel="noopener">Refresh your Hue bridge connection (${connection.bridge.name})</a>`;
-                                    e.append(p);
+                                    if (!existing) {
+                                        const p = document.createElement("p");
+                                        p.innerHTML = `<a href="${link}" rel="noopener">Refresh connection '${connection.bridge.name}'</a>`;
+                                        e.append(p);
+                                    }
+                                } else if (existing) {
+                                    existing.remove();
                                 }
                             }
                         }
