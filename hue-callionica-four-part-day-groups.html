@@ -508,9 +508,7 @@
 
         window.addEventListener('pageshow', (event) => {
             const backOrForward = event.persisted || (window.performance?.navigation?.type === 2);
-            if (backOrForward) {
-                requestData(immediate);
-            }
+            requestData(backOrForward ? immediate : wait);
         });
 
         function ancestor(e, pred) {
