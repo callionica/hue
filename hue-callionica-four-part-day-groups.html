@@ -359,7 +359,7 @@
     </style>
     <!-- 1800 to 6600 -->
     <script type="module">
-        import { loadCurrentBridges, loadConnection, loadConnections, testConnection } from "./hue-callionica-connect.js";
+        import { loadCurrentBridges, loadConnection, loadConnections, testConnection, diagnoseConnection } from "./hue-callionica-connect.js";
         import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
@@ -487,19 +487,45 @@
                                 e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
                             }
                         } else {
+                            let generalFailure = false;
+
                             for (const connection of Object.values(connections)) {
-                                const valid = await testConnection(connection);
+                                const diagnosis = await diagnoseConnection(connection);
+
                                 const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
-                                const existing = e.querySelector(`a[href='${link}']`);
-                                if (!valid) {
-                                    if (!existing) {
+                                const cert = e.querySelector(`a[href='${link}']`);
+
+                                if (diagnosis === "certificate-error") {    
+                                    if (!cert) {
                                         const p = document.createElement("p");
                                         p.innerHTML = `<a href="${link}" rel="noopener">Refresh connection '${connection.bridge.name}'</a>`;
                                         e.append(p);
                                     }
-                                } else if (existing) {
-                                    existing.remove();
+                                    continue;
                                 }
+
+                                if (cert) {
+                                    cert.parentElement?.remove();
+                                }
+
+                                if (diagnosis === "success") {
+                                    continue;
+                                }
+
+                                generalFailure = true;
+
+                                console.log("Diagnosis", diagnosis);
+                            }
+
+                            const general = e.querySelector(`a[href='hue-callionica-connect.html']`);
+                            if (generalFailure) {
+                                if (!general) {
+                                    const p = document.createElement("p");
+                                    p.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                                    e.append(p);
+                                }
+                            } else if (general) {
+                                general.parentElement?.remove();
                             }
                         }
                     }
