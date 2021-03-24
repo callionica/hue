@@ -387,8 +387,8 @@ export async function getSceneComplete(connection, sceneID, lastUpdated) {
     }
 
     const key = `{bridge:"${bridgeID}",scene:"${sceneID}"}`;
-    const s = sessionStorage.getItem(key);
-    if (s != undefined) {
+    const s = sessionStorage.getItem(key) || localStorage.getItem(key) || undefined;
+    if (s !== undefined) {
         scene = JSON.parse(s);
         if (scene.lastupdated === lastUpdated) {
             return scene;
@@ -398,7 +398,19 @@ export async function getSceneComplete(connection, sceneID, lastUpdated) {
     scene = await getCategory(connection, `scenes/${sceneID}`);
 
     sceneCache[sceneID] = scene;
-    sessionStorage.setItem(key, JSON.stringify(scene, null, 2));
+
+    const storableValue = JSON.stringify(scene, null, 2);
+    sessionStorage.setItem(key, storableValue);
+
+    function storedSceneCount(storage, bridgeID) {
+        return Object.entries(storage).filter(([name, value]) => name.startsWith(`{bridge:"${bridgeID}",scene:`)).length;
+    }
+
+    // Store some scenes for each bridge to localStorage for performance
+    const maxStoredScenes = 25;
+    if (localStorage.getItem(key) || storedSceneCount(localStorage, bridgeID) < maxStoredScenes) {
+        localStorage.setItem(key, storableValue);
+    }
 
     return scene;
 }
