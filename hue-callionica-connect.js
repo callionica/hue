@@ -1,5 +1,5 @@
 "use strict";
-import { getConfig, delay, TimeoutExpired, fetch } from "./hue-callionica.js";
+import { getConfig, delay, TimeoutExpired, fetchJSON } from "./hue-callionica.js";
 
 // bridge: { id, ip, name }
 // connection: { bridge, app, token }
@@ -142,19 +142,19 @@ export async function diagnoseConnection(connection) {
     }
 }
 
-// Return the bridge name and serial number obtained from the description XML over HTTP
-// This method avoids certificate issues by relying on HTTP only
-export async function bridgeFromDescriptionXML(address) {
-    const response = await fetch(`http://${address}/description.xml`);
-    const data = await response.text();
-    const parser = new DOMParser();
-    const dom = parser.parseFromString(data, "application/xml");
-    let serialNumber = dom.querySelector("serialNumber").textContent.toLowerCase();
-    const id = serialNumber.substring(0, 6) + "fffe" + serialNumber.substring(6);
-    const name = dom.querySelector("friendlyName").textContent;
-    const bridge = { id, ip: address, name };
-    return bridge;
-}
+// // Return the bridge name and serial number obtained from the description XML over HTTP
+// // This method avoids certificate issues by relying on HTTP only
+// export async function bridgeFromDescriptionXML(address) {
+//     const response = await fetch(`http://${address}/description.xml`);
+//     const data = await response.text();
+//     const parser = new DOMParser();
+//     const dom = parser.parseFromString(data, "application/xml");
+//     let serialNumber = dom.querySelector("serialNumber").textContent.toLowerCase();
+//     const id = serialNumber.substring(0, 6) + "fffe" + serialNumber.substring(6);
+//     const name = dom.querySelector("friendlyName").textContent;
+//     const bridge = { id, ip: address, name };
+//     return bridge;
+// }
 
 export async function bridgeFromAddress(address) {
     try {
@@ -179,8 +179,7 @@ export async function bridgeFromAddress(address) {
 async function jsonFetch(address, ms) {
     var result;
     try {
-        const fetchResult = await fetch(address, undefined, ms);
-        result = await fetchResult.json();
+        result = await fetchJSON(address, undefined, ms);
     } catch (e) {
         console.log(e);
         throw { address, e };
@@ -242,8 +241,7 @@ export async function bridgesByDiscovery() {
 async function get(address) {
     let bridgeResult;
     try {
-        const result = await fetch(address);
-        bridgeResult = await result.json();
+        bridgeResult = await fetchJSON(address);
     } catch (e) {
         console.log(address);
         console.log(body);
@@ -257,8 +255,7 @@ async function get(address) {
 async function send(method, address, body) {
     let bridgeResult;
     try {
-        const result = await fetch(address, { method, body });
-        bridgeResult = await result.json();
+        bridgeResult = await fetchJSON(address, { method, body });
     } catch (e) {
         console.log(address);
         console.log(body);
