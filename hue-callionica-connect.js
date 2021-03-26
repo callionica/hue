@@ -1,5 +1,5 @@
 "use strict";
-import { getConfig, delay, TimeoutExpired, fetchJSON } from "./hue-callionica.js";
+import { getConfig, delay, TimeoutExpired, TimeoutCanceled, fetchJSON } from "./hue-callionica.js";
 
 // bridge: { id, ip, name }
 // connection: { bridge, app, token }
@@ -138,6 +138,11 @@ export async function diagnoseConnection(connection) {
         if (error.e instanceof TimeoutExpired) {
             return "unreachable";
         }
+
+        if (error.e instanceof TimeoutCanceled) {
+            return "request-canceled";
+        }
+
         return "certificate-error";
     }
 }
@@ -160,7 +165,14 @@ export async function bridgeFromAddress(address) {
     try {
         const bridge = await bridgeByIP(address);
         return { bridge, status: "reachable" };
-    } catch (e) {
+    } catch (error) {
+        if (error.e instanceof TimeoutExpired) {
+            return "unreachable";
+        }
+
+        if (error.e instanceof TimeoutCanceled) {
+            return "request-canceled";
+        }
         console.log(e);
     }
 
