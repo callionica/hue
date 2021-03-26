@@ -173,7 +173,6 @@ export async function bridgeFromAddress(address) {
         if (error.e instanceof TimeoutCanceled) {
             return { status: "request-canceled" };
         }
-        console.log(e);
     }
 
     return { status: "certificate-failure" };
