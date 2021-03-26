@@ -167,11 +167,11 @@ export async function bridgeFromAddress(address) {
         return { bridge, status: "reachable" };
     } catch (error) {
         if (error.e instanceof TimeoutExpired) {
-            return "unreachable";
+            return { status: "unreachable" };
         }
 
         if (error.e instanceof TimeoutCanceled) {
-            return "request-canceled";
+            return { status: "request-canceled" };
         }
         console.log(e);
     }
