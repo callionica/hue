@@ -365,6 +365,13 @@
                 document.location = "hue-callionica-disclaimer.html";
             }
             
+            window.addEventListener('pageshow', (event) => {
+                const backOrForward = event.persisted || (window.performance?.navigation?.type === 2);
+                if (backOrForward) {
+                    location.reload();
+                }
+            });
+
             document.onclick = onclick;
             
             const locals = await bridgesByLocalDiscovery();
