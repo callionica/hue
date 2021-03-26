@@ -20,6 +20,22 @@
         .role-select {
             font-weight: bold;
         }
+
+        .bridgeid-prefix {
+            /* font-weight: normal; */
+            color: gray;
+        }
+
+        td {
+            margin: 0;
+            padding: 0;
+        }
+
+        p {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+
     </style>
     <script type="module">
         import { loadConnections, loadCurrentBridges, storeCurrentBridges } from "./hue-callionica-connect.js";
@@ -81,12 +97,22 @@
             e.id = id;
             e.classList.add("connection");
 
+            // e.innerHTML = `
+            // <p><span class="bridgename"></span></p>
+            // <p>ID: <span class="bridgeid"><span class="bridgeid-prefix"></span><span class="bridgeid-suffix"></span></span></p>
+            // <p>Address: <span class="bridgeip"></span></p>
+            // <p>Password: <span class="token"></span></p>
+            // <p>Role: <span class="role"></span></p>`;
+
             e.innerHTML = `
             <p><span class="bridgename"></span></p>
-            <p>ID: <span class="bridgeid"></span></p>
-            <p>Address: <span class="bridgeip"></span></p>
-            <p>Password: <span class="token"></span></p>
-            <p>Role: <span class="role"></span></p>`;
+            <table>
+            <tr><td><p>ID: </p></td><td><p><span class="bridgeid"><span class="bridgeid-prefix"></span><span class="bridgeid-suffix"></span></span></p></td></tr>
+            <tr><td><p>Address: </p></td><td><p><span class="bridgeip"></span></p></td></tr>
+            <tr><td><p>Password: </p></td><td><p><span class="token"></span></p></td></tr>
+            <tr><td><p>Role: </p></td><td><p><span class="role"></span></p></td></tr>
+            </table>
+            `;
             
             const r = e.querySelector(".role");
             const role = createRole(scope);
@@ -96,14 +122,22 @@
             return e;
         }
 
+        function parseBridgeID(bridgeID) {
+            return { prefix: bridgeID.substring(0, bridgeID.length - 6), suffix: bridgeID.slice(-6) };
+        }
+
         function updateConnection(connection, role, scope) {
             scope = scope || document;
 
             const tokenDisplay = connection.token.substring(0, 6) + "..." + connection.token.slice(-6);
 
+            const id = parseBridgeID(connection.bridge.id);
+
             const e = scope.querySelector(`#${connection.bridge.id}`);
             e.querySelector(".bridgename").innerText = connection.bridge.name;
-            e.querySelector(".bridgeid").innerText = connection.bridge.id;
+            // e.querySelector(".bridgeid").innerText = id.prefix + id.suffix;
+            e.querySelector(".bridgeid-prefix").innerText = id.prefix;
+            e.querySelector(".bridgeid-suffix").innerText = id.suffix;
             e.querySelector(".bridgeip").innerText = connection.bridge.ip;
             e.querySelector(".token").innerText = tokenDisplay; //connection.token;
             e.querySelector(".role-select").value = role;
