@@ -32,6 +32,10 @@
             margin-bottom: 0.5rem;
         }
 
+        .bridgemac {
+            font-weight: bold;
+        }
+
         div {
             padding: 0;
             margin: 0;
@@ -119,6 +123,7 @@
             <p><span class="bridgename"></span></p>
             <table>
             <tr><td><p>ID: </p></td><td><p><span class="bridgeid"><span class="bridgeid-prefix"></span><span class="bridgeid-suffix"></span></span></p></td></tr>
+            <tr><td><p>MAC: </p></td><td><p><span class="bridgemac"></span></p></td></tr>
             <tr><td><p>Address: </p></td><td><p><span class="bridgeip"></span></p></td></tr>
             <tr><td><p>Password: </p></td><td><p><span class="token"></span></p></td></tr>
             <tr><td><p>Role: </p></td><td><p><span class="role"></span></p></td></tr>
@@ -134,7 +139,10 @@
         }
 
         function parseBridgeID(bridgeID) {
-            return { prefix: bridgeID.substring(0, bridgeID.length - 6), suffix: bridgeID.slice(-6) };
+            const fffe = bridgeID.substring(6, 6 + 4);
+            const mac = (fffe === "fffe") ? (bridgeID.substring(0, 6) + bridgeID.slice(-6)).toUpperCase() : undefined;
+
+            return { prefix: bridgeID.substring(0, bridgeID.length - 6), suffix: bridgeID.slice(-6), mac };
         }
 
         function updateConnection(connection, role, scope) {
@@ -144,11 +152,14 @@
 
             const id = parseBridgeID(connection.bridge.id);
 
+            const macDisplay = `${id.mac.substring(0,2)}:${id.mac.substring(2,4)}:${id.mac.substring(4,6)}:${id.mac.substring(6,8)}:${id.mac.substring(8,10)}:${id.mac.substring(10)}`;
+
             const e = scope.querySelector(`#${connection.bridge.id}`);
             e.querySelector(".bridgename").innerText = connection.bridge.name;
             // e.querySelector(".bridgeid").innerText = id.prefix + id.suffix;
             e.querySelector(".bridgeid-prefix").innerText = id.prefix;
             e.querySelector(".bridgeid-suffix").innerText = id.suffix;
+            e.querySelector(".bridgemac").innerText = macDisplay;
             e.querySelector(".bridgeip").innerText = connection.bridge.ip;
             e.querySelector(".token").innerText = tokenDisplay; //connection.token;
             e.querySelector(".role-select").value = role;
