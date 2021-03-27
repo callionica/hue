@@ -2378,6 +2378,10 @@ export async function getAllPlus(connection) {
         scene.active = isActiveScene(data, scene);
     }
 
+    for (const group of Object.values(data.groups)) {
+        group.lightSummary = summarizeLights(group, data);
+    }
+
     return data;
 }
 
