@@ -367,7 +367,7 @@
     <!-- 1800 to 6600 -->
     <script type="module">
         import { loadCurrentBridges, loadConnection, loadConnections, testConnection, diagnoseConnection } from "./hue-callionica-connect.js";
-        import { getAllPlus, summarizeLights, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { getAllPlus, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
 
@@ -648,11 +648,11 @@
             const data = datas[group.bridge];
             const name = e.querySelector(".group-name");
             name.innerText = group.name;
-            // summarizeLights only treats a light as 'on'
+            // lightSummary only treats a light as 'on'
             // if it is also reachable. So 'anyOn' for the
             // group means that there is at least one light
             // that is both on & reachable.
-            const lightSummary = summarizeLights(group, data);
+            const lightSummary = group.lightSummary;
             Object.assign(e.dataset, lightSummary);
 
             const bri = e.querySelector(".group-brightness");
@@ -874,39 +874,43 @@
         function updateGroups(groups, scope) {
             scope = scope || document;
 
+            // Put unreachables at the end
+            const orderedGroups = [
+                ...groups.filter(g => !g.lightSummary.allUnreachable),
+                ...groups.filter(g =>  g.lightSummary.allUnreachable)
+            ];
+
             const container = scope.querySelector("#data");
 
             const children = [];
-            for (const group of groups) {
+            for (const group of orderedGroups) {
                 let e = container.querySelector(`#group-${group.bridge}-${group.id}`);
                 if (e == undefined) {
                     e = createGroup(group, scope);
+                }
 
-                    // Either add the new element as the first element
-                    // or put it after the previous element
-                    const previous = children[children.length - 1];
-                    if (previous === undefined) {
+                // Reorder elements
+                const previous = children[children.length - 1];
+                const currentPrevious = e.previousElementSibling || undefined;
+                if (previous === undefined) {
+                    if ((e.parentElement == undefined) || (previous !== currentPrevious)) {
                         container.prepend(e);
-                    } else {
+                    }
+                } else {
+                    if (previous !== currentPrevious) {
                         previous.after(e);
                     }
                 }
-                children.push(e);
 
+                children.push(e);
                 updateGroup(e, group, scope);
             }
 
             for (const ge of [...container.querySelectorAll(`.group`)]) {
-                if (children.includes(ge)) {
-                    // Move unreachables to the end
-                    if (ge.dataset.allUnreachable === "true") {
-                        container.appendChild(ge);
-                    }
-                    continue;
+                if (!children.includes(ge)) {
+                    // Remove old groups
+                    ge.remove();
                 }
-
-                // Remove old groups
-                ge.remove();
             }
         }
     
