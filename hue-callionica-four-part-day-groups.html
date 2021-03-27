@@ -881,7 +881,15 @@
                 let e = container.querySelector(`#group-${group.bridge}-${group.id}`);
                 if (e == undefined) {
                     e = createGroup(group, scope);
-                    container.append(e);
+
+                    // Either add the new element as the first element
+                    // or put it after the previous element
+                    const previous = children[children.length - 1];
+                    if (previous === undefined) {
+                        container.prepend(e);
+                    } else {
+                        previous.after(e);
+                    }
                 }
                 children.push(e);
 
