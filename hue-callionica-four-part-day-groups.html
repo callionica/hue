@@ -393,7 +393,13 @@
             // Advanced sort by include, exclude, sort params
             groups = paramsSort(params, groups);
 
-            updateGroups(groups);
+            // Put unreachables at the end
+            const orderedGroups = [
+                ...groups.filter(g => !g.lightSummary.allUnreachable),
+                ...groups.filter(g =>  g.lightSummary.allUnreachable)
+            ];
+
+            updateGroups(orderedGroups);
 
             const data = Object.values(datas)[0];
             if (data !== undefined) {
@@ -871,14 +877,8 @@
             return e;
         }
 
-        function updateGroups(groups, scope) {
+        function updateGroups(orderedGroups, scope) {
             scope = scope || document;
-
-            // Put unreachables at the end
-            const orderedGroups = [
-                ...groups.filter(g => !g.lightSummary.allUnreachable),
-                ...groups.filter(g =>  g.lightSummary.allUnreachable)
-            ];
 
             const container = scope.querySelector("#data");
 
