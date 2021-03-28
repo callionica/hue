@@ -375,6 +375,20 @@ export function localizeDateTime(dt) {
     return { display, displayDate, displayTime };
 }
 
+function pick(names, items) {
+    const chosen = names.map(p => []);
+    const remainder = [];
+    for (const item of items) {
+        const index = names.indexOf(item.name.toLowerCase());
+        if (index >= 0) {
+            chosen[index].push(item);
+        } else {
+            remainder.push(item);
+        }
+    }
+    return { chosen: chosen.flatMap(x => x), remainder };
+}
+
 export function paramsSort(params, items) {
     function getList(name) {
         const p = params.get(name);
@@ -395,20 +409,18 @@ export function paramsSort(params, items) {
         items = items.filter(item => !exclude.includes(item.name.toLowerCase()));
     }
 
-    const preferred = getList("sort");
-    if (preferred) {
-        const x = preferred.map(p => []);
-        const y = [];
-        for (const item of items) {
-            const index = preferred.indexOf(item.name.toLowerCase());
-            if (index >= 0) {
-                x[index].push(item);
-            } else {
-                y.push(item);
-            }
-        }
+    const last = getList("end");
+    if (last) {
+        const x = pick(last, items);
 
-        items = [...x.flatMap(x => x), ...y];
+        items = [...x.remainder, ...x.chosen];
+    }
+
+    const first = getList("start");
+    if (first) {
+        const x = pick(first, items);
+
+        items = [...x.chosen, ...x.remainder];
     }
 
     return items;
