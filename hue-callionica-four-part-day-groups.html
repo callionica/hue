@@ -371,21 +371,23 @@
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
 
+        function multi(datas, prop) {
+            return Object.values(datas).flatMap(data => {
+                // Get standard form of bridge ID
+                const bridge = data.config.bridgeid.toLowerCase();
+
+                // Add bridge ID to each item
+                return Object.values(data[prop]).map(item => ({...item, bridge}));
+            });
+        }
+
         const params = new URLSearchParams(document.location.search);
 
         let pauseData = false;
         let pauseUpdates = false;
 
         async function ondata(datas) {
-            
-            let groups = Object.values(datas).flatMap(data => {
-                const bridge = data.config.bridgeid.toLowerCase();
-
-                // Add bridge to each group
-                const groups = Object.values(data.groups).map(group => ({...group, bridge}));
-
-                return groups;
-            });
+            let groups = multi(datas, "groups");
 
             // Basic sort by name
             groups.sort(sortBy(g => g.name));
