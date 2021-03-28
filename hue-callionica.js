@@ -2365,6 +2365,13 @@ export async function getAll(connection) {
 /* Same as getAll plus all the scene details (using the scene cache) */
 export async function getAllPlus(connection) {
     const data = await getAll(connection);
+
+    for (const light of Object.values(data.lights)) {
+        light.calculated = {};
+        light.calculated.ct = lightCT(light);
+        light.calculated.xy = lightXY(light);
+    }
+
     const scenes = Object.values(data.scenes);
     
     // Use retries here because otherwise we hit throttling limit
@@ -2674,8 +2681,9 @@ export function summarizeLights(group, data) {
             if (light.state.bri > maximumBrightness) {
                 maximumBrightness = light.state.bri;
             }
-            if (light.state.ct > maximumColorTemperature) {
-                maximumColorTemperature = lightCT(light);
+            const ct = light.calculated.ct || lightCT(light);
+            if (ct > maximumColorTemperature) {
+                maximumColorTemperature = ct;
             }
         }
 
@@ -2756,7 +2764,7 @@ function isActiveScene(data, scene, options = { allowUnreachable: true }) {
                     continue;
                 }
 
-                const xyLight = lightXY(light);
+                const xyLight = light.calculated.xy || lightXY(light);
                 const xyScene = (prop === "ct") ? ctToXY(sceneValue) : new Point(sceneValue[0], sceneValue[1]);
                 if (!eqXY(xyLight, xyScene)) {
                     // console.log(prop, light.name, xyLight, xyScene, sceneValue);
