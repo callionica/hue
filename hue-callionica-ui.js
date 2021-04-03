@@ -8,7 +8,7 @@ export function getDaylight(data) {
     if (daylightSensor?.config?.configured && daylightSensor?.config?.on) {
         daylight = {
             value: (daylightSensor?.state?.daylight) ? "light" : "dark",
-            updated: new Date(daylightSensor?.state?.lastupdated),
+            updated: new Date(daylightSensor?.state?.lastupdated + "Z"),
             sunriseOffset: daylightSensor?.config?.sunriseoffset,
             sunsetOffset: daylightSensor?.config?.sunsetoffset,
         };
