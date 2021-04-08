@@ -2668,6 +2668,7 @@ export function summarizeLights(group, data) {
     let anyUnreachable = false;
     let allUnreachable = true;
     let maximumBrightness = -1;
+    let anyDimmable = false;
     let maximumColorTemperature = -1;
 
     for (const lightID of group.lights) {
@@ -2691,12 +2692,31 @@ export function summarizeLights(group, data) {
 
         if (unreachable) {
             anyUnreachable = true;
+        } else {
+            if (light.state.bri !== undefined) { // Could do light.capabilities.control.maxlumen
+                anyDimmable = true;
+            }
         }
 
         allUnreachable = allUnreachable && unreachable;
     }
 
-    return { anyOn, allOn, anyUnreachable, allUnreachable, maximumBrightness, maximumColorTemperature };
+    // If any lights are on, but we didn't get a positive brightness value
+    // we must have non-dimmable lights that are on, so treat max brightness as 100%.
+
+    // Note that max brightness can decrease when a new light is switched on.
+    // For example, a non-dimmable bulb is on, giving bri of 100%
+    // then a dimmable bulb is switched on in addition, giving a bri of 50%.
+
+    // In other words, maximumBrightness is the maximum brightness of
+    // dimmable lights that are on unless there are no such lights
+    // in which case it is 100% if any non-dimmable lights are on.
+
+    if (anyOn && maximumBrightness < 0) {
+        maximumBrightness = 254;
+    }
+
+    return { anyOn, allOn, anyUnreachable, allUnreachable, anyDimmable, maximumBrightness, maximumColorTemperature };
 }
 
 function eq(a, b) {
