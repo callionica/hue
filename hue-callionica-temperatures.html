@@ -60,7 +60,7 @@
             const c = (item.state.temperature)/100;
             const f = CtoF(c);
             const lastUpdated = localizeDateTime(item.state.lastupdated + "Z");
-            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})" data-on="${on}" data-reachable="${reachable}"><td>${item.name}</td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td><time datetime="${item.state.lastupdated}">${lastUpdated.display}</time></td></tr>`;
+            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})" data-on="${on}" data-reachable="${reachable}"><td>${item.name}</td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td><time datetime="${item.state.lastupdated + "Z"}">${lastUpdated.display}</time></td></tr>`;
         }
 
         async function main() {
