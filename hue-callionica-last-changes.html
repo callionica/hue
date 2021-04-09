@@ -88,7 +88,7 @@
             };
 
             const cat = category2(category, o);
-            const lastChanged = localizeDateTime(date);
+            const lastChanged = localizeDateTime(date + "Z");
             const time = lastChanged.displayTime[1] == ":" ? (" " + lastChanged.displayTime) : lastChanged.displayTime;
             const propertyTitle = propertyTitles[property] || (property[0].toUpperCase() + property.substring(1));
             const categoryTitle = categoryTitles[cat] || (cat[0].toUpperCase() + cat.substring(1));
