@@ -236,6 +236,26 @@
             flex-grow: 1;
         }
 
+        .group-temperature {
+            margin: 0.25rem;
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+            padding: 0.2rem;
+            
+            display: inline-block;
+            line-height: 1.75rem;
+
+            color: gray;
+
+            /* width: 25rem; */
+            /* flex-grow: 1; */
+        }
+
+        .group-temperature:not(:empty):after {
+            content: '℃';
+            color: gray;
+        }
+
         .group-scenes, .group-lights {
             display: flex;
             width: 100%;
@@ -656,6 +676,10 @@
             const data = datas[group.bridge];
             const name = e.querySelector(".group-name");
             name.innerText = group.name;
+
+            const temp = e.querySelector(".group-temperature");
+            temp.innerText = group.temperatures[0]?.celsius || "";
+
             // lightSummary only treats a light as 'on'
             // if it is also reachable. So 'anyOn' for the
             // group means that there is at least one light
@@ -810,12 +834,16 @@
             name.classList.add("group-name");
             name.innerText = group.name;
 
+            const temp = scope.createElement("span");
+            temp.classList.add("group-temperature");
+            temp.innerText = group.temperatures[0]?.celsius || "";
+
             const btn = scope.createElement("button");
             btn.classList.add("group-toggle");
             btn.innerText = "Toggle";
             btn.onclick = () => { flash(); toggleFourPartDayScene(btn); };
 
-            o.append(name, btn);
+            o.append(name, temp, btn);
 
             const i = scope.createElement("div");
             i.dataset.expando = "inner";

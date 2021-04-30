@@ -2385,8 +2385,56 @@ export async function getAllPlus(connection) {
         scene.active = isActiveScene(data, scene);
     }
 
+    const temperatures = Object.values(data.sensors).filter(sensor => sensor?.state?.temperature !== undefined);
+
+    function CtoF(c) {
+        return (c * 9/5) + 32;
+    }
+
+    function temp(sensor) {
+        if (sensor === undefined) {
+            return;
+        }
+
+        const isOn = (sensor) => {
+            const on = sensor.config?.on;
+            return on || (on === undefined);
+        };
+
+        const isReachable = (sensor) => {
+            const reachable = sensor.config?.reachable;
+            return reachable || (reachable === undefined);
+        };
+
+        if (isOn(sensor) && isReachable(sensor)) {
+            return sensor.state?.temperature;
+        }
+    }
+
+    function C(sensor) {
+        const v = temp(sensor);
+        if (v === undefined) {
+            return;
+        }
+        return (v/100).toFixed(1);
+    }
+
+    function F(sensor) {
+        const v = temp(sensor);
+        if (v === undefined) {
+            return;
+        }
+        return CtoF(v/100).toFixed(1);
+    }
+
+    for (const sensor of temperatures) {
+        sensor.fahrenheit = F(sensor);
+        sensor.celsius = C(sensor);
+    }
+
     for (const group of Object.values(data.groups)) {
         group.lightSummary = summarizeLights(group, data);
+        group.temperatures = temperatures.filter(sensor => sensor.name === group.name);
     }
 
     return data;
