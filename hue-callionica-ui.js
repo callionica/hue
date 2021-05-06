@@ -356,7 +356,39 @@ export const FourPartDay = (()=>{
     };
 })();
 
+const dateFormatWithYear = Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric"});
+const dateFormatWithoutYear = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric"});
 
+export function formatHumanDate(date) {
+    try {
+        const now = new Date();
+        if (date.getFullYear() == now.getFullYear()) {
+            return dateFormatWithoutYear.format(date);
+        }
+        return dateFormatWithYear.format(date);
+    } catch (e) {
+        return "Unknown";
+    }
+}
+
+const timeFormatYMDT = Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "numeric"});
+const timeFormatMDT = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "numeric"});
+const timeFormatT = Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "numeric"});
+
+export function formatHumanDateTime(date) {
+    try {
+        const now = new Date();
+        if (date.getFullYear() == now.getFullYear()) {
+            if ((date.getMonth() == now.getMonth()) && (date.getDate() == now.getDate())) {
+                return timeFormatT.format(date);
+            }
+            return timeFormatMDT.format(date);
+        }
+        return timeFormatYMDT.format(date);
+    } catch (e) {
+        return "Unknown";
+    }
+}
 
 export function localizeDateTime(dt) {
     if (dt === undefined) {
