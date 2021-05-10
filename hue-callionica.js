@@ -287,6 +287,12 @@ export async function setSensorValue(connection, id, value) {
     return put(address, body);
 }
 
+export async function setSensorName(connection, id, value) {
+    const address = Address(connection, `sensors/${id}`);
+    const body = JSON.stringify({ "name": value });
+    return put(address, body);
+}
+
 // buttonevent is not modifiable
 // export async function setSensorButtonEvent(connection, id, value) {
 //     const store = "buttonevent";

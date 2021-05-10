@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Rename Sensor</title>
+    <!--<link rel="stylesheet" href="hue-callionica.css">-->
+    <style>
+        select, button, input {
+            border-style: solid;
+            border-width: 0.1rem;
+            border-color: inherit;
+            border-radius: 0.275rem;
+            padding: 0.2rem;
+            color: inherit;
+            background-color: inherit;
+        }
+
+        input[type='submit'] {
+            background-color: rgb(24, 103, 184);
+            color: white;
+        }
+
+        input[type='submit']:hover {
+            background-color: rgb(0, 93, 166);
+            color: white;
+        }
+
+        body > p {
+            margin-left: 0.8rem;
+        }
+
+    </style>
+    <script type="module">
+        import { loadConnection } from "./hue-callionica-connect.js";
+        import { getAllPlus, setSensorName } from "./hue-callionica.js";
+
+        const app = "Callionica";
+        const params = new URLSearchParams(document.location.search);
+        const bridge_ = params.get("bridge")?.toLowerCase().trim() || undefined;
+        const sensor_ = params.get("sensor")?.toLowerCase().trim() || undefined;
+        const connection = loadConnection(app, { id: bridge_ });
+        
+        let data;
+
+        function message(text) {
+            document.querySelector("#message").innerText = text;
+        }
+
+        async function main() {
+            data = await getAllPlus(connection);
+            const bridgeName = data.config.name;
+            const sensor = data.sensors[sensor_];
+
+            document.querySelector(".name").innerText = sensor.name;
+            document.querySelector(".bridge-name").innerText = bridgeName;
+            document.querySelector(".id").innerText = sensor.id;
+
+            const box = document.querySelector("#name");
+            box.placeholder = sensor.name;
+
+            const e = document.querySelector("form");
+            if (e.onsubmit == undefined) {
+                e.onsubmit = () => {
+                    (async function(){
+                        try {
+                            const name = box.value.trim();
+                            await setSensorName(connection, sensor.id, name);
+                            document.querySelector(".name").innerText = name;
+                            message("success");
+                        } catch (e) {
+                            message("error");
+                        }
+                    })();
+                    return false;
+                };
+            }
+            // message(bridge_ + " " + sensor.name + bridgeName);
+        }
+
+        main().then(x => console.log("Done"));
+    </script>
+</head>
+<body>
+    <datalist id="names">
+        <option value="Kitchen"></option>
+        <option value="Living room"></option>
+        <option value="Bedroom"></option>
+        <option value="Bathroom"></option>
+        <option value="Shower room"></option>
+        <option value="Hall"></option>
+        <option value="Stairs"></option>
+        <option value="Garden"></option>
+        <option value="Outside"></option>
+        <option value="Inside"></option>
+    </datalist>
+    <h1>Sensor › Rename</h1>
+    <hr/>
+    <div id="sensor" class="sensor">
+        <form action="#">
+            <p><span class="name"></span></p>
+            <table>
+                <tr>
+                    <td>
+                        <p>Bridge: </p>
+                    </td>
+                    <td>
+                        <p><span class="bridge-name"></span></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>ID: </p>
+                    </td>
+                    <td>
+                        <p><span class="id"></span></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>Name: </p>
+                    </td>
+                    <td>
+                        <p><input id="name" type="text" list="names"></span></p>
+                    </td>
+                </tr>
+            </table>
+            <p>
+                <input type="submit" value="Rename">
+            </p>
+        </form>
+    </div>
+    <p><span id="message"></span></p>
+</body>
+</html>
