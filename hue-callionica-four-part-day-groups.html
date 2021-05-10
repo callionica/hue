@@ -395,7 +395,7 @@
         function multi(datas, prop) {
             return Object.values(datas).flatMap(data => {
                 // Get standard form of bridge ID
-                const bridge = data.config.bridgeid.toLowerCase();
+                const bridge = data.id;
 
                 // Add bridge ID to each item
                 return Object.values(data[prop]).map(item => ({...item, bridge}));

@@ -2358,7 +2358,12 @@ export function rearrangeForHueComponents(data) {
 /** Returns a cyclic graph of Hue data including Hue components */
 export async function getAll(connection) {
     const data = await getAllCategories(connection);
+    
+    // Promote and standardize the bridge ID
+    data.id = data.config.bridgeid.toLowerCase();
+
     rearrangeForHueComponents(data);
+
     return data;
 }
 
