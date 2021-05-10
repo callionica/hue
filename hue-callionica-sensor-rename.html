@@ -41,6 +41,10 @@
             color: inherit;
         }
 
+        p {
+            padding-top: 0.3rem;
+        }
+
         hr {
             overflow: visible; /* For IE */
             padding: 0;
@@ -64,7 +68,7 @@
 
         :root {
             --back-color: 30,30,30;
-            --button-color: 45,45,45;
+            --item-color: 45,45,45;
             --text-color: 204,204,204;
 
             background-color: rgb(var(--back-color));
@@ -81,8 +85,15 @@
             color: white;
         }
 
-        body > p {
+        /* body > p {
             margin-left: 0.8rem;
+        } */
+
+        .sensor {
+            background-color: rgb(var(--item-color));
+            padding: 0.4rem;
+            margin: 0.4rem;
+            border-radius: 0.3rem;
         }
 
     </style>
@@ -106,6 +117,16 @@
             data = await getAllPlus(connection);
             const bridgeName = data.config.name;
             const sensor = data.sensors[sensor_];
+            const groups = Array.from(new Set(Object.values(data.groups).map(group => group.name))).sort((a, b) => a.localeCompare(b));
+
+            const list = document.querySelector("#names");
+            list.innerText = "";
+
+            for (const group of groups) {
+                const o = document.createElement("option");
+                o.value = group;
+                list.append(o);
+            }
 
             document.querySelector(".name").innerText = sensor.name;
             document.querySelector(".bridge-name").innerText = bridgeName;
