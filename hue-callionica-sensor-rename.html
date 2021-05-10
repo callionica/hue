@@ -33,14 +33,14 @@
 
     </style>
     <script type="module">
-        import { loadConnection } from "./hue-callionica-connect.js";
+        import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, setSensorName } from "./hue-callionica.js";
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
         const bridge_ = params.get("bridge")?.toLowerCase().trim() || undefined;
         const sensor_ = params.get("sensor")?.toLowerCase().trim() || undefined;
-        const connection = loadConnection(app, { id: bridge_ });
+        const connection = (bridge_ !== undefined) ? loadConnection(app, { id: bridge_ }) : loadConnections()[0];
         
         let data;
 

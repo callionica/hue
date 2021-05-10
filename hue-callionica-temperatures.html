@@ -30,6 +30,9 @@
         tr[data-reachable='false'] {
             color: gray;
         }
+        a {
+            background-color: inherit;
+        }
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -62,7 +65,7 @@
             const lu = new Date(item.state.lastupdated + "Z");
             const lastUpdated = formatHumanDateTime(lu);
             // const lastUpdated = localizeDateTime(item.state.lastupdated + "Z");
-            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})" data-on="${on}" data-reachable="${reachable}"><td>${item.name}</td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td><time datetime="${item.state.lastupdated + "Z"}">${lastUpdated}</time></td></tr>`;
+            return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})" data-on="${on}" data-reachable="${reachable}"><td><a href="hue-callionica-sensor-rename.html?bridge=${bridge.id}&sensor=${item.id}">${item.name}</a></td><td class="numeric celsius">${c.toFixed(1)}</td><td class="numeric fahrenheit">${f.toFixed(1)}</td><td><time datetime="${item.state.lastupdated + "Z"}">${lastUpdated}</time></td></tr>`;
         }
 
         async function main() {
