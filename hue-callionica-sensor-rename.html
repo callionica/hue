@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Rename Sensor</title>
+    <title>Rename Accessory</title>
     <!--<link rel="stylesheet" href="hue-callionica.css">-->
     <style>
         * {
@@ -96,6 +96,14 @@
             border-radius: 0.3rem;
         }
 
+        .buttons {
+            padding-top: 1.0rem;
+        }
+
+        #name {
+            max-width: 50vw;
+        }
+
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
@@ -111,6 +119,13 @@
 
         function message(text) {
             document.querySelector("#message").innerText = text;
+        }
+
+        function sensorKind(sensor) {
+            if (sensor.metadata) {
+                return `${sensor.metadata.component} > ${sensor.metadata.property}`.replaceAll(">", "›");
+            }
+            return sensor.productname || sensor.modelid;
         }
 
         async function main() {
@@ -129,6 +144,7 @@
             }
 
             document.querySelector(".name").innerText = sensor.name;
+            document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
 
@@ -169,27 +185,32 @@
         <option value="Garden"></option>
         <option value="Outside"></option>
         <option value="Inside"></option>
+        <option value="Upstairs"></option>
+        <option value="Downstairs"></option>
+        <option value="Basement"></option>
+        <option value="Garage"></option>
     </datalist>
-    <h1>Sensor › Rename</h1>
+    <h1>Rename Accessory</h1>
     <hr/>
     <div id="sensor" class="sensor">
         <form action="#">
             <h2 class="name">...</h2>
+            <p class="description"></p>
             <table>
-                <tr>
+                <!-- <tr>
                     <td>
                         <p>Bridge: </p>
                     </td>
                     <td>
                         <p><span class="bridge-name"></span></p>
                     </td>
-                </tr>
+                </tr> -->
                 <tr>
                     <td>
                         <p>ID: </p>
                     </td>
                     <td>
-                        <p><span class="id"></span></p>
+                        <p><span class="id"></span> (<span class="bridge-name"></span>)</p>
                     </td>
                 </tr>
                 <tr>
@@ -201,7 +222,7 @@
                     </td>
                 </tr>
             </table>
-            <p>
+            <p class="buttons">
                 <input type="submit" value="Rename">
             </p>
         </form>
