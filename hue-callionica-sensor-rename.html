@@ -162,8 +162,21 @@
                                 // message("Please enter a name");
                                 return;
                             }
+
                             await setSensorName(connection, sensor.id, name);
                             document.querySelector(".name").innerText = name;
+
+                            if (sensor.device !== undefined) {
+                                const result = confirm(`Also rename ${sensor.device.length - 1} related sensors?`);
+                                if (result) {
+                                    for (const relatedSensor of sensor.device) {
+                                        if (relatedSensor.id !== sensor.id) {
+                                            await setSensorName(connection, relatedSensor.id, name);
+                                        }
+                                    }
+                                }
+                            }
+
                             message("success");
                         } catch (e) {
                             message("error");

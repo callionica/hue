@@ -2396,7 +2396,29 @@ export async function getAllPlus(connection) {
         scene.active = isActiveScene(data, scene);
     }
 
-    const temperatures = Object.values(data.sensors).filter(sensor => sensor?.state?.temperature !== undefined);
+    const sensors = Object.values(data.sensors);
+
+    // Group together the presence, light level, and temperature sensor of
+    // a single Hue Motion Sensor
+    const motionSensors = sensors.filter(sensor => sensor.manufacturername.startsWith("Signify") && sensor.type === "ZLLPresence");
+
+    for (const motionSensor of motionSensors) {
+        const prefix = motionSensor.uniqueid.substring(0, motionSensor.uniqueid.length - 4);
+
+        const lightLevelSensors = sensors.filter(sensor => sensor.type === "ZLLLightLevel" && sensor.manufacturername === motionSensor.manufacturername && sensor.modelid === motionSensor.modelid && sensor.uniqueid.startsWith(prefix));
+        const temperatureSensors = sensors.filter(sensor => sensor.type === "ZLLTemperature" && sensor.manufacturername === motionSensor.manufacturername && sensor.modelid === motionSensor.modelid && sensor.uniqueid.startsWith(prefix));
+
+        if (lightLevelSensors.length === 1 && temperatureSensors.length === 1) {
+            const l = lightLevelSensors[0];
+            const t = temperatureSensors[0];
+            const device = [motionSensor, l, t];
+            for (const item of device) {
+                item.device = device;
+            }
+        }
+    }
+
+    const temperatures = sensors.filter(sensor => sensor?.state?.temperature !== undefined);
 
     function CtoF(c) {
         return (c * 9/5) + 32;
