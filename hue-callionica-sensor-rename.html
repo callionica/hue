@@ -150,6 +150,7 @@
 
             const box = document.querySelector("#name");
             box.placeholder = sensor.name;
+            box.value = sensor.name;
 
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
@@ -157,6 +158,10 @@
                     (async function(){
                         try {
                             const name = box.value.trim();
+                            if (name.length === 0) {
+                                // message("Please enter a name");
+                                return;
+                            }
                             await setSensorName(connection, sensor.id, name);
                             document.querySelector(".name").innerText = name;
                             message("success");
