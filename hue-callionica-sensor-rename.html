@@ -42,7 +42,8 @@
         }
 
         p {
-            padding-top: 0.3rem;
+            /* padding-top: 0.3rem; */
+            line-height: 1.75rem;
         }
 
         hr {
@@ -85,14 +86,15 @@
             color: white;
         }
 
-        /* body > p {
-            margin-left: 0.8rem;
-        } */
+        #content {
+            padding: 0.25rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
 
         .sensor {
             background-color: rgb(var(--item-color));
-            padding: 0.4rem;
-            margin: 0.4rem;
+            padding: 0.7rem;
             border-radius: 0.3rem;
         }
 
@@ -208,12 +210,14 @@
         <option value="Basement"></option>
         <option value="Garage"></option>
     </datalist>
+    <div id="content">
     <h1>Rename Accessory</h1>
     <hr/>
+
     <div id="sensor" class="sensor">
         <form action="#">
             <h2 class="name">...</h2>
-            <p class="description"></p>
+            <p class="description">...</p>
             <table>
                 <!-- <tr>
                     <td>
@@ -228,7 +232,7 @@
                         <p>ID: </p>
                     </td>
                     <td>
-                        <p><span class="id"></span> (<span class="bridge-name"></span>)</p>
+                        <p><span class="id">...</span> (<span class="bridge-name">...</span>)</p>
                     </td>
                 </tr>
                 <tr>
@@ -246,5 +250,6 @@
         </form>
     </div>
     <p><span id="message"></span></p>
+    </div>
 </body>
 </html>
