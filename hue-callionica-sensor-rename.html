@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Rename Accessory</title>
-    <!--<link rel="stylesheet" href="hue-callionica.css">-->
     <style>
         * {
             box-sizing: border-box;
@@ -113,9 +112,11 @@
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
-        const bridge_ = params.get("bridge")?.toLowerCase().trim() || undefined;
         const sensor_ = params.get("sensor")?.toLowerCase().trim() || undefined;
-        const connection = (bridge_ !== undefined) ? loadConnection(app, { id: bridge_ }) : loadConnections()[0];
+        const connection = (() => {
+            const bridge = params.get("bridge")?.toLowerCase().trim() || undefined;
+            return (bridge !== undefined) ? loadConnection(app, { id: bridge }) : loadConnections()[0];
+        })();
         
         let data;
 
@@ -187,7 +188,6 @@
                     return false;
                 };
             }
-            // message(bridge_ + " " + sensor.name + bridgeName);
         }
 
         main().then(x => console.log("Done"));
