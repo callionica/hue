@@ -493,3 +493,33 @@ export function optionsTemp(unit, start, end, interval) {
     }
     return result;
 }
+
+function optionsIDName(items) {
+    const result = [];
+    for (const group of items) {
+        const e = document.createElement("option");
+        e.value = group.id;
+        e.innerText = group.name;
+
+        result.push(e);
+    }
+    return result;
+
+}
+
+export function optionsGroup(data) {
+    const groups = Object.values(data.groups);
+    groups.sort((a,b) => a.name.localeCompare(b.name));
+
+    return optionsIDName(groups);
+}
+
+export function optionsScene(data, group) {
+    function isRecoveryScene(scene) {
+        return scene.name.replaceAll(" ", "").toLowerCase().includes("recoveryscene");
+    }
+
+    const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !isRecoveryScene(scene)).sort((a,b) => a.name.localeCompare(b.name));
+
+    return optionsIDName(scenes);
+}
