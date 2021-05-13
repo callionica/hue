@@ -30,6 +30,7 @@
         h2 {
             font-size: 1.2rem;
             padding-top: 0.25rem;
+            margin-bottom: 0.5rem;
         }
         h3 {
             font-size: 1.1rem;
@@ -85,6 +86,11 @@
             color: white;
         }
 
+        button:hover {
+            background-color: rgb(0, 93, 166);
+            color: white;
+        }
+
         .small {
             line-height: 1.0rem;
             font-size: 0.75rem;
@@ -128,10 +134,19 @@
             min-width: 15vw;
         }
 
+        .rule-name {
+            min-width: 15vw;
+            display: inline-block;
+        }
+
+        button {
+            margin-left: 4rem;
+        }
+
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
-        import { getAllPlus, getSensorTriggeredRules, setSensorName } from "./hue-callionica.js";
+        import { getAllPlus, getSensorTriggeredRules, createRule, deleteRule } from "./hue-callionica.js";
         import { optionsTemp, optionsGroup, optionsScene } from "./hue-callionica-ui.js";
 
         const app = "Callionica";
@@ -143,6 +158,7 @@
         })();
         
         let data;
+        let sensor;
 
         function message(text) {
             document.querySelector("#message").innerText = text;
@@ -195,7 +211,11 @@
 
             const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 32);
 
-            console.log(name);
+            const condition = {
+                address: `/sensors/${sensor.id}/state/temperature`,
+                operator: op,
+                value: temp
+            };
 
             const action = {
                 address: `/groups/${group}/action`,
@@ -211,25 +231,51 @@
 
             const rule = {
                 name,
-                conditions: [{
-                    address: `/sensors/${sensor.id}/state/temperature`,
-                    operator: op,
-                    value: temp
-                }],
+                conditions: [ condition ],
                 actions: [ action ]
             };
 
             return rule;
         }
 
+        function updateRules() {
+            const rules = Object.values(data.rules);
+            const sensorRules = getSensorTriggeredRules(rules, sensor.id);
+            const c = document.querySelector("#rules");
+            c.innerHTML = "";
+
+            if (sensorRules.length === 0) {
+                c.innerHTML = `<p>No existing rules.</p>`;
+            }
+
+            for (const sensorRule of sensorRules) {
+                const e = document.createElement("tr");
+                e.innerHTML = `
+                <td><span class="rule-name"></span></td><td><button>Delete</button></td>
+                `;
+                e.querySelector(".rule-name").innerText = sensorRule.name;
+                e.querySelector("button").onclick = ()=>{
+                    (async ()=>{
+                        const confirmed = confirm(`Permanently delete rule '${sensorRule.name}'?`);
+                        if (confirmed) {
+                            await deleteRule(connection, sensorRule.id);
+                            data = await getAllPlus(connection);
+                            sensor = data.sensors[sensor_];
+                            updateRules();
+                        }
+                    })();
+                };
+                c.append(e);
+            }
+        }
+
         async function main() {
             data = await getAllPlus(connection);
-            const rules = Object.values(data.rules);
+            sensor = data.sensors[sensor_];
 
             const bridgeName = data.config.name;
-            const sensor = data.sensors[sensor_];
 
-            const sensorRules = getSensorTriggeredRules(rules, sensor.id);
+            updateRules();
 
             document.querySelector(".name").innerText = sensor.name;
             document.querySelector(".description").innerText = sensorKind(sensor);
@@ -263,11 +309,13 @@
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
                 e.onsubmit = () => {
-                    (async function(){
+                    (async ()=>{
                         try {
                             const rule = getRule(sensor);
-                            console.log(rule);
-                            message("success");
+                            await createRule(connection, rule);
+                            data = await getAllPlus(connection);
+                            sensor = data.sensors[sensor_];
+                            updateRules();
                         } catch (e) {
                             message("error");
                         }
@@ -290,7 +338,9 @@
             <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
             <p class="small"><span class="description">...</span></p>
             <h2><span class="name">...</span></h2>
+            <hr/>
         <div>
+            <h3>New Rule</h3>
             <p>Conditions:</p>
             <p>
             <select class="operators">
@@ -313,6 +363,12 @@
             </p>
             
         </form>
+
+        <hr/>
+        <h3>Rules</h3>
+        <table id="rules">
+
+        </table>
     </div>
     <p><span id="message"></span></p>
     </div>
