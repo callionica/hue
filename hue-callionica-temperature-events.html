@@ -86,6 +86,7 @@
         }
 
         .small {
+            line-height: 1.0rem;
             font-size: 0.75rem;
             color: gray;
         }
@@ -114,7 +115,8 @@
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
-        import { getAllPlus, setSensorName } from "./hue-callionica.js";
+        import { getAllPlus, getSensorTriggeredRules, setSensorName } from "./hue-callionica.js";
+        import { optionsTemp } from "./hue-callionica-ui.js"; 
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
@@ -137,25 +139,37 @@
             return sensor.productname || sensor.modelid;
         }
 
+        function temperatureTrigger(sensor, operator, value) {
+            const address = `/sensors/${sensor.id}/state/temperature`; 
+            return [
+                { address, operator, value: `${value}` },
+                { address, operator: "dx" },
+            ];
+        }
+
         async function main() {
             data = await getAllPlus(connection);
+            const rules = Object.values(data.rules);
+
             const bridgeName = data.config.name;
             const sensor = data.sensors[sensor_];
-            const groups = Array.from(new Set(Object.values(data.groups).map(group => group.name))).sort((a, b) => a.localeCompare(b));
 
-            const list = document.querySelector("#names");
-            list.innerText = "";
+            const sensorRules = getSensorTriggeredRules(rules, sensor.id);
 
-            for (const group of groups) {
-                const o = document.createElement("option");
-                o.value = group;
-                list.append(o);
-            }
+            // for (const group of groups) {
+            //     const o = document.createElement("option");
+            //     o.value = group;
+            //     list.append(o);
+            // }
 
             document.querySelector(".name").innerText = sensor.name;
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
+
+            // 0, 40, 0.5 C
+            // 30, 110, 1 F
+            document.querySelector(".temperatures").append(...optionsTemp("C"));
 
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
@@ -176,34 +190,40 @@
     </script>
 </head>
 <body>
-    <datalist id="names">
-        <option value="Kitchen"></option>
-        <option value="Living room"></option>
-        <option value="Bedroom"></option>
-        <option value="Bathroom"></option>
-        <option value="Shower room"></option>
-        <option value="Hall"></option>
-        <option value="Stairs"></option>
-        <option value="Garden"></option>
-        <option value="Outside"></option>
-        <option value="Inside"></option>
-        <option value="Upstairs"></option>
-        <option value="Downstairs"></option>
-        <option value="Basement"></option>
-        <option value="Garage"></option>
-    </datalist>
     <div id="content">
     <h1>Temperature Events</h1>
     <hr/>
 
     <div id="sensor" class="sensor">
         <form action="#">
+            <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
+            <p class="small"><span class="description">...</span></p>
             <h2><span class="name">...</span></h2>
-            <p class="description">...</p>
+            <p>Condition: 
+            <select>
+            <option value="gt">Greater Than</option>
+            <option value="lt">Less Than</option>
+            </select>
+            <select class="temperatures">
+            </select> ℃
+            </p>
+            <p>
+                Action: 
+                <select>
+                <option value="gt">Bedroom</option>
+                <option value="lt">Living room</option>
+                </select>
+                <select>
+                <option value="gt">On</option>
+                <option value="lt">Off</option>
+                <option value="lt">Bright</option>
+                <option value="lt">Dimmed</option>
+                </select>
+            </p>
             <p class="buttons">
                 <input type="submit" value="Create">
             </p>
-            <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
+            
         </form>
     </div>
     <p><span id="message"></span></p>
