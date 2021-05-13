@@ -85,6 +85,12 @@
             color: white;
         }
 
+        .small {
+            line-height: 1.0rem;
+            font-size: 0.75rem;
+            color: gray;
+        }
+
         #content {
             padding: 0.25rem;
             padding-left: 0.5rem;
@@ -216,25 +222,10 @@
 
     <div id="sensor" class="sensor">
         <form action="#">
+            <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
+            <p class="small"><span class="description">...</span></p>
             <h2 class="name">...</h2>
-            <p class="description">...</p>
             <table>
-                <!-- <tr>
-                    <td>
-                        <p>Bridge: </p>
-                    </td>
-                    <td>
-                        <p><span class="bridge-name"></span></p>
-                    </td>
-                </tr> -->
-                <tr>
-                    <td>
-                        <p>ID: </p>
-                    </td>
-                    <td>
-                        <p><span class="id">...</span> (<span class="bridge-name">...</span>)</p>
-                    </td>
-                </tr>
                 <tr>
                     <td>
                         <p>Name: </p>
