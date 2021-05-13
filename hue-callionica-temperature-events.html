@@ -209,7 +209,7 @@
             const group = groupsSelect.value;
             const scene = scenesSelect.value;
 
-            const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 32);
+            const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
 
             const condition = {
                 address: `/sensors/${sensor.id}/state/temperature`,
@@ -240,6 +240,11 @@
 
         function updateRules() {
             const rules = Object.values(data.rules);
+
+            for (const rule of rules) {
+                console.log(rule.name.length);
+            }
+
             const sensorRules = getSensorTriggeredRules(rules, sensor.id);
             const c = document.querySelector("#rules");
             c.innerHTML = "";
