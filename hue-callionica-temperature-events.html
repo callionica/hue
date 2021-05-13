@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Temperature Events</title>
+    <title>Rules</title>
     <style>
         * {
             box-sizing: border-box;
@@ -142,6 +142,10 @@
 
         button {
             margin-left: 4rem;
+        }
+
+        .label {
+            font-weight: bold;
         }
 
     </style>
@@ -336,7 +340,7 @@
 </head>
 <body>
     <div id="content">
-    <h1>Temperature Events</h1>
+    <h1>Rules</h1>
     <hr/>
 
     <div id="sensor" class="sensor">
@@ -347,7 +351,7 @@
             <hr/>
         <div>
             <h3>New Rule</h3>
-            <p>Conditions:</p>
+            <p class="label">Conditions:</p>
             <p>
             <select class="operators">
             <option value="gt">Increases above</option>
@@ -356,7 +360,7 @@
             <select class="temperatures">
             </select> ℃
             </p>
-            <p>Actions:</p>
+            <p class="label">Actions:</p>
             <p>
                 <select class="groups">
                 </select>
