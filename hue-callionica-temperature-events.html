@@ -112,11 +112,27 @@
             max-width: 50vw;
         }
 
+        .operators {
+            min-width: 15vw;
+        }
+
+        .temperatures {
+            min-width: 10vw;
+        }
+
+        .groups {
+            min-width: 15vw;
+        }
+
+        .scenes {
+            min-width: 15vw;
+        }
+
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, getSensorTriggeredRules, setSensorName } from "./hue-callionica.js";
-        import { optionsTemp } from "./hue-callionica-ui.js"; 
+        import { optionsTemp, optionsGroup, optionsScene } from "./hue-callionica-ui.js";
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
@@ -147,6 +163,65 @@
             ];
         }
 
+        function option(name, value) {
+            const e = document.createElement("option");
+            e.text = name;
+            e.value = value;
+            return e;
+        }
+
+        function selectOption(select, name) {
+            const options = [...select.options];
+            const found = options.find(o => o.text === name);
+            if (found !== undefined) {
+                found.selected = true;
+            }
+            return found;
+        }
+
+        function getRule(sensor, scope) {
+            scope = scope || document;
+
+            const operatorsSelect = scope.querySelector(".operators");
+            const temperaturesSelect = scope.querySelector(".temperatures");
+            const groupsSelect = scope.querySelector(".groups");
+            const scenesSelect = scope.querySelector(".scenes");
+
+            const op = operatorsSelect.value;
+            // const temp = parseInt(temperaturesSelect.value, 10);
+            const temp = temperaturesSelect.value;
+            const group = groupsSelect.value;
+            const scene = scenesSelect.value;
+
+            const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 32);
+
+            console.log(name);
+
+            const action = {
+                address: `/groups/${group}/action`,
+                body: {},
+                method: "PUT"
+            };
+
+            if (["on", "off"].includes(scene)) {
+                action.body.on = (scene === "on") ? true : false;
+            } else {
+                action.body.scene = scene;
+            }
+
+            const rule = {
+                name,
+                conditions: [{
+                    address: `/sensors/${sensor.id}/state/temperature`,
+                    operator: op,
+                    value: temp
+                }],
+                actions: [ action ]
+            };
+
+            return rule;
+        }
+
         async function main() {
             data = await getAllPlus(connection);
             const rules = Object.values(data.rules);
@@ -156,19 +231,33 @@
 
             const sensorRules = getSensorTriggeredRules(rules, sensor.id);
 
-            // for (const group of groups) {
-            //     const o = document.createElement("option");
-            //     o.value = group;
-            //     list.append(o);
-            // }
-
             document.querySelector(".name").innerText = sensor.name;
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
 
-            // 0, 40, 0.5 C
-            // 30, 110, 1 F
+            const groupsSelect = document.querySelector(".groups");
+            const scenesSelect = document.querySelector(".scenes");
+
+            groupsSelect.onchange = () => {
+                const oldScene = scenesSelect.selectedOptions[0]?.text;
+                console.log(oldScene);
+
+                const group = data.groups[groupsSelect.value];
+                scenesSelect.innerHTML = "";
+                scenesSelect.append(option("● On", "on"), option("○ Off", "off"));
+                scenesSelect.append(...optionsScene(data, group));
+
+                if (oldScene !== undefined) {
+                    selectOption(scenesSelect, oldScene);
+                }
+            };
+
+            groupsSelect.append(...optionsGroup(data));
+            groupsSelect.onchange();
+
+            selectOption(groupsSelect, sensor.name);
+
             document.querySelector(".temperatures").append(...optionsTemp("C"));
 
             const e = document.querySelector("form");
@@ -176,6 +265,8 @@
                 e.onsubmit = () => {
                     (async function(){
                         try {
+                            const rule = getRule(sensor);
+                            console.log(rule);
                             message("success");
                         } catch (e) {
                             message("error");
@@ -199,27 +290,24 @@
             <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
             <p class="small"><span class="description">...</span></p>
             <h2><span class="name">...</span></h2>
-            <p>Condition: 
-            <select>
-            <option value="gt">Greater Than</option>
-            <option value="lt">Less Than</option>
+        <div>
+            <p>Conditions:</p>
+            <p>
+            <select class="operators">
+            <option value="gt">Increases above</option>
+            <option value="lt">Decreases below</option>
             </select>
             <select class="temperatures">
             </select> ℃
             </p>
+            <p>Actions:</p>
             <p>
-                Action: 
-                <select>
-                <option value="gt">Bedroom</option>
-                <option value="lt">Living room</option>
+                <select class="groups">
                 </select>
-                <select>
-                <option value="gt">On</option>
-                <option value="lt">Off</option>
-                <option value="lt">Bright</option>
-                <option value="lt">Dimmed</option>
+                <select class="scenes">
                 </select>
             </p>
+        </div>
             <p class="buttons">
                 <input type="submit" value="Create">
             </p>
