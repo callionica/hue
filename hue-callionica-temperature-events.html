@@ -71,7 +71,9 @@
         :root {
             --back-color: 30,30,30;
             --item-color: 45,45,45;
+            
             --text-color: 204,204,204;
+            --text-color-2: 128,128,128;
 
             background-color: rgb(var(--back-color));
             color: rgb(var(--text-color));
@@ -95,7 +97,7 @@
         .small {
             line-height: 1.0rem;
             font-size: 0.75rem;
-            color: gray;
+            color: rgb(var(--text-color-2));
         }
 
         /* .celsius {
@@ -115,7 +117,7 @@
         } */
 
         .T {
-            color: gray;
+            color: rgb(var(--text-color-2));
         }
 
         *[data-scale='F']:not(:empty)::after {
@@ -124,6 +126,11 @@
 
         *[data-scale='C']:not(:empty)::after {
             content: '℃'
+        }
+
+        td {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
         }
 
         #content {
@@ -175,6 +182,14 @@
 
         .label {
             font-weight: bold;
+            line-height: 2.5rem;
+            padding-top: 0.5rem;
+        }
+
+        form {
+            background-color: rgb(55,55,55);
+            padding: 0.5rem;
+            border-radius: 0.4rem;
         }
 
     </style>
@@ -384,12 +399,14 @@
     <hr/>
 
     <div id="sensor" class="sensor">
-        <form action="#">
+        
             <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
             <p class="small"><span class="description">...</span></p>
             <h2><span class="name">...</span> <span class="T" data-scale></span><!-- <span class="fahrenheit"></span>--></h2>
             <hr/>
-        <div>
+
+        <form action="#">
+            <div>
             <h3>New Rule</h3>
             <p class="label">Conditions:</p>
             <p>
@@ -407,11 +424,11 @@
                 <select class="scenes">
                 </select>
             </p>
-        </div>
+            </div>
+
             <p class="buttons">
                 <input type="submit" value="Create">
             </p>
-            
         </form>
 
         <hr/>
