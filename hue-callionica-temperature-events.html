@@ -98,11 +98,31 @@
             color: gray;
         }
 
-        .celsius {
+        /* .celsius {
             color: gray;
         }
 
         .celsius:not(:empty)::after {
+            content: '℃'
+        }
+
+        .fahrenheit {
+            color: gray;
+        }
+
+        .fahrenheit:not(:empty)::after {
+            content: '℉'
+        } */
+
+        .T {
+            color: gray;
+        }
+
+        *[data-scale='F']:not(:empty)::after {
+            content: '℉'
+        }
+
+        *[data-scale='C']:not(:empty)::after {
             content: '℃'
         }
 
@@ -170,6 +190,7 @@
             const bridge = params.get("bridge")?.toLowerCase().trim() || undefined;
             return (bridge !== undefined) ? loadConnection(app, { id: bridge }) : loadConnections()[0];
         })();
+        const scale = "F";
         
         let data;
         let sensor;
@@ -223,7 +244,7 @@
             const group = groupsSelect.value;
             const scene = scenesSelect.value;
 
-            const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
+            const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text}${scale} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
 
             const condition = {
                 address: `/sensors/${sensor.id}/state/temperature`,
@@ -297,7 +318,11 @@
             updateRules();
 
             document.querySelector(".name").innerText = sensor.name;
-            document.querySelector(".celsius").innerText = sensor.celsius ?? "";
+            const t = document.querySelector(".T");
+            t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
+            t.dataset.scale = scale;
+            // document.querySelector(".celsius").innerText = sensor.celsius ?? "";
+            // document.querySelector(".fahrenheit").innerText = sensor.fahrenheit ?? "";
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
@@ -324,7 +349,9 @@
 
             selectOption(groupsSelect, sensor.name);
 
-            document.querySelector(".temperatures").append(...optionsTemp("C", sensor.state.temperature));
+            document.querySelector(".temperatures").append(...optionsTemp(scale, sensor.state.temperature));
+
+            document.querySelector(".temperatures + *[data-scale]").dataset.scale = scale;
 
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
@@ -357,7 +384,7 @@
         <form action="#">
             <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
             <p class="small"><span class="description">...</span></p>
-            <h2><span class="name">...</span> <span class="celsius"></span></h2>
+            <h2><span class="name">...</span> <span class="T" data-scale></span><!-- <span class="fahrenheit"></span>--></h2>
             <hr/>
         <div>
             <h3>New Rule</h3>
@@ -368,7 +395,7 @@
             <option value="lt">Decreases below</option>
             </select>
             <select class="temperatures">
-            </select> ℃
+            </select><span data-scale> </span><!-- the space is important -->
             </p>
             <p class="label">Actions:</p>
             <p>
