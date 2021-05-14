@@ -458,20 +458,24 @@ export function paramsSort(params, items) {
     return items;
 }
 
-function CtoF(c) {
+function FFromC(c) {
     return (c * 9/5) + 32;
 }
 
-function CtoT(c) {
-    return Math.floor(100 * CtoF(c));
+function CFromF(f) {
+    return (f - 32) * 5/9;
 }
 
-function FtoT(f) {
-    return Math.floor(100 * f);
+function TFromC(c) {
+    return Math.floor(100 * c);
+}
+
+function TFromF(f) {
+    return TFromC(CFromF(f));
 }
 
 export function optionsTemp(unit, start, end, interval) {
-    const fn = unit === "C" ? CtoT : FtoT;
+    const fn = unit === "C" ? TFromC : TFromF;
     
     if (unit === "C") {
         start = (start !== undefined) ? start : 0;
