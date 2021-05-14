@@ -98,6 +98,14 @@
             color: gray;
         }
 
+        .celsius {
+            color: gray;
+        }
+
+        .celsius::after {
+            content: '℃'
+        }
+
         #content {
             padding: 0.25rem;
             padding-left: 0.5rem;
@@ -289,6 +297,7 @@
             updateRules();
 
             document.querySelector(".name").innerText = sensor.name;
+            document.querySelector(".celsius").innerText = sensor.celsius;
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
@@ -315,7 +324,7 @@
 
             selectOption(groupsSelect, sensor.name);
 
-            document.querySelector(".temperatures").append(...optionsTemp("C"));
+            document.querySelector(".temperatures").append(...optionsTemp("C", sensor.state.temperature));
 
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
@@ -348,7 +357,7 @@
         <form action="#">
             <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span></p>
             <p class="small"><span class="description">...</span></p>
-            <h2><span class="name">...</span></h2>
+            <h2><span class="name">...</span> <span class="celsius">...</span></h2>
             <hr/>
         <div>
             <h3>New Rule</h3>

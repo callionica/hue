@@ -474,7 +474,7 @@ function TFromF(f) {
     return TFromC(CFromF(f));
 }
 
-export function optionsTemp(unit, start, end, interval) {
+export function optionsTemp(unit, selectedT, start, end, interval) {
     const fn = unit === "C" ? TFromC : TFromF;
     
     if (unit === "C") {
@@ -487,11 +487,20 @@ export function optionsTemp(unit, start, end, interval) {
         interval = interval || 1;
     }
 
+    selectedT = (selectedT !== undefined) ? selectedT : fn(start);
+    let selected = false;
+
     const result = [];
     for (let current = start; current <= end; current += interval) {
         const e = document.createElement("option");
-        e.value = fn(current);
+        const value = fn(current);
+        e.value = value;
         e.innerText = interval < 1 ? current.toFixed(1) : current;
+
+        if (!selected && (value >= selectedT)) {
+            selected = true;
+            e.selected = true;
+        }
 
         result.push(e);
     }
