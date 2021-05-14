@@ -185,12 +185,15 @@
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
-        const sensor_ = params.get("sensor")?.toLowerCase().trim() || undefined;
+        const sensor_ = params.get("sensor")?.toLowerCase().trim() ?? undefined;
         const connection = (() => {
-            const bridge = params.get("bridge")?.toLowerCase().trim() || undefined;
+            const bridge = params.get("bridge")?.toLowerCase().trim() ?? undefined;
             return (bridge !== undefined) ? loadConnection(app, { id: bridge }) : loadConnections()[0];
         })();
-        const scale = "F";
+
+        const paramScale = params.get("scale")?.toUpperCase().trim() ?? undefined;
+        const allScale = paramScale ?? sessionStorage.getItem("scale") ?? localStorage.getItem("scale") ?? "C";
+        const scale = (allScale.startsWith("F")) ? "F" : "C";
         
         let data;
         let sensor;
