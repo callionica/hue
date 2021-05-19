@@ -105,22 +105,6 @@
             color: rgb(var(--text-color-2));
         }
 
-        /* .celsius {
-            color: gray;
-        }
-
-        .celsius:not(:empty)::after {
-            content: '℃'
-        }
-
-        .fahrenheit {
-            color: gray;
-        }
-
-        .fahrenheit:not(:empty)::after {
-            content: '℉'
-        } */
-
         .T {
             color: rgb(var(--text-color-2));
         }
@@ -364,8 +348,7 @@
             const t = document.querySelector(".T");
             t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
             t.dataset.scale = scale;
-            // document.querySelector(".celsius").innerText = sensor.celsius ?? "";
-            // document.querySelector(".fahrenheit").innerText = sensor.fahrenheit ?? "";
+
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
