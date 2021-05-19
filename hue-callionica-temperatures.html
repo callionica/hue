@@ -85,7 +85,8 @@
             --item-color: 45,45,45;
             
             --text-color: 204,204,204;
-            --text-color-2: 128,128,128;
+            --text-color-A: 170,170,170;
+            --text-color-B: 128,128,128;
 
             background-color: rgb(var(--back-color));
             color: rgb(var(--text-color));
@@ -109,7 +110,7 @@
         .small {
             line-height: 1.0rem;
             font-size: 0.75rem;
-            color: rgb(var(--text-color-2));
+            color: rgb(var(--text-color-B));
         }
 
         .T {
@@ -128,26 +129,44 @@
             background-color: inherit;
             text-decoration: none;
         }
+        .name {
+            color: rgb(var(--text-color-A));
+        }
+        .name:hover {
+            color: rgb(var(--text-color));
+        }
         .rules-link {
             font-size: 2rem;
-            color: rgb(var(--text-color-2));
+            color: rgb(var(--text-color-B));
+        }
+        .rules-link:hover {
+            color: rgb(var(--text-color));
         }
         #temperatures {
-            display: flex;
+            /* display: flex;
             flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: space-around; */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 12rem);
+            grid-auto-columns: 12rem;
+            column-gap: 0.5rem;
+            row-gap: 0.5rem;
+            padding: 0.5rem;
+            justify-content: center;
         }
         .sensor {
             background-color: rgb(55,55,55);
             padding: 0.5rem;
             border-radius: 0.4rem;
             max-width: var(--max-width);
-            width: 12rem;
+            width: 11rem;
             margin: 0.5rem;
         }
         .temp-rules {
             display: grid;
             grid-template-columns: 1fr 1rem;
+            padding: 0.5rem;
+            padding-top: 0.25rem;
         }
     </style>
     <script type="module">
@@ -190,6 +209,7 @@
             const template = `<p class="small"><span class="bridge-name">...</span> | <span class="id">...</span> | <time datetime=""></time></p>
             <!--<p class="small"><span class="description">...</span></p>-->
             <h2><a href="hue-callionica-sensor-rename.html?bridge=${bridge.id}&sensor=${item.id}"><span class="name">...</span></a></h2>
+            <hr/>
             <p class="temp-rules"><span class="T" data-scale></span><a class="rules-link" href="hue-callionica-temperature-events.html?bridge=${bridge.id}&sensor=${item.id}">⚙︎</a></p>
             `;
 
