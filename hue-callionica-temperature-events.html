@@ -6,7 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Rules</title>
     <style>
-        * {
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
             border: 0;
             padding: 0;
@@ -21,6 +23,9 @@
             
             overflow-x: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+            --max-width: 30rem;
+            --snap: 8rem;
         }
 
         h1 {
@@ -155,27 +160,26 @@
         }
 
         .operators {
-            min-width: 8ch;
+            min-width: var(--snap);
         }
 
         .temperatures {
-            min-width: 6ch;
+            min-width: calc(var(--snap)/2);
             text-align: right;
         }
 
         .groups {
-            min-width: 8ch;
-            max-width: 24ch;
+            min-width: var(--snap);
         }
 
         .scenes {
-            min-width: 8ch;
-            max-width: 24ch;
+            min-width: var(--snap);
         }
 
         .rule-name {
             min-width: 15vw;
             display: inline-block;
+            grid-column: 1;
         }
 
         button {
@@ -192,13 +196,32 @@
             background-color: rgb(55,55,55);
             padding: 0.5rem;
             border-radius: 0.4rem;
+            max-width: var(--max-width);
+        }
+
+        .snap-grid {
+            display: grid;
+            --grid-columns: 4;
+            --grid-characters: 60;
+            grid-template-columns: repeat(auto-fit, var(--snap));
+            row-gap: 0.25rem;
+            column-gap: 0.5rem;
+        }
+
+        li {
+            display: grid;
+            row-gap: 0.25rem;
+            column-gap: 0.5rem;
+            grid-template-columns: 1fr var(--snap);
+            padding-top: 0.5rem;
+            max-width: var(--max-width);
         }
 
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, getSensorTriggeredRules, createRule, deleteRule } from "./hue-callionica.js";
-        import { optionsTemp, optionsGroup, optionsScene } from "./hue-callionica-ui.js";
+        import { optionsTemp, optionsGroup, optionsScene, snapToGrid } from "./hue-callionica-ui.js";
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
@@ -309,9 +332,9 @@
             }
 
             for (const sensorRule of sensorRules) {
-                const e = document.createElement("tr");
+                const e = document.createElement("li");
                 e.innerHTML = `
-                <td><span class="rule-name"></span></td><td><button>Delete</button></td>
+                <span class="rule-name"></span><button>Delete</button>
                 `;
                 e.querySelector(".rule-name").innerText = sensorRule.name;
                 e.querySelector("button").onclick = ()=>{
@@ -373,6 +396,8 @@
 
             document.querySelector(".temperatures + *[data-scale]").dataset.scale = scale;
 
+            snapToGrid();
+
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
                 e.onsubmit = () => {
@@ -411,19 +436,19 @@
             <div>
             <h3>New Rule</h3>
             <p class="label">Conditions:</p>
-            <p>
-            <select class="operators">
+            <p class="snap-grid">
+            <select class="operators snap-grid-item">
             <option value="gt">Increases above</option>
             <option value="lt">Decreases below</option>
             </select>
-            <select class="temperatures">
-            </select><span data-scale> </span><!-- the space is important -->
+            <span class="snap-grid-item"><select class="temperatures">
+            </select><span data-scale> </span></span><!-- the space is important -->
             </p>
             <p class="label">Actions:</p>
-            <p>
-                <select class="groups">
+            <p class="snap-grid">
+                <select class="groups snap-grid-item">
                 </select>
-                <select class="scenes">
+                <select class="scenes snap-grid-item">
                 </select>
             </p>
             </div>
@@ -435,9 +460,9 @@
 
         <hr/>
         <h3>Rules</h3>
-        <table id="rules">
+        <ol id="rules">
 
-        </table>
+        </ol>
     </div>
     <p><span id="message"></span></p>
     </div>

@@ -536,3 +536,74 @@ export function optionsScene(data, group) {
 
     return optionsIDName(scenes);
 }
+
+/*
+snapToGrid sets the grid-column-end style on grid items using the 
+character length of the grid item to determine how many columns to use.
+Assumption is that grid columns are evenly spaced.
+
+.snap-grid - apply to a grid where you want snapping
+.snap-grid-item - apply to items that you want extended to grid lines
+(Items will not be snapped if they already have an explicit grid-column-end)
+--grid-columns - the number of columns in a row of the grid
+--grid-characters - the number of characters in a row of the grid
+[data-characters] - a grid item attribute that overrides the character length
+*/
+export function snapToGrid(grid) {
+    function characterLength(item, minimumLength = 12) {
+        const c1 = parseInt(item.dataset.characters, 10) || undefined;
+        if (c1 !== undefined) {
+            return c1; // No minimum length here
+        }
+
+        if (item.nodeName === "SELECT") {
+            const options = [...item.querySelectorAll("option")];
+            let c2 = 0;
+            for (const option of options) {
+                if (option.text.length > c2) {
+                    c2 = option.text.length;
+                }
+            }
+            return Math.max(c2, minimumLength);
+        }
+
+        if (item.nodeName === "INPUT") {
+            return Math.max(item.value.length, minimumLength);
+        }
+
+        return Math.max(item.innerText.length, minimumLength);
+    }
+
+    function setGridColumnEnd(item, columnsPerLine, charactersPerLine) {
+        if (!["", "auto"].includes(getComputedStyle(item).gridColumnEnd)) {
+            // Ignore elements with an explicit grid-column-end
+            return;
+        }
+
+        const characters = characterLength(item);
+
+        const controlColumns = Math.min(Math.ceil(columnsPerLine * characters / charactersPerLine), columnsPerLine);
+        if (controlColumns > 1) {
+            item.style.gridColumnEnd = `span ${controlColumns}`;
+        }
+    }
+
+    const grids = (grid !== undefined) ?
+        (Array.isArray(grid) ? grid : [grid]) :
+        [...document.querySelectorAll(".snap-grid")];
+
+    for (const grid of grids) {
+        const style = getComputedStyle(grid);
+        // More reliable than parsing the grid style
+        const columnsPerLine = parseInt(style.getPropertyValue("--grid-columns"), 10) || undefined;
+        // Must be provided by the designer
+        const charactersPerLine = parseInt(style.getPropertyValue("--grid-characters"), 10) || undefined;
+        if (columnsPerLine && charactersPerLine) {
+            const items = [...grid.querySelectorAll(".snap-grid-item")];
+            for (const item of items) {
+                setGridColumnEnd(item, columnsPerLine, charactersPerLine);
+            }
+        }
+    }
+}
+
