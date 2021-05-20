@@ -122,11 +122,15 @@
         }
 
         *[data-scale='F']:not(:empty)::after {
-            content: '℉'
+            content: '℉';
+            color: rgb(var(--text-color-A));
+            margin-left: 0.1rem;
         }
 
         *[data-scale='C']:not(:empty)::after {
-            content: '℃'
+            content: '℃';
+            color: rgb(var(--text-color-A));
+            margin-left: 0.1rem;
         }
 
         a {
