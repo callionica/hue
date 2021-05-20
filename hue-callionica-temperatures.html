@@ -221,7 +221,7 @@
             const lastUpdated = formatHumanDateTime(lu);
 
             const template = `<a href="hue-callionica-temperature-events.html?bridge=${bridge.id}&sensor=${item.id}">
-            <p class="small"><span class="bridge-name">...</span><!-- | <span class="id">...</span>--> | <time datetime=""></time></p>
+            <p class="small"><!--<span class="bridge-name">...</span> | <span class="id">...</span> | --><time datetime=""></time></p>
             <!--<p class="small"><span class="description">...</span></p>-->
             <h2><span class="name">...</span></h2>
             <hr/>
@@ -261,7 +261,7 @@
             }
 
             // e.querySelector(".description").innerText = sensorKind(sensor);
-            e.querySelector(".bridge-name").innerText = bridge.name;
+            // e.querySelector(".bridge-name").innerText = bridge.name;
             // e.querySelector(".id").innerText = sensor.id;
 
             return e.outerHTML;
