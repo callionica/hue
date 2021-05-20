@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Rules</title>
+    <title>Settings</title>
     <style>
         *,
         *::before,
@@ -44,6 +44,7 @@
 
         a {
             color: inherit;
+            text-decoration: none;
         }
 
         p {
@@ -344,7 +345,12 @@
 
             updateRules();
 
-            document.querySelector(".name").innerText = sensor.name;
+            const nam = document.querySelector(".name");
+            nam.innerHTML = "";
+            const a = document.createElement("a");
+            a.href = `hue-callionica-sensor-rename.html?bridge=${data.id}&sensor=${sensor.id}`;
+            a.innerText = sensor.name;
+            nam.append(a);
             const t = document.querySelector(".T");
             t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
             t.dataset.scale = scale;
@@ -405,7 +411,7 @@
 </head>
 <body>
     <div id="content">
-    <h1>Rules</h1>
+    <h1>Settings</h1>
     <hr/>
 
     <div id="sensor" class="sensor">

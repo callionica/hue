@@ -162,10 +162,15 @@
             width: 11rem;
             margin: 0.5rem;
         }
+        .sensor:hover {
+            --text-color-A: var(--text-color);
+            --text-color-B: var(--text-color);
+        }
         .temp-rules {
             display: grid;
-            grid-template-columns: 1fr 1rem;
-            padding: 0.5rem;
+            grid-template-columns: 1fr;
+            justify-content: center;
+            /* padding: 0.5rem; */
             padding-top: 0.25rem;
         }
     </style>
@@ -206,12 +211,14 @@
             const lu = new Date(item.state.lastupdated + "Z");
             const lastUpdated = formatHumanDateTime(lu);
 
-            const template = `<p class="small"><span class="bridge-name">...</span> | <span class="id">...</span> | <time datetime=""></time></p>
+            const template = `<a href="hue-callionica-temperature-events.html?bridge=${bridge.id}&sensor=${item.id}">
+            <p class="small"><span class="bridge-name">...</span> | <span class="id">...</span> | <time datetime=""></time></p>
             <!--<p class="small"><span class="description">...</span></p>-->
-            <h2><a href="hue-callionica-sensor-rename.html?bridge=${bridge.id}&sensor=${item.id}"><span class="name">...</span></a></h2>
+            <h2><span class="name">...</span></h2>
             <hr/>
-            <p class="temp-rules"><span class="T" data-scale></span><a class="rules-link" href="hue-callionica-temperature-events.html?bridge=${bridge.id}&sensor=${item.id}">⚙︎</a></p>
-            `;
+            <p class="temp-rules"><span class="T" data-scale></span></p>
+            </a>
+            `; // ⚙
 
             const e = document.createElement("div");
             e.classList.add("sensor");
@@ -233,6 +240,16 @@
             const t = e.querySelector(".T");
             t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
             t.dataset.scale = scale;
+
+            if (!reachable || !on) {
+                delete t.dataset.scale
+            }
+
+            if (!reachable) {
+                t.innerText = "Unreachable";
+            } else if (!on) {
+                t.innerHTML = `<span style="color: rgb(var(--text-color-B));">OFF</span>`;
+            }
 
             // e.querySelector(".description").innerText = sensorKind(sensor);
             e.querySelector(".bridge-name").innerText = bridge.name;
