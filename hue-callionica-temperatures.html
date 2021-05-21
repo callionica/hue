@@ -182,6 +182,10 @@
             /* padding: 0.5rem; */
             padding-top: 0.25rem;
         }
+        #scale {
+            -webkit-appearance: none;
+            height: 2.4rem;
+        }
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
@@ -194,7 +198,25 @@
         const params = new URLSearchParams(document.location.search);
         const paramScale = params.get("scale")?.toUpperCase().trim() ?? undefined;
         const allScale = paramScale ?? sessionStorage.getItem("scale") ?? localStorage.getItem("scale") ?? "C";
-        const scale = (allScale.startsWith("F")) ? "F" : "C";
+        let scale = (allScale.startsWith("F")) ? "F" : "C";
+
+        function onScaleChange() {
+            const current = document.querySelector("#scale");
+            scale = current.value;
+            localStorage.setItem("scale", scale);
+            document.location = document.location; // TODO
+        }
+
+        function updateScale(scale) {
+            const current = document.querySelector("#scale");
+            current.value = scale;
+
+            if (current.onchange == undefined) {
+                current.onchange = onScaleChange;
+            }
+        }
+
+        updateScale(scale);
 
         function sensorKind(sensor) {
             if (sensor.metadata) {
@@ -315,7 +337,11 @@
 </head>
 <body>
     <div id="content">
-    <h1>Temperatures</h1>
+    <h1>Temperatures<select id="scale" >
+        <option value="C" selected>℃</option>
+        <option value="F">℉</option>
+        </select>
+    </h1>
     <hr/>
     <div id="connection"></div>
     <div id="temperatures"></div>

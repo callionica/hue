@@ -241,9 +241,16 @@
             /* flex-grow: 1; */
         }
 
-        .group-temperature:not(:empty):after {
+        *[data-scale='F']:not(:empty)::after {
+            content: '℉';
+            color: gray;
+            margin-left: 0.1rem;
+        }
+
+        *[data-scale='C']:not(:empty)::after {
             content: '℃';
             color: gray;
+            margin-left: 0.1rem;
         }
 
         .group-scenes, .group-lights {
@@ -425,6 +432,7 @@
         let bridges;
         let connections = {};
         let datas = {};
+        let scale = "C";
 
         const wait = "wait";
         const immediate = "immediate";
@@ -444,6 +452,10 @@
 
             try {            
                 try {
+                    const paramScale = params.get("scale")?.toUpperCase().trim() ?? undefined;
+                    const allScale = paramScale ?? sessionStorage.getItem("scale") ?? localStorage.getItem("scale") ?? "C";
+                    scale = (allScale.startsWith("F")) ? "F" : "C";
+
                     if (bridges === undefined) {
                         function getList(name) {
                             const p = params.get(name);
@@ -669,7 +681,8 @@
             name.innerText = group.name;
 
             const temp = e.querySelector(".group-temperature");
-            temp.innerText = group.temperatures[0]?.celsius || "";
+            temp.dataset.scale = scale;
+            temp.innerText = ((scale === "F") ? group.temperatures[0]?.fahrenheit : group.temperatures[0]?.celsius) || "";
 
             // lightSummary only treats a light as 'on'
             // if it is also reachable. So 'anyOn' for the
