@@ -502,7 +502,7 @@
                             continue;
                         }
                         if (!pauseData && !document.hidden && navigator.onLine) {
-                            datas[bridge.id] = await getAllPlus(connection);
+                            datas[bridge.id] = await getAllPlus(connection, mode === wait ? 1000 : 0);
                         }
                     }
 

@@ -408,10 +408,71 @@ export async function getCategory(connection, category) {
     return bridgeResult;
 }
 
-export async function getAllCategories(connection) {
+class Cache {
+    constructor(name) {
+        this.name = name;
+        // Must be https for the cache API to work
+        this.root = "https://callionica.com";
+    }
+
+    async cache() {
+        if (this.cache_ === undefined) {
+            this.cache_ = await caches.open(this.name);
+        }
+        return this.cache_;
+    }
+
+    async setItem(key, value) {
+        const cache = await this.cache();
+        const k = new URL(key, this.root);
+        const v = { stored: new Date().toISOString(), value };
+        const response = new Response(JSON.stringify(v));
+        return await cache.put(k, response);
+    }
+
+    async getItem(key) {
+        const cache = await this.cache();
+        const k = new URL(key, this.root);
+        const result = await cache.match(k) ?? undefined;
+        if (result === undefined) {
+            return result;
+        }
+        const o = await result.json();
+        o.stored = new Date(o.stored);
+        return o;
+    }
+
+    async removeItem(key) {
+        const cache = await this.cache();
+        const k = new URL(key, this.root);
+        await cache.delete(k);
+    }
+}
+
+const CACHE_NAME = "hue-callionica";
+const cache = new Cache(CACHE_NAME);
+
+export async function getAllCategories(connection, maximumCacheAgeMS = 0) {
+    // Cache here because we still have non-cyclic data that can be stringified
+
+    const key = `${connection.bridge.id}`;
+
+    if (maximumCacheAgeMS > 0) {
+        const o = await cache.getItem(key);
+        if (o !== undefined) {
+            const now = new Date();
+            const milliseconds = now - o.stored;
+            if (milliseconds < maximumCacheAgeMS) {
+                return o.value;
+            }
+        }
+    }
+
     const result = await getCategory(connection, "");
-    // const capabilities = await getCapabilities(connection);
-    // result.capabilities = capabilities;
+
+    // await here so that the caller doesn't change our data before we save it
+    await cache.setItem(key, result);
+
     return result;
 }
 
@@ -2362,8 +2423,8 @@ export function rearrangeForHueComponents(data) {
 }
 
 /** Returns a cyclic graph of Hue data including Hue components */
-export async function getAll(connection) {
-    const data = await getAllCategories(connection);
+export async function getAll(connection, maximumCacheAgeMS = 0) {
+    const data = await getAllCategories(connection, maximumCacheAgeMS);
     
     // Promote and standardize the bridge ID
     data.id = data.config.bridgeid.toLowerCase();
@@ -2374,8 +2435,8 @@ export async function getAll(connection) {
 }
 
 /* Same as getAll plus all the scene details (using the scene cache) */
-export async function getAllPlus(connection) {
-    const data = await getAll(connection);
+export async function getAllPlus(connection, maximumCacheAgeMS = 0) {
+    const data = await getAll(connection, maximumCacheAgeMS);
 
     for (const light of Object.values(data.lights)) {
         light.calculated = {};
