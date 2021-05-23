@@ -385,7 +385,7 @@
     <!-- 1800 to 6600 -->
     <script type="module">
         import { loadCurrentBridges, loadConnection, loadConnections, testConnection, diagnoseConnection } from "./hue-callionica-connect.js";
-        import { getAllPlus, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { delay, getAllPlus, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
         import { paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
 
@@ -406,11 +406,17 @@
             constructor() {
                 this.params = new URLSearchParams(document.location.search);
                 this.scale_ = undefined;
-                this.datas = [];
                 this.pauseData = false;
                 this.pauseUpdates = false;
                 this.dataRequestMade = false;
                 this.dataTimeoutToken = undefined;
+                this.delay = 2 * 1000;
+                this.cacheMS = this.delay/2;
+                this.delayController = new AbortController();
+
+                window.addEventListener('pageshow', (event) => {
+                    this.update();
+                });
             }
 
             // Parse a comma-separated, case-insensitive list from params 
@@ -438,7 +444,9 @@
             }
 
             // Get the bridges to use for the current page
-            async getBridges() {
+            getBridges() {
+                let bridges;
+
                 const bridgeNamesOrIDs = this.getParamsList("bridges") || undefined;
                 if (bridgeNamesOrIDs !== undefined) {
                     const connections = loadConnections();
@@ -455,10 +463,12 @@
                 if (bridges === undefined) {
                     bridges = loadCurrentBridges();
                 }
+
+                return bridges;
             }
 
             // Load connections for the specified bridges
-            async getConnections(bridges) {
+            getConnections(bridges) {
                 return bridges.map(
                     bridge => loadConnection("Callionica", bridge)
                 );
@@ -482,7 +492,7 @@
             async handlePossibleErrors(dataResults) {
                 const missing = (dataResults.length === 0) || dataResults.some(result => result.connection === undefined);
 
-                const failures = dataResults.filter(r => r.status !== "fulfilled").map(r => r.connection);
+                const failures = dataResults.filter(r => (r.connection !== undefined) && (r.status !== "fulfilled")).map(r => r.connection);
                 
                 if (!missing && (failures.length === 0)) {
                     delete document.body.dataset.showConnection;
@@ -542,47 +552,57 @@
                 }
             }
 
-            // Override to refresh the page when data changes
-            async onData(datas) {
-
+            // Override to refresh the page when data changes (or periodically)
+            async onUpdatePage(datas) {
+                console.log("onUpdatePage", new Date());
             }
 
-            // Request data passing "wait" or "immediate"
+            // Request data from the Hue bridges (unless we shouldn't)
             async requestData_(cacheMS) {
                 if (!this.pauseData && !document.hidden && navigator.onLine) {
-                    const bridges = await this.getBridges();
+                    const bridges = this.getBridges();
                     const connections = this.getConnections(bridges);
-                    const dataResults = this.getData(connections, cacheMS);
+                    const dataResults = await this.getData(connections, cacheMS);
 
                     await this.handlePossibleErrors(dataResults);
 
-                    this.datas = dataResults.filter(r => r.status === "fulfilled").map(r => r.data);
-                }
-
-                if (!this.pauseUpdates && !document.hidden) {
-                    await this.onData(this.datas);
+                    return dataResults.filter(r => r.status === "fulfilled").map(r => r.data);
                 }
             }
 
-            async requestData(mode = wait) {
-                if (this.dataRequestMade && (mode === wait)) {
-                    return;
+            // Update the page with the latest data (unless we shouldn't)
+            async updatePage_(datas) {
+                if (!this.pauseUpdates && !document.hidden) {
+                    await this.onUpdatePage(datas);
                 }
+            }
 
-                clearTimeout(this.dataTimeoutToken);
-                this.dataTimeoutToken = setTimeout(() => this.requestData(wait), 2 * 1000);
+            // Without explicit control, the page will poll the bridges at 2 second
+            // intervals and will accept cached data no older than 1 second.
+            // (Data might be cached if there are other pages active.)
+            // To get truly fresh data call update() which will quit out of the pause
+            // state and request fresh data from the bridges.
+            // The page will then go back to polling and accepting cached data.
+            async loop() {
+                while (true) {
+                    const datas = await this.requestData_(this.cacheMS);
+                    this.cacheMS = Math.min(this.delay/2, 1 * 1000);
 
-                try {
-                    const cacheMS = (mode === wait) ? 1000 : 0;
-                    this.dataRequestMade = true;
-                    await requestData_(cacheMS);
-                } finally {
-                    this.dataRequestMade = false;
+                    await this.updatePage_(datas);
+
+                    this.delayController = new AbortController();
+                    await delay(this.delay, this.delayController.signal);
                 }
+            }
+
+            update() {
+                this.cacheMS = 0;
+                this.delayController.abort();
             }
         }
 
         const page = new CallionicaHuePage();
+        page.loop();
 
         const params = new URLSearchParams(document.location.search);
 
