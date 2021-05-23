@@ -489,7 +489,6 @@
 
             const temp = e.querySelector(".group-temperature");
             const scale = page.scale;
-            temp.dataset.scale = scale;
             const tempSensor = group.temperatures[0];
             if (tempSensor === undefined) {
                 temp.innerText = "";
@@ -501,6 +500,7 @@
                     const a = document.createElement("a");
                     a.href = "hue-callionica-temperatures.html";
                     a.innerText = t;
+                    a.dataset.scale = scale;
                     temp.innerText = "";
                     temp.append(a)
                 }
