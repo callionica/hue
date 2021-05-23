@@ -621,7 +621,7 @@ export class CallionicaHuePage {
         this.delay = 2 * 1000;
         this.cacheMS = this.delay/2;
         this.delayController = new AbortController();
-        this.datas = [];
+        this.hubs = [];
 
         window.addEventListener('pageshow', (event) => {
             this.update();
@@ -763,7 +763,7 @@ export class CallionicaHuePage {
 
     // Override to refresh the page when data changes (or periodically)
     // Argument is { connection, data }[]
-    async onUpdatePage(datas) {
+    async onUpdatePage(hubs) {
         console.log("onUpdatePage", new Date());
     }
 
@@ -781,15 +781,15 @@ export class CallionicaHuePage {
     }
 
     // Update the page with the latest data (unless we shouldn't)
-    async updatePage_(datas) {
+    async updatePage_(hubs) {
         if (!this.pauseUpdates && !document.hidden) {
-            await this.onUpdatePage(datas);
+            await this.onUpdatePage(hubs);
         }
     }
 
     // Returns { connection, data } or undefined
     getBridgeData(bridgeID) {
-        return this.datas.find(d => d.connection.bridge.id === bridgeID) ?? undefined;
+        return this.hubs.find(d => d.connection.bridge.id === bridgeID) ?? undefined;
     }
 
     // Without explicit control, the page will poll the bridges at 2 second
@@ -800,13 +800,13 @@ export class CallionicaHuePage {
     // The page will then go back to polling and accepting cached data.
     async loop() {
         while (true) {
-            const datas = await this.requestData_(this.cacheMS);
+            const hubs = await this.requestData_(this.cacheMS);
             this.cacheMS = Math.min(this.delay/2, 1 * 1000);
-            if (datas !== undefined) {
-                this.datas = datas;
+            if (hubs !== undefined) {
+                this.hubs = hubs;
             }
 
-            await this.updatePage_(this.datas);
+            await this.updatePage_(this.hubs);
 
             this.delayController = new AbortController();
             await delay(this.delay, this.delayController.signal);

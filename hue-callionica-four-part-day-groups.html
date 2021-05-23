@@ -871,8 +871,8 @@
         }
 
         class GroupsPage extends CallionicaHuePage {
-            onUpdatePage(datas) {
-                datas = datas.map(d => d.data); // TODO
+            onUpdatePage(hubs) {
+                const datas = hubs.map(d => d.data);
 
                 function multi(datas, prop) {
                     return datas.flatMap(data => {
