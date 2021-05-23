@@ -871,26 +871,8 @@
         }
 
         class GroupsPage extends CallionicaHuePage {
-            onUpdatePage(hubs) {
-                const datas = hubs.map(d => d.data);
-
-                function multi(datas, prop) {
-                    return datas.flatMap(data => {
-                        // Get standard form of bridge ID
-                        const bridge = data.id;
-
-                        // Add bridge ID to each item
-                        return Object.values(data[prop]).map(item => ({...item, bridge}));
-                    });
-                }
-
-                let groups = multi(datas, "groups");
-
-                // Basic sort by name
-                groups.sort(sortBy(g => g.name));
-
-                // Advanced sort by include, exclude, sort params
-                groups = this.sortAndFilter(groups);
+            onUpdatePage() {
+                const groups = this.getItems("groups");
 
                 // Put unreachables at the end
                 const orderedGroups = [
@@ -900,7 +882,7 @@
 
                 updateGroups(orderedGroups);
 
-                const data = datas[0];
+                const data = this.hubs[0]?.data;
                 if (data !== undefined) {
                     updateManual(data);
                 }

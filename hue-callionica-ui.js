@@ -1,5 +1,5 @@
 import { loadCurrentBridges, loadConnection } from "./hue-callionica-connect.js";
-import { delay, getAllPlus } from "./hue-callionica.js";
+import { delay, sortBy, getAllPlus } from "./hue-callionica.js";
 
 const keySunrise = "hue-four-part-day-sunrise";
 const keySunset = "hue-four-part-day-sunset";
@@ -781,9 +781,9 @@ export class CallionicaHuePage {
     }
 
     // Update the page with the latest data (unless we shouldn't)
-    async updatePage_(hubs) {
+    async updatePage_() {
         if (!this.pauseUpdates && !document.hidden) {
-            await this.onUpdatePage(hubs);
+            await this.onUpdatePage();
         }
     }
 
@@ -806,7 +806,7 @@ export class CallionicaHuePage {
                 this.hubs = hubs;
             }
 
-            await this.updatePage_(this.hubs);
+            await this.updatePage_();
 
             this.delayController = new AbortController();
             await delay(this.delay, this.delayController.signal);
@@ -816,5 +816,25 @@ export class CallionicaHuePage {
     update() {
         this.cacheMS = 0;
         this.delayController.abort();
+    }
+
+    getItems(prop) {
+        let items = this.hubs.flatMap(hub => {
+            const data = hub.data;
+
+            // Get standard form of bridge ID
+            const bridge = data.id;
+
+            // Add bridge ID to each item
+            return Object.values(data[prop]).map(item => ({...item, bridge}));
+        });
+
+        // Basic sort by name
+        items.sort(sortBy(g => g.name));
+
+        // Advanced sort by include, exclude, sort params
+        items = this.sortAndFilter(items);
+
+        return items;
     }
 }
