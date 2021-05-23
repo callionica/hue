@@ -174,6 +174,15 @@
             --text-color-B: var(--text-color);
             --hr-color: var(--highlight-color);
         }
+        .sensor[data-reachable='false'] {
+            --text-color-A: var(--back-color);
+            --text-color-B: var(--back-color);
+            --hr-color: var(--back-color);
+        }
+        .sensor[data-reachable='false']:hover {
+            --text-color-A: var(--text-color);
+            --hr-color: var(--highlight-color);
+        }
         .temp-rules {
             display: grid;
             grid-template-columns: 1fr;
@@ -215,17 +224,17 @@
             return sensor.productname || sensor.modelid;
         }
 
+        const isOn = (sensor) => {
+            const on = sensor.config?.on;
+            return on || (on === undefined);
+        };
+
+        const isReachable = (sensor) => {
+            const reachable = sensor.config?.reachable;
+            return reachable || (reachable === undefined);
+        };
+        
         function temperatureHTML(item) {
-            const isOn = (sensor) => {
-                const on = sensor.config?.on;
-                return on || (on === undefined);
-            };
-
-            const isReachable = (sensor) => {
-                const reachable = sensor.config?.reachable;
-                return reachable || (reachable === undefined);
-            };
-
             const on = isOn(item);
             const reachable = isReachable(item);
 
@@ -243,6 +252,7 @@
 
             const e = document.createElement("div");
             e.classList.add("sensor");
+            e.dataset.reachable = reachable;
             e.innerHTML = template;
 
             const sensor = item;
@@ -288,10 +298,17 @@
 
                 const sensors = this.getItems("sensors").filter(sensor => sensor?.state?.temperature !== undefined);
 
-                const msg = (sensors.length === 0) ? `<p>No temperature sensors found.</p>` : "";
+                // Put unreachables at the end
+                const orderedSensors = [
+                    ...sensors.filter(g => isReachable(g) && isOn(g)),
+                    ...sensors.filter(g => isReachable(g) && !isOn(g)),
+                    ...sensors.filter(g => !isReachable(g))
+                ];
+
+                const msg = (orderedSensors.length === 0) ? `<p>No temperature sensors found.</p>` : "";
 
                 const html = ``
-                + sensors.map(item => temperatureHTML(item)).join("\n")
+                + orderedSensors.map(item => temperatureHTML(item)).join("\n")
                 
                 + msg
                 ;
