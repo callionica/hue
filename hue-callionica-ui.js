@@ -621,6 +621,7 @@ export class CallionicaHuePage {
         this.delay = 2 * 1000;
         this.cacheMS = this.delay/2;
         this.delayController = new AbortController();
+        this.datas = [];
 
         window.addEventListener('pageshow', (event) => {
             this.update();
@@ -761,6 +762,7 @@ export class CallionicaHuePage {
     }
 
     // Override to refresh the page when data changes (or periodically)
+    // Argument is { connection, data }[]
     async onUpdatePage(datas) {
         console.log("onUpdatePage", new Date());
     }
@@ -774,7 +776,7 @@ export class CallionicaHuePage {
 
             await this.handlePossibleErrors(dataResults);
 
-            return dataResults.filter(r => r.status === "fulfilled").map(r => r.data);
+            return dataResults.filter(r => r.status === "fulfilled");
         }
     }
 
@@ -783,6 +785,11 @@ export class CallionicaHuePage {
         if (!this.pauseUpdates && !document.hidden) {
             await this.onUpdatePage(datas);
         }
+    }
+
+    // Returns { connection, data } or undefined
+    getBridgeData(bridgeID) {
+        return this.datas.find(d => d.connection.bridge.id === bridgeID) ?? undefined;
     }
 
     // Without explicit control, the page will poll the bridges at 2 second
@@ -795,8 +802,11 @@ export class CallionicaHuePage {
         while (true) {
             const datas = await this.requestData_(this.cacheMS);
             this.cacheMS = Math.min(this.delay/2, 1 * 1000);
+            if (datas !== undefined) {
+                this.datas = datas;
+            }
 
-            await this.updatePage_(datas);
+            await this.updatePage_(this.datas);
 
             this.delayController = new AbortController();
             await delay(this.delay, this.delayController.signal);

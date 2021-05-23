@@ -389,204 +389,6 @@
         import { CallionicaHuePage, paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
 
-        function multi(datas, prop) {
-            return Object.values(datas).flatMap(data => {
-                // Get standard form of bridge ID
-                const bridge = data.id;
-
-                // Add bridge ID to each item
-                return Object.values(data[prop]).map(item => ({...item, bridge}));
-            });
-        }
-
-        const page = new CallionicaHuePage();
-        page.loop();
-
-        const wait = "wait";
-        const immediate = "immediate";
-
-        const params = new URLSearchParams(document.location.search);
-
-        let pauseData = false;
-        let pauseUpdates = false;
-
-        async function ondata(datas) {
-            let groups = multi(datas, "groups");
-
-            // Basic sort by name
-            groups.sort(sortBy(g => g.name));
-
-            // Advanced sort by include, exclude, sort params
-            groups = paramsSort(params, groups);
-
-            // Put unreachables at the end
-            const orderedGroups = [
-                ...groups.filter(g => !g.lightSummary.allUnreachable),
-                ...groups.filter(g =>  g.lightSummary.allUnreachable)
-            ];
-
-            updateGroups(orderedGroups);
-
-            const data = Object.values(datas)[0];
-            if (data !== undefined) {
-                updateManual(data);
-            }
-        }
-
-        let dataRequestMade;
-        let dataTimeoutToken;
-        let bridges;
-        let connections = {};
-        let datas = {};
-        let scale = "C";
-
-
-        // Call to get new data
-        async function requestData(mode) {
-            // console.log("requestData");
-            mode = mode || wait;
-
-            if (dataRequestMade && (mode === wait)) {
-                return;
-            }
-
-            clearTimeout(dataTimeoutToken);
-            dataTimeoutToken = undefined;
-            dataRequestMade = true;
-
-            try {            
-                try {
-                    const paramScale = params.get("scale")?.toUpperCase().trim() ?? undefined;
-                    const allScale = paramScale ?? sessionStorage.getItem("scale") ?? localStorage.getItem("scale") ?? "C";
-                    scale = (allScale.startsWith("F")) ? "F" : "C";
-
-                    if (bridges === undefined) {
-                        function getList(name) {
-                            const p = params.get(name);
-                            return p?.split(",").map(x => x.trim().toLowerCase());
-                        }
-
-                        const bridgeIDs = getList("bridges") || undefined;
-                        if (bridgeIDs !== undefined) {
-                            const connections = loadConnections();
-                            bridges = bridgeIDs.map(id => {
-                                const named = connections.find(connection => connection.bridge.name.toLowerCase() === id);
-                                if (named !== undefined) {
-                                    return { id: named.bridge.id };
-                                } else {
-                                    return { id };
-                                }
-                            });
-                        }
-
-                        if (bridges === undefined) {
-                            bridges = loadCurrentBridges();
-                        }
-                    }
-
-                    if (bridges.length === 0) {
-                        throw "No bridges";
-                    }
-
-                    // Load connections for the specified bridges
-                    for (const bridge of bridges) {
-                        let connection = connections[bridge.id];
-                        if (connection === undefined) {
-                            connection = await loadConnection("Callionica", bridge);
-                            connections[bridge.id] = connection;
-                        }
-                    }
-
-                    // Get the data for the specified bridges
-                    let missingConnection = false;
-                    for (const bridge of bridges) {
-                        let connection = connections[bridge.id];
-                        if (connection === undefined) {
-                            missingConnection = true;
-                            continue;
-                        }
-                        if (!pauseData && !document.hidden && navigator.onLine) {
-                            datas[bridge.id] = await getAllPlus(connection, mode === wait ? 1000 : 0);
-                        }
-                    }
-
-                    if (missingConnection) {
-                        throw "Missing connection";
-                    }
-
-                    delete document.body.dataset.showConnection;
-                } catch (error) {
-                    // Only show errors when the document is visible
-                    if (!document.hidden) {
-                        document.body.dataset.showConnection = true;
-
-                        const e = document.querySelector("#connection");
-
-                        const missingConnection = (bridges === undefined) || (bridges.length === 0) || bridges.some(bridge => connections[bridge.id] === undefined);
-                        if (missingConnection) {
-                            const existing = e.querySelector(`a[href='hue-callionica-connect.html']`);
-                            if (!existing) {
-                                e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
-                            }
-                        } else {
-                            let generalFailure = false;
-
-                            for (const connection of Object.values(connections)) {
-                                const diagnosis = await diagnoseConnection(connection);
-
-                                const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
-                                const cert = e.querySelector(`a[href='${link}']`);
-
-                                if (diagnosis === "certificate-error") {    
-                                    if (!cert) {
-                                        const p = document.createElement("p");
-                                        p.innerHTML = `<a href="${link}" rel="noopener">Refresh connection '${connection.bridge.name}'</a>`;
-                                        e.append(p);
-                                    }
-                                    continue;
-                                }
-
-                                if (cert) {
-                                    cert.parentElement?.remove();
-                                }
-
-                                if (diagnosis === "success") {
-                                    continue;
-                                }
-
-                                generalFailure = true;
-
-                                console.log("Diagnosis", diagnosis);
-                            }
-
-                            const general = e.querySelector(`a[href='hue-callionica-connect.html']`);
-                            if (generalFailure) {
-                                if (!general) {
-                                    const p = document.createElement("p");
-                                    p.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
-                                    e.append(p);
-                                }
-                            } else if (general) {
-                                general.parentElement?.remove();
-                            }
-                        }
-                    }
-                }
-            } finally {
-                dataRequestMade = false;
-            }
-
-            dataTimeoutToken = setTimeout(() => requestData(wait), 2 * 1000);
-
-            if (!pauseUpdates && !document.hidden && navigator.onLine) {
-                ondata(datas);
-            }
-        }
-
-        window.addEventListener('pageshow', (event) => {
-            const backOrForward = event.persisted || (window.performance?.navigation?.type === 2);
-            requestData(backOrForward ? immediate : wait);
-        });
 
         function ancestor(e, pred) {
             let container = e.parentNode;
@@ -680,11 +482,12 @@
         }
 
         function updateGroup(e, group, scope) {
-            const data = datas[group.bridge];
+            const { data } = page.getBridgeData(group.bridge);
             const name = e.querySelector(".group-name");
             name.innerText = group.name;
 
             const temp = e.querySelector(".group-temperature");
+            const scale = page.scale;
             temp.dataset.scale = scale;
             temp.innerText = ((scale === "F") ? group.temperatures[0]?.fahrenheit : group.temperatures[0]?.celsius) || "";
 
@@ -825,7 +628,7 @@
             scope = scope || document;
 
             const bridge = group.bridge;
-            const data = datas[bridge];
+            const { data } = page.getBridgeData(bridge);
 
             const e = scope.createElement("div");
             e.id = `group-${bridge}-${group.id}`;
@@ -983,8 +786,7 @@
         }
 
         async function activateFourPartDayScene(btn) {
-            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
-            const data = datas[connection.bridge.id];
+            const { connection, data } = page.getBridgeData(ancestorOrSelfData(btn, "bridge-id"));
 
             const groupID = ancestorOrSelfData(btn, "group-id");
             const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
@@ -997,14 +799,13 @@
                 await setGroupOn(connection, groupID, true);
             }
 
-            requestData(immediate);
+            page.update();
         }
 
         async function toggleFourPartDayScene(btn) {
             const on = ancestorOrSelfData(btn, "on") === "true";
             if (on) {
-                const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
-                const data = datas[connection.bridge.id];
+                const { connection, data } = page.getBridgeData(ancestorOrSelfData(btn, "bridge-id"));
 
                 const groupID = ancestorOrSelfData(btn, "group-id");
                 const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
@@ -1019,30 +820,28 @@
                 await activateFourPartDayScene(btn);
             }
 
-            requestData(immediate);
+            page.update();
         }
 
         async function toggleLight(btn) {
-            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
-            const data = datas[connection.bridge.id];
+            const { connection, data } = page.getBridgeData(ancestorOrSelfData(btn, "bridge-id"));
 
             const on = ancestorOrSelfData(btn, "on") === "true";
             const id = ancestorOrSelfData(btn, "light-id");
             await setLightOn(connection, id, !on);
 
-            requestData(immediate);
+            page.update();
         }
 
         async function selectBrightness(btn) {
-            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
-            const data = datas[connection.bridge.id];
+            const { connection, data } = page.getBridgeData(ancestorOrSelfData(btn, "bridge-id"));
 
             const groupID = ancestorOrSelfData(btn, "group-id");
 
             // If user has selected OFF, turn the group off (don't use the off-scene)
             if (btn.value === "off") {
                 await setGroupOn(connection, groupID, false);
-                requestData(immediate);
+                page.update();
                 return;
             }
 
@@ -1058,21 +857,59 @@
             const extras = !on ? { on: true, ct } : undefined;
             await setGroupBrightness(connection, groupID, brightness, extras);
 
-            requestData(immediate);
+            page.update();
         }
 
         async function selectCT(btn) {
-            const connection = connections[ancestorOrSelfData(btn, "bridge-id")];
-            const data = datas[connection.bridge.id];
+            const { connection, data } = page.getBridgeData(ancestorOrSelfData(btn, "bridge-id"));
 
             const groupID = ancestorOrSelfData(btn, "group-id");
             const ct = parseInt(btn.value, 10);
             await setGroupCT(connection, groupID, ct);
 
-            requestData(immediate);
+            page.update();
         }
 
-        requestData();
+        class GroupsPage extends CallionicaHuePage {
+            onUpdatePage(datas) {
+                datas = datas.map(d => d.data); // TODO
+
+                function multi(datas, prop) {
+                    return datas.flatMap(data => {
+                        // Get standard form of bridge ID
+                        const bridge = data.id;
+
+                        // Add bridge ID to each item
+                        return Object.values(data[prop]).map(item => ({...item, bridge}));
+                    });
+                }
+
+                let groups = multi(datas, "groups");
+
+                // Basic sort by name
+                groups.sort(sortBy(g => g.name));
+
+                // Advanced sort by include, exclude, sort params
+                groups = this.sortAndFilter(groups);
+
+                // Put unreachables at the end
+                const orderedGroups = [
+                    ...groups.filter(g => !g.lightSummary.allUnreachable),
+                    ...groups.filter(g =>  g.lightSummary.allUnreachable)
+                ];
+
+                updateGroups(orderedGroups);
+
+                const data = datas[0];
+                if (data !== undefined) {
+                    updateManual(data);
+                }
+            }
+        }
+
+        const page = new GroupsPage();
+        page.loop();
+
     </script>
 </head>
 <body data-page="groups">
