@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Temperatures</title>
-    <!--<link rel="stylesheet" href="hue-callionica.css">-->
     <style>
         *,
         *::before,
@@ -185,26 +184,19 @@
         #scale {
             -webkit-appearance: none;
             height: 2.4rem;
+            margin-left: 0.5rem;
         }
     </style>
     <script type="module">
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAllPlus, getCapabilities, getSensorTriggeredRules } from "./hue-callionica.js";
-        import { localizeDateTime, formatHumanDateTime } from "./hue-callionica-ui.js";
-
-        let bridge;
-        let connection;
-
-        const params = new URLSearchParams(document.location.search);
-        const paramScale = params.get("scale")?.toUpperCase().trim() ?? undefined;
-        const allScale = paramScale ?? sessionStorage.getItem("scale") ?? localStorage.getItem("scale") ?? "C";
-        let scale = (allScale.startsWith("F")) ? "F" : "C";
+        import { localizeDateTime, formatHumanDateTime, CallionicaHuePage } from "./hue-callionica-ui.js";
 
         function onScaleChange() {
             const current = document.querySelector("#scale");
-            scale = current.value;
+            const scale = current.value;
             localStorage.setItem("scale", scale);
-            document.location = document.location; // TODO
+            page.update();
         }
 
         function updateScale(scale) {
@@ -216,8 +208,6 @@
             }
         }
 
-        updateScale(scale);
-
         function sensorKind(sensor) {
             if (sensor.metadata) {
                 return `${sensor.metadata.component} > ${sensor.metadata.property}`.replaceAll(">", "›");
@@ -225,7 +215,7 @@
             return sensor.productname || sensor.modelid;
         }
 
-        function temperatureHTML(item, bridge) {
+        function temperatureHTML(item) {
             const isOn = (sensor) => {
                 const on = sensor.config?.on;
                 return on || (on === undefined);
@@ -242,7 +232,7 @@
             const lu = new Date(item.state.lastupdated + "Z");
             const lastUpdated = formatHumanDateTime(lu);
 
-            const template = `<a href="hue-callionica-temperature-events.html?bridge=${bridge.id}&sensor=${item.id}">
+            const template = `<a href="hue-callionica-temperature-events.html?bridge=${item.bridge}&sensor=${item.id}">
             <p class="small"><!--<span class="bridge-name">...</span> | <span class="id">...</span> | --><time datetime=""></time></p>
             <!--<p class="small"><span class="description">...</span></p>-->
             <h2><span class="name">...</span></h2>
@@ -262,14 +252,15 @@
             time.innerText = lastUpdated;
 
             if (!reachable) {
-                time.outerHTML = "Unreachable";
+                time.outerHTML = "Offline";
             } else if (!on) {
                 time.outerHTML = "Off";
             }
 
             e.querySelector(".name").innerText = sensor.name;
             const t = e.querySelector(".T");
-            t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
+            const scale = page.scale;
+            t.innerText = sensor[scale === "F" ? "fahrenheit" : "celsius" ] ?? "";
             t.dataset.scale = scale;
 
             if (!reachable || !on) {
@@ -277,7 +268,7 @@
             }
 
             if (!reachable) {
-                t.innerHTML = `<span style="color: rgb(var(--text-color-B));">Unreachable</span>`;
+                t.innerHTML = `<span style="color: rgb(var(--text-color-B));">OFFLINE</span>`;
             } else if (!on) {
                 t.innerHTML = `<span style="color: rgb(var(--text-color-B));">OFF</span>`;
             }
@@ -291,48 +282,26 @@
             // return `<tr id="${type}-${item.id}" title="ID: ${item.id} (${type})" data-on="${on}" data-reachable="${reachable}"><td><a href="hue-callionica-sensor-rename.html?bridge=${bridge.id}&sensor=${item.id}">${item.name}</a></td><td class="numeric T" data-scale="C">${item.celsius ?? ""}</td><td class="numeric T" data-scale="F">${item.fahrenheit ?? ""}</td><td><time datetime="${item.state.lastupdated + "Z"}">${lastUpdated}</time></td><td><a class="rules-link" href="hue-callionica-temperature-events.html?bridge=${bridge.id}&sensor=${item.id}">⚙︎</a></td></tr>`;
         }
 
-        async function main() {
-            bridge = loadCurrentBridge();
-            connection = await loadConnection("Callionica", bridge);
+        class TemperaturesPage extends CallionicaHuePage {
+            onUpdatePage() {
+                updateScale(page.scale);
 
-            const data = await getAllPlus(connection);
-            const capabilities = await getCapabilities(connection);
+                const sensors = this.getItems("sensors").filter(sensor => sensor?.state?.temperature !== undefined);
 
-            const sensors = Object.values(data.sensors).filter(sensor => sensor?.state?.temperature !== undefined).sort((a, b) => a.name.localeCompare(b.name));
+                const msg = (sensors.length === 0) ? `<p>No temperature sensors found.</p>` : "";
 
-            const msg = (sensors.length === 0) ? `<p>No temperature sensors found.</p>` : "";
-
-            const html = ``
-            + sensors.map(item => temperatureHTML(item, connection.bridge)).join("\n")
-            
-            + msg
-            ;
-            document.getElementById("temperatures").innerHTML = html;
-        }
-
-        async function _main() {
-            try {
-                await main();
-                delete document.body.dataset.showConnection;
-
-                // setTimeout(()=> _main(), 60*1000);
-
-            } catch (error) {
-                document.body.dataset.showConnection = true;
-
-                const e = document.querySelector("#connection");
-
-                if ((bridge === undefined) || (connection === undefined)) {
-                    e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
-                } else {
-                    e.innerHTML = `<a href="https://${connection.bridge.ip}/api/unauthenticated/config">Refresh your Hue bridge connection</a>`;
-                }
-
-                setTimeout(()=> _main(), 3*1000);
+                const html = ``
+                + sensors.map(item => temperatureHTML(item)).join("\n")
+                
+                + msg
+                ;
+                document.getElementById("temperatures").innerHTML = html;
             }
         }
 
-        _main().then(x => console.log("Done"));
+        const page = new TemperaturesPage();
+        page.loop();
+
     </script>
 </head>
 <body>

@@ -814,10 +814,13 @@ export class CallionicaHuePage {
     }
 
     update() {
+        this.scale_ = undefined;
         this.cacheMS = 0;
         this.delayController.abort();
     }
 
+    // Returns items like groups, sensors, etc sorted and filtered by name
+    // in a single array across all bridges.
     getItems(prop) {
         let items = this.hubs.flatMap(hub => {
             const data = hub.data;
