@@ -490,7 +490,21 @@
             const temp = e.querySelector(".group-temperature");
             const scale = page.scale;
             temp.dataset.scale = scale;
-            temp.innerText = ((scale === "F") ? group.temperatures[0]?.fahrenheit : group.temperatures[0]?.celsius) || "";
+            const tempSensor = group.temperatures[0];
+            if (tempSensor === undefined) {
+                temp.innerText = "";
+            } else {
+                const t = ((scale === "F") ? tempSensor.fahrenheit : tempSensor.celsius);
+                if (t === undefined) {
+                    temp.innerText = "";
+                } else {
+                    const a = document.createElement("a");
+                    a.href = "hue-callionica-temperatures.html";
+                    a.innerText = t;
+                    temp.innerText = "";
+                    temp.append(a)
+                }
+            }
 
             // lightSummary only treats a light as 'on'
             // if it is also reachable. So 'anyOn' for the
