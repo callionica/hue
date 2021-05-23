@@ -304,10 +304,6 @@
         function updateRules() {
             const rules = Object.values(data.rules);
 
-            for (const rule of rules) {
-                console.log(rule.name.length);
-            }
-
             const sensorRules = getSensorTriggeredRules(rules, sensor.id);
             const c = document.querySelector("#rules");
             c.innerHTML = "";

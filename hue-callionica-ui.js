@@ -800,16 +800,22 @@ export class CallionicaHuePage {
     // The page will then go back to polling and accepting cached data.
     async loop() {
         while (true) {
-            const hubs = await this.requestData_(this.cacheMS);
-            this.cacheMS = Math.min(this.delay/2, 1 * 1000);
-            if (hubs !== undefined) {
-                this.hubs = hubs;
+            try {
+
+                const hubs = await this.requestData_(this.cacheMS);
+                this.cacheMS = Math.min(this.delay/2, 1 * 1000);
+                if (hubs !== undefined) {
+                    this.hubs = hubs;
+                }
+
+                await this.updatePage_();
+
+                this.delayController = new AbortController();
+                await delay(this.delay, this.delayController.signal);
+
+            } catch (error) {
+                console.log(error);
             }
-
-            await this.updatePage_();
-
-            this.delayController = new AbortController();
-            await delay(this.delay, this.delayController.signal);
         }
     }
 
