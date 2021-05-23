@@ -399,6 +399,191 @@
             });
         }
 
+        const wait = "wait";
+        const immediate = "immediate";
+
+        export class CallionicaHuePage {
+            constructor() {
+                this.params = new URLSearchParams(document.location.search);
+                this.scale_ = undefined;
+                this.datas = [];
+                this.pauseData = false;
+                this.pauseUpdates = false;
+                this.dataRequestMade = false;
+                this.dataTimeoutToken = undefined;
+            }
+
+            // Parse a comma-separated, case-insensitive list from params 
+            getParamsList(name) {
+                const p = this.params.get(name);
+                return p?.split(",").map(x => x.trim().toLowerCase());
+            }
+
+            // Sort and filter items by name using parameters passed to the page
+            sortAndFilter(items) {
+                return paramsSort(this.params, items);
+            }
+
+            // Returns the current temperature scale ("C" or "F")
+            get scale() {
+                if (this.scale_ !== undefined) {
+                    return this.scale_;
+                }
+
+                const paramScale = this.params.get("scale")?.toUpperCase().trim() ?? undefined;
+                const scale = paramScale ?? sessionStorage.getItem("scale") ?? localStorage.getItem("scale") ?? "C";
+                this.scale_ = (scale.startsWith("F")) ? "F" : "C";
+
+                return this.scale_;
+            }
+
+            // Get the bridges to use for the current page
+            async getBridges() {
+                const bridgeNamesOrIDs = this.getParamsList("bridges") || undefined;
+                if (bridgeNamesOrIDs !== undefined) {
+                    const connections = loadConnections();
+                    bridges = bridgeNamesOrIDs.map(id => {
+                        const named = connections.find(connection => connection.bridge.name.toLowerCase() === id);
+                        if (named !== undefined) {
+                            return { id: named.bridge.id };
+                        } else {
+                            return { id };
+                        }
+                    });
+                }
+
+                if (bridges === undefined) {
+                    bridges = loadCurrentBridges();
+                }
+            }
+
+            // Load connections for the specified bridges
+            async getConnections(bridges) {
+                return bridges.map(
+                    bridge => loadConnection("Callionica", bridge)
+                );
+            }
+
+            // Get the data for the specified connections
+            async getData(connections, cacheMS) {
+                const promises = connections.map(
+                    connection => getAllPlus(connection, cacheMS)
+                );
+                const results = await Promise.allSettled(promises);
+                return connections.map((connection, index) => {
+                    return {
+                        connection,
+                        data: results[index].value,
+                        status: results[index].status
+                    };
+                });
+            }
+
+            async handlePossibleErrors(dataResults) {
+                const missing = (dataResults.length === 0) || dataResults.some(result => result.connection === undefined);
+
+                const failures = dataResults.filter(r => r.status !== "fulfilled").map(r => r.connection);
+                
+                if (!missing && (failures.length === 0)) {
+                    delete document.body.dataset.showConnection;
+                    return;
+                }
+
+                document.body.dataset.showConnection = true;
+
+                const e = document.querySelector("#connection");
+
+                if (missing) {
+                    const existing = e.querySelector(`a[href='hue-callionica-connect.html']`);
+                    if (!existing) {
+                        e.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                    }
+                } else {
+                    let generalFailure = false;
+
+                    for (const connection of failures) {
+                        const diagnosis = await diagnoseConnection(connection);
+
+                        const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
+                        const cert = e.querySelector(`a[href='${link}']`);
+
+                        if (diagnosis === "certificate-error") {    
+                            if (!cert) {
+                                const p = document.createElement("p");
+                                p.innerHTML = `<a href="${link}" rel="noopener">Refresh connection '${connection.bridge.name}'</a>`;
+                                e.append(p);
+                            }
+                            continue;
+                        }
+
+                        if (cert) {
+                            cert.parentElement?.remove();
+                        }
+
+                        if (diagnosis === "success") {
+                            continue;
+                        }
+
+                        generalFailure = true;
+
+                        console.log("Diagnosis", diagnosis);
+                    }
+
+                    const general = e.querySelector(`a[href='hue-callionica-connect.html']`);
+                    if (generalFailure) {
+                        if (!general) {
+                            const p = document.createElement("p");
+                            p.innerHTML = `<a href="hue-callionica-connect.html">Connect to your Hue bridge</a>`;
+                            e.append(p);
+                        }
+                    } else if (general) {
+                        general.parentElement?.remove();
+                    }
+                }
+            }
+
+            // Override to refresh the page when data changes
+            async onData(datas) {
+
+            }
+
+            // Request data passing "wait" or "immediate"
+            async requestData_(cacheMS) {
+                if (!this.pauseData && !document.hidden && navigator.onLine) {
+                    const bridges = await this.getBridges();
+                    const connections = this.getConnections(bridges);
+                    const dataResults = this.getData(connections, cacheMS);
+
+                    await this.handlePossibleErrors(dataResults);
+
+                    this.datas = dataResults.filter(r => r.status === "fulfilled").map(r => r.data);
+                }
+
+                if (!this.pauseUpdates && !document.hidden) {
+                    await this.onData(this.datas);
+                }
+            }
+
+            async requestData(mode = wait) {
+                if (this.dataRequestMade && (mode === wait)) {
+                    return;
+                }
+
+                clearTimeout(this.dataTimeoutToken);
+                this.dataTimeoutToken = setTimeout(() => this.requestData(wait), 2 * 1000);
+
+                try {
+                    const cacheMS = (mode === wait) ? 1000 : 0;
+                    this.dataRequestMade = true;
+                    await requestData_(cacheMS);
+                } finally {
+                    this.dataRequestMade = false;
+                }
+            }
+        }
+
+        const page = new CallionicaHuePage();
+
         const params = new URLSearchParams(document.location.search);
 
         let pauseData = false;
@@ -434,8 +619,6 @@
         let datas = {};
         let scale = "C";
 
-        const wait = "wait";
-        const immediate = "immediate";
 
         // Call to get new data
         async function requestData(mode) {
