@@ -1,4 +1,4 @@
-import { loadCurrentBridges, loadConnection } from "./hue-callionica-connect.js";
+import { loadCurrentBridges, loadConnection, diagnoseConnection } from "./hue-callionica-connect.js";
 import { delay, sortBy, getAllPlus } from "./hue-callionica.js";
 
 const keySunrise = "hue-four-part-day-sunrise";
