@@ -814,7 +814,7 @@ export class CallionicaHuePage {
                 await delay(this.delay, this.delayController.signal);
 
             } catch (error) {
-                console.log(error);
+                console.log("loop", error);
             }
         }
     }
