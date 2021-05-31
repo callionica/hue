@@ -451,7 +451,18 @@
 
         function setupExpandoElement(element) {
             element.addEventListener("click", (e) => {
-                if (!expandoExcludes.includes(e.target.nodeName)) {
+                let current = e.target;
+                let proceed = true;
+
+                while (current != undefined) {
+                    if (expandoExcludes.includes(current.nodeName)) {
+                        proceed = false;
+                        break;
+                    }
+                    current = current.parentElement;
+                }
+
+                if (proceed) {
                     expando(element);
                     e.preventDefault();
                 }
