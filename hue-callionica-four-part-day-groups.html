@@ -886,10 +886,16 @@
             const { connection, data } = page.getBridgeData(ancestorOrSelfData(btn, "bridge-id"));
 
             const groupID = ancestorOrSelfData(btn, "group-id");
+            const sensorID = ancestorOrSelfData(btn, "power-sensor-id");
 
             // If user has selected OFF, turn the group off (don't use the off-scene)
             if (btn.value === "off") {
-                await setGroupOn(connection, groupID, false);
+                if (sensorID !== undefined) {
+                    await setSensorValue(connection, sensorID, 0); // Off
+                } else {
+                    await setGroupOn(connection, groupID, false);
+                }
+
                 page.update();
                 return;
             }
@@ -903,6 +909,11 @@
             // If any lights are on, we just change the brightness
             // If no lights are on, we turn on the group (don't use the on-scene)
             // using the color temperature of the nearby CT control
+
+            if (!on && sensorID !== undefined) {
+                await setSensorValue(connection, sensorID, 2); // Full power
+            }
+
             const extras = !on ? { on: true, ct } : undefined;
             await setGroupBrightness(connection, groupID, brightness, extras);
 
