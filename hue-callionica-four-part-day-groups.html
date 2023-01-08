@@ -837,9 +837,11 @@
 
             if (sensorID !== undefined) {
                 await setSensorValue(connection, sensorID, 2); // Full power
-            } else if (sceneID !== undefined) {
+            }
+            
+            if (sceneID !== undefined) {
                 await setGroupScene(connection, groupID, sceneID);
-            } else {
+            } else if (sensorID === undefined) {
                 await setGroupOn(connection, groupID, true);
             }
 
