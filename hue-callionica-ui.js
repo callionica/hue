@@ -642,14 +642,22 @@ export function snapToGrid(grid) {
 
 export class CallionicaHuePage {
     constructor() {
+        /** @type URLSearchParams */
         this.params = new URLSearchParams(document.location.search);
+        /** @type {"C" | "F"} */
         this.scale_ = undefined;
+        /** @type boolean */
         this.pauseData = false;
+        /** @type boolean */
         this.pauseUpdates = false;
+        /** @type boolean */
         this.dataRequestMade = false;
         this.dataTimeoutToken = undefined;
+        /** @type number */
         this.delay = 2 * 1000;
+        /** @type number */
         this.cacheMS = this.delay/2;
+        /** @type AbortController */
         this.delayController = new AbortController();
         this.hubs = [];
 
@@ -671,7 +679,6 @@ export class CallionicaHuePage {
 
     /**
      * Returns the current temperature scale ("C" or "F")
-     * @returns { "C" | "F" }
      */
     get scale() {
         if (this.scale_ !== undefined) {
