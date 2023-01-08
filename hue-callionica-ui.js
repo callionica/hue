@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-unused-vars require-await
 import { loadCurrentBridges, loadConnection, loadConnections, diagnoseConnection } from "./hue-callionica-connect.js";
-import { delay, sortBy, getAllPlus } from "./hue-callionica.js";
+import { delay, sortBy, getAllPlus, getConnectedComponents } from "./hue-callionica.js";
 
 const keySunrise = "hue-four-part-day-sunrise";
 const keySunset = "hue-four-part-day-sunset";
@@ -875,7 +875,14 @@ export class CallionicaHuePage {
             const bridge = data.id;
 
             // Add bridge ID to each item
-            return Object.values(data[prop]).map(item => ({...item, bridge}));
+            return Object.values(data[prop]).map(item => {
+                const components = getConnectedComponents(item, data);
+                const powerSensor = components.map(component => {
+                    const sensor = component.sensors.find(sensor => sensor.modelid == "PM.Zone.PowerLevel");
+                    return sensor;
+                }).find(x => x);
+                return {...item, components, powerSensor, bridge};
+            });
         });
 
         // Basic sort by name
