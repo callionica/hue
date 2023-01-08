@@ -281,6 +281,10 @@
             transition: background-color 0.4s ease, color 0.4s ease;
         }
 
+        button.light[data-archetype='plug'] {
+            border-radius: 0%;
+        }
+
         button.light[data-on='true'] {
             color: rgb(var(--lit-color));
             border-color: rgb(var(--lit-color));
@@ -594,6 +598,7 @@
                 lightElement.dataset.name = light.name;
                 lightElement.dataset.on = light.state.on && light.state.reachable;
                 lightElement.dataset.unreachable = !light.state.reachable;
+                lightElement.dataset.archetype = light.config.archetype;
             }
 
             for (const ge of [...lightsContainer.querySelectorAll("*[data-light-id]")]) {
