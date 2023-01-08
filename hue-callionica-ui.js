@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-unused-vars require-await
-import { loadCurrentBridges, loadConnection, diagnoseConnection } from "./hue-callionica-connect.js";
+import { loadCurrentBridges, loadConnection, loadConnections, diagnoseConnection } from "./hue-callionica-connect.js";
 import { delay, sortBy, getAllPlus } from "./hue-callionica.js";
 
 const keySunrise = "hue-four-part-day-sunrise";
@@ -462,22 +462,51 @@ export function paramsSort(params, items) {
     return items;
 }
 
+/**
+ * 
+ * @param { number } c 
+ * @returns { number }
+ */
 function FFromC(c) {
     return (c * 9/5) + 32;
 }
 
+/**
+ * 
+ * @param { number } f 
+ * @returns { number }
+ */
 function CFromF(f) {
     return (f - 32) * 5/9;
 }
 
+/**
+ * 
+ * @param { number } c 
+ * @returns { number }
+ */
 function TFromC(c) {
     return Math.floor(100 * c);
 }
 
+/**
+ * 
+ * @param { number } f 
+ * @returns { number }
+ */
 function TFromF(f) {
     return TFromC(CFromF(f));
 }
 
+/**
+ * 
+ * @param {"C" | "F" } unit 
+ * @param {number} selectedT 
+ * @param {number} start 
+ * @param {number} end 
+ * @param {number} interval 
+ * @returns 
+ */
 export function optionsTemp(unit, selectedT, start, end, interval) {
     const fn = unit === "C" ? TFromC : TFromF;
     
@@ -640,7 +669,10 @@ export class CallionicaHuePage {
         return paramsSort(this.params, items);
     }
 
-    // Returns the current temperature scale ("C" or "F")
+    /**
+     * Returns the current temperature scale ("C" or "F")
+     * @returns { "C" | "F" }
+     */
     get scale() {
         if (this.scale_ !== undefined) {
             return this.scale_;
