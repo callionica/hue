@@ -18,6 +18,12 @@ export class TimeoutExpired extends Timeout {}
 export class TimeoutCanceled extends Timeout {}
 
 // Timeout expiry and timeout cancelation are not errors
+/**
+ * 
+ * @param { number } ms 
+ * @param { AbortSignal } signal 
+ * @returns { Promise<TimeoutCanceled> | Promise<TimeoutExpired> }
+ */
 export function delay(ms, signal) {
     let timeoutHandle;
     let resolve;
