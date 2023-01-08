@@ -2544,8 +2544,8 @@ export async function getAllPlus(connection, maximumCacheAgeMS = 0) {
     return data;
 }
 
-export function getConnectedComponents(component, data) {
-    return Object.values(data.components).filter(c => c.connections.find(cn => cn.item === component));
+export function getConnectedComponents(item, data) {
+    return Object.values(data.components).filter(c => c.connections.find(cn => cn.item === item));
 }
 
 export async function deleteComponent(connection, component) {
