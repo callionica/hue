@@ -390,7 +390,7 @@
     <!-- 1800 to 6600 -->
     <script type="module">
         import { loadCurrentBridges, loadConnection, loadConnections, testConnection, diagnoseConnection } from "./hue-callionica-connect.js";
-        import { delay, getAllPlus, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy } from "./hue-callionica.js";
+        import { delay, getAllPlus, setLightOn, setGroupOn, setGroupBrightness, setGroupCT, setGroupScene, sortBy, setSensorValue } from "./hue-callionica.js";
         import { CallionicaHuePage, paramsSort, FourPartDay, getDaylight } from "./hue-callionica-ui.js";
         import { friendlyKToCT } from "./hue-callionica-color.js";
 
@@ -499,6 +499,13 @@
 
         function updateGroup(e, group, scope) {
             const { data } = page.getBridgeData(group.bridge);
+
+            if (group.powerSensor !== undefined) {
+                e.dataset.powerSensorId = group.powerSensor.id;
+            } else {
+                delete e.dataset.powerSensorId;
+            }
+
             const name = e.querySelector(".group-name");
             name.innerText = group.name;
 
@@ -564,6 +571,9 @@
 
             const gt = e.querySelector(".group-toggle");
             gt.dataset.on = !isUsingOffScene && lightSummary.anyOn;
+            if (group.powerSensor !== undefined) {
+                gt.dataset.on = group.powerSensor.value.value > 1; // Full power
+            }
             gt.dataset.lightOn = lightSummary.anyOn;
             gt.dataset.unreachable = lightSummary.allUnreachable;
 
@@ -823,7 +833,11 @@
             
             const sceneID = ancestorOrSelfData(btn, "scene-id") || FourPartDay.getScene(data, groupID, dayPartName)?.id;
 
-            if (sceneID !== undefined) {
+            const sensorID = ancestorOrSelfData(btn, "power-sensor-id");
+
+            if (sensorID !== undefined) {
+                await setSensorValue(connection, sensorID, 2); // Full power
+            } else if (sceneID !== undefined) {
                 await setGroupScene(connection, groupID, sceneID);
             } else {
                 await setGroupOn(connection, groupID, true);
@@ -840,8 +854,11 @@
                 const groupID = ancestorOrSelfData(btn, "group-id");
                 const dayPartName = ancestorOrSelfData(btn, "day-part") || FourPartDay.getPart(data).name;
                 const sceneID = ancestorOrSelfData(btn, "off-scene-id") || FourPartDay.getOffScene(data, groupID, dayPartName)?.id;
+                const sensorID = ancestorOrSelfData(btn, "power-sensor-id");
 
-                if (sceneID !== undefined) {
+                if (sensorID !== undefined) {
+                    await setSensorValue(connection, sensorID, 0); // Off
+                } else if (sceneID !== undefined) {
                     await setGroupScene(connection, groupID, sceneID);
                 } else {
                     await setGroupOn(connection, groupID, false);
