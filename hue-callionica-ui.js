@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-unused-vars require-await
 import { loadCurrentBridges, loadConnection, diagnoseConnection } from "./hue-callionica-connect.js";
 import { delay, sortBy, getAllPlus } from "./hue-callionica.js";
 
@@ -369,7 +370,7 @@ export function formatHumanDate(date) {
             return dateFormatWithoutYear.format(date);
         }
         return dateFormatWithYear.format(date);
-    } catch (e) {
+    } catch (_e) {
         return "Unknown";
     }
 }
@@ -388,7 +389,7 @@ export function formatHumanDateTime(date) {
             return timeFormatMDT.format(date);
         }
         return timeFormatYMDT.format(date);
-    } catch (e) {
+    } catch (_e) {
         return "Unknown";
     }
 }
@@ -411,7 +412,7 @@ export function localizeDateTime(dt) {
 }
 
 function pick(names, items) {
-    const chosen = names.map(p => []);
+    const chosen = names.map(_p => []);
     const remainder = [];
     for (const item of items) {
         const index = names.indexOf(item.name.toLowerCase());
@@ -623,7 +624,7 @@ export class CallionicaHuePage {
         this.delayController = new AbortController();
         this.hubs = [];
 
-        window.addEventListener('pageshow', (event) => {
+        globalThis.addEventListener('pageshow', (event) => {
             this.update();
         });
     }
