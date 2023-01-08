@@ -1,8 +1,12 @@
+// deno-lint-ignore-file require-await no-unused-vars no-constant-condition
 "use strict";
 
 import { lightXY, lightCT, ctToXY, Point } from "./hue-callionica-color.js";
 
-// Hope this works!
+/**
+ * Generates a unique ID
+ * @returns { string }
+ */
 export function uuid() {
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -148,7 +152,7 @@ function describeButtonItself(gesture) {
 }
 
 function describeButton(value) {
-    var button;
+    let button;
     if (value >= BTN_OFF) {
         button = BTN_OFF;
     } else if (value >= BTN_STAR_DOWN) {
@@ -267,7 +271,7 @@ export async function put(address, body) {
 }
 
 export async function create(address, body) {
-    let bridgeResult = await send("POST", address, body);
+    const bridgeResult = await send("POST", address, body);
     return bridgeResult[0].success.id;
 }
 
@@ -397,7 +401,7 @@ export async function deleteScene(connection, id) {
 export async function getCategory(connection, category) {
     const address = Address(connection, `${category}`);
 
-    var bridgeResult;
+    let bridgeResult;
     try {
         bridgeResult = await fetchJSON(address);
     } catch (e) {
@@ -1115,8 +1119,8 @@ export async function createSceneCycle(connection, groupID, zoneID, powerManagem
         return createSchedule(connection, body);
     }
 
-    var schedules = [];
-    var rules = [];
+    const schedules = [];
+    const rules = [];
     for (const [index, item] of cycle.entries()) {
         rules.push(await createNext(index));
         rules.push(await createFullPower(item, index));
@@ -1451,8 +1455,8 @@ export async function createPowerManagedZone(connection, zone) {
     const configurationID = await createStatusSensor(connection, zone.name, "PM.Zone.Configurations.Current", 0);
 
     // The power switching rules
-    var configs = [];
-    for (var index = 0; index < zone.configurations.length; ++index) {
+    const configs = [];
+    for (let index = 0; index < zone.configurations.length; ++index) {
         const configuration = zone.configurations[index];
         const config = await createPMZConfiguration(connection, configuration, index, powerLevelID, powerManagementID, configurationID);
         configs.push(config);
@@ -1912,7 +1916,7 @@ export async function createPowerManagedMotionSensor(connection, name, motionID,
         return createRule(connection, body);
     }
 
-    let rules = [
+    const rules = [
         await onActivate1(),
         await onActivate2(),
         await onActivate3(),
@@ -2141,8 +2145,8 @@ function expandResourceLink(id, data) {
 
 export function sortBy(keyFn) {
     return function sorter(a, b) {
-        var keyA = keyFn(a);
-        var keyB = keyFn(b);
+        const keyA = keyFn(a);
+        const keyB = keyFn(b);
         if (keyA < keyB) return -1;
         if (keyA > keyB) return 1;
         return 0;
@@ -2154,8 +2158,8 @@ function extractAgenda(sensor, schedules) {
     const address = `/sensors/${sensor.id}/state`;
     const enabledSchedules = schedules.filter(schedule => (schedule.status === "enabled") && schedule.command.address.endsWith(address));
     for (const schedule of enabledSchedules) {
-        let localTime = schedule.localtime;
-        let value = schedule.command.body.status;
+        const localTime = schedule.localtime;
+        const value = schedule.command.body.status;
         result.push({ localTime, sensor, value, schedule });
     }
 
@@ -2176,7 +2180,7 @@ function extractDaylightAgenda(sensor, data) {
 
     for (const rule of enabledRules) {
         for (const trigger of rule.triggers) {
-            let condition = trigger.conditions.filter(c => c.address === daylight && c.operator === "eq")[0];
+            const condition = trigger.conditions.filter(c => c.address === daylight && c.operator === "eq")[0];
             if (!condition) {
                 continue;
             }
@@ -2184,7 +2188,7 @@ function extractDaylightAgenda(sensor, data) {
             // A combination of the test above that gets us a condition that matches
             // and the fact that we've already paired conditions into a trigger means
             // that we only need to look at the operator here
-            let ddxCondition = trigger.conditions.filter(c => c.operator === "ddx")[0];
+            const ddxCondition = trigger.conditions.filter(c => c.operator === "ddx")[0];
 
             for (const action of rule.actions) {
                 if (action.address === address) {
@@ -2192,7 +2196,7 @@ function extractDaylightAgenda(sensor, data) {
                     if (ddxCondition) {
                         localTime += "+" + ddxCondition.value; // TODO
                     }
-                    let value = action.body.status;
+                    const value = action.body.status;
                     result.push({ localTime, sensor, value, rule });
                 }
             }
@@ -2204,7 +2208,7 @@ function extractDaylightAgenda(sensor, data) {
 
 function extractProperty(sensor, schedules, rules, propertyMetadata) {
 
-    let values = [];
+    const values = [];
 
     const address = `/sensors/${sensor.id}/state/status`;
     const ruleName = propertyMetadata.item.toLowerCase();
@@ -2213,17 +2217,17 @@ function extractProperty(sensor, schedules, rules, propertyMetadata) {
     for (const rule of enabledRules) {
         const valueCondition = rule.conditions.filter(condition => (condition.address === address) && (condition.operator === "eq"))[0];
         if (valueCondition) {
-            let value = parseInt(valueCondition.value, 10);
+            const value = parseInt(valueCondition.value, 10);
             if (propertyMetadata.kind === "ddx") {
                 const propertyCondition = rule.conditions.filter(condition => (condition.operator === "ddx"))[0];
                 if (propertyCondition) {
-                    let propertyValue = propertyCondition.value;
+                    const propertyValue = propertyCondition.value;
                     values.push({ value, propertyValue });
                     continue;
                 }
             } else if (propertyMetadata.kind === "scene") {
                 // TODO error handling
-                let propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
+                const propertyValue = rule.actions.filter(action => action.body.scene)[0].body.scene;
                 values.push({ value, propertyValue, rule });
                 continue;
             }
@@ -2232,7 +2236,7 @@ function extractProperty(sensor, schedules, rules, propertyMetadata) {
         }
     }
 
-    let result = [];
+    const result = [];
 
     // Condense all the found values
     for (const v of values) {
@@ -2261,7 +2265,7 @@ function extractProperty(sensor, schedules, rules, propertyMetadata) {
 }
 
 function rearrangeProperties(values, data) {
-    let result = [];
+    const result = [];
 
     for (const v of values) {
         for (const d of v.data) {
@@ -2383,7 +2387,7 @@ export function rearrangeForHueComponents(data) {
 
                 let values;
                 if (metadata.list) {
-                    let v = metadata.list.map(propertyMetadata => {
+                    const v = metadata.list.map(propertyMetadata => {
                         return {
                             metadata: propertyMetadata,
                             data: extractProperty(sensor, component.schedules, component.rules, propertyMetadata)
