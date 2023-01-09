@@ -269,6 +269,14 @@
             ];
         }
 
+        function buttonTrigger(sensor, value) {
+            const address = `/sensors/${sensor.id}/state/buttonevent`; 
+            return [
+                { address, operator: "eq", value: `${value}` },
+                { address, operator: "dx" },
+            ];
+        }
+
         function option(name, value) {
             const e = document.createElement("option");
             e.text = name;
@@ -288,24 +296,29 @@
         function getRule(sensor, scope) {
             scope = scope || document;
 
-            const operatorsSelect = scope.querySelector(".operators");
-            const temperaturesSelect = scope.querySelector(".temperatures");
+            const buttonSelect = scope.querySelector(".button-id");
+            const buttonActionSelect = scope.querySelector(".button-action");
+
             const groupsSelect = scope.querySelector(".groups");
             const scenesSelect = scope.querySelector(".scenes");
 
-            const op = operatorsSelect.value;
-            // const temp = parseInt(temperaturesSelect.value, 10);
-            const temp = temperaturesSelect.value;
+            const button = parseInt(buttonSelect.value, 10); 
+            const buttonAction = parseInt(buttonActionSelect.value);
+
             const group = groupsSelect.value;
             const scene = scenesSelect.value;
 
-            const name = `${op === "gt" ? "↑" : "↓"}${temperaturesSelect.selectedOptions[0]?.text}${scale} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
-
-            const condition = {
-                address: `/sensors/${sensor.id}/state/temperature`,
-                operator: op,
-                value: temp
+            const actionIcon = {
+                "0": "↓",
+                "1": "↓↓",
+                "2": "↑",
+                "3": ".↑",
+                "4": "?",
             };
+
+            const name = `${actionIcon[buttonAction]}${button/1000} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
+
+            const conditions = buttonTrigger(sensor, button + buttonAction);
 
             const action = {
                 address: `/groups/${group}/action`,
@@ -321,7 +334,7 @@
 
             const rule = {
                 name,
-                conditions: [ condition ],
+                conditions,
                 actions: [ action ]
             };
 
@@ -374,9 +387,9 @@
             a.href = `hue-callionica-sensor-rename.html?bridge=${data.id}&sensor=${sensor.id}`;
             a.innerText = sensor.name;
             nam.append(a);
-            const t = document.querySelector(".T");
-            t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
-            t.dataset.scale = scale;
+            // const t = document.querySelector(".T");
+            // t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
+            // t.dataset.scale = scale;
 
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
@@ -404,9 +417,9 @@
 
             selectOption(groupsSelect, sensor.name);
 
-            document.querySelector(".temperatures").append(...optionsTemp(scale, sensor.state.temperature));
+            // document.querySelector(".temperatures").append(...optionsTemp(scale, sensor.state.temperature));
 
-            document.querySelector(".temperatures + *[data-scale]").dataset.scale = scale;
+            // document.querySelector(".temperatures + *[data-scale]").dataset.scale = scale;
 
             snapToGrid();
 
@@ -449,12 +462,18 @@
             <h3>New Rule</h3>
             <p class="label">Conditions:</p>
             <p class="snap-grid">
-            <select class="operators snap-grid-item">
-            <option value="gt">Increases above</option>
-            <option value="lt">Decreases below</option>
+            <select class="button-id snap-grid-item">
+            <option value="1000">One</option>
+            <option value="2000">Two</option>
+            <option value="3000">Three</option>
+            <option value="4000">Four</option>
             </select>
-            <span class="snap-grid-item"><select class="temperatures">
-            </select><span data-scale> </span></span><!-- the space is important -->
+            <select class="button-action snap-grid-item">
+            <option value="0">Down</option>
+            <option value="1">Repeat</option>
+            <option value="2" selected>Up (short)</option>
+            <option value="3">Up (long)</option>
+            </select>
             </p>
             <p class="label">Actions:</p>
             <p class="snap-grid">
