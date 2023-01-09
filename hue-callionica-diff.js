@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-constant-condition
 // Compares two different sets of Hue bridge data to produce information about the differences
 
 export function lights({ source, destination }) {
@@ -133,7 +134,7 @@ export function extractSourceToDestinationMap(lights, scope) {
 
         const mapped = uniqueids.find(v => v[0] === uniqueid);
         if (mapped !== undefined) {
-            const [src, dst] = mapped; 
+            const [_src, dst] = mapped; 
             ids.push([value.source.id, (dst === undefined) ? undefined : lights.all[dst].destination]);
         } else {
             ids.push([value.source.id, value.destination]);
@@ -227,7 +228,7 @@ export function lightsTable(lights, tbl) {
     return tbl;
 }
 
-export function renameTable(source, destination, s2d, tbl) {
+export function renameTable(source, _destination, s2d, tbl) {
     tbl = tbl || table();
 
     const renames = [];

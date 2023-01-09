@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-unused-vars
 export class Point {
     constructor(x, y) {
         this.x = x;
