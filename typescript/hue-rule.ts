@@ -36,10 +36,10 @@ type Condition = {
 type ButtonEvent = number;
 type ConditionValue = boolean | number | string;
 
-type Property = "flag" | "status" | "buttonevent" | "presence";
+type StateProperty = "flag" | "status" | "buttonevent" | "presence";
 
 class Conditions {
-    static isEqual(id: EntityID, value: ConditionValue, property: Property = "status"): Condition {
+    static isEqual(id: EntityID, value: ConditionValue, property: StateProperty = "status"): Condition {
         return {
             address: `/${id.entity}s/${id.id}/state/${property}`,
             operator: "eq",
@@ -47,7 +47,7 @@ class Conditions {
         };
     }
 
-    static isChanged(id: EntityID, property = "status"): Condition {
+    static isChanged(id: EntityID, property: StateProperty = "status"): Condition {
         return {
             address: `/${id.entity}s/${id.id}/state/${property}`,
             operator: "dx"
@@ -61,15 +61,15 @@ class Conditions {
         };
     }
 
-    static isChangedTo(id: EntityID, value: ConditionValue, property: Property = "status"): Condition[] {
+    static isChangedTo(id: EntityID, value: ConditionValue, property: StateProperty = "status"): Condition[] {
         return [this.isEqual(id, value, property), this.isChanged(id, property)];
     }
 
-    static isUpdatedTo(id: EntityID, value: ConditionValue, property: Property = "status"): Condition[] {
+    static isUpdatedTo(id: EntityID, value: ConditionValue, property: StateProperty = "status"): Condition[] {
         return [this.isEqual(id, value, property), this.isUpdated(id)];
     }
 
-    static wasChangedTo(id: EntityID, value: ConditionValue, time: TimeDuration, property: Property = "status"): Condition[] {
+    static wasChangedTo(id: EntityID, value: ConditionValue, time: TimeDuration, property: StateProperty = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -80,7 +80,7 @@ class Conditions {
         ];
     }
 
-    static wasUpdatedTo(id: EntityID, value: ConditionValue, time: TimeDuration, property: Property = "status"): Condition[] {
+    static wasUpdatedTo(id: EntityID, value: ConditionValue, time: TimeDuration, property: StateProperty = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -91,7 +91,7 @@ class Conditions {
         ];
     }
 
-    static notChangedSince(id: EntityID, value: ConditionValue, time: TimeDuration, property: Property = "status"): Condition[] {
+    static notChangedSince(id: EntityID, value: ConditionValue, time: TimeDuration, property: StateProperty = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
@@ -102,7 +102,7 @@ class Conditions {
         ];
     }
 
-    static notUpdatedSince(id: EntityID, value: ConditionValue, time: TimeDuration, property: Property = "status"): Condition[] {
+    static notUpdatedSince(id: EntityID, value: ConditionValue, time: TimeDuration, property: StateProperty = "status"): Condition[] {
         return [
             this.isEqual(id, value, property),
             {
