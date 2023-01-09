@@ -36,7 +36,8 @@ type Condition = {
 type ButtonEvent = number;
 type ConditionValue = boolean | number | string;
 
-type StateProperty = "flag" | "status" | "buttonevent" | "presence";
+type WriteableStateProperty = "flag" | "status";
+type StateProperty = WriteableStateProperty | "buttonevent" | "presence" | "temperature";
 
 class Conditions {
     static isEqual(id: EntityID, value: ConditionValue, property: StateProperty = "status"): Condition {
