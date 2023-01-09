@@ -2614,21 +2614,25 @@ export function isMatchingCondition(condition, sensorID, property, value) {
     return false;
 }
 
+/** Rules where the sensor is used as a trigger */
 export function getSensorTriggeredRules(rules, sensorID) {
     const prefix = `/sensors/${sensorID}/`;
     return rules.filter(rule => rule.triggers.some(trigger => trigger.conditions.some(condition => condition.address.startsWith(prefix))));
 }
 
+/** Rules where the sensor is used as a condition */
 export function getSensorConditionRules(rules, sensorID) {
     const prefix = `/sensors/${sensorID}/`;
     return rules.filter(rule => rule.conditions.some(condition => condition.address.startsWith(prefix)));
 }
 
+/** Rules where the sensor is updated by an action */
 export function getSensorUpdatingRules(rules, sensorID) {
     const prefix = `/sensors/${sensorID}/`;
     return rules.filter(rule => rule.actions.some(action => action.address.startsWith(prefix)));
 }
 
+/** Schedules where the sensor is updated by a command */
 export function getSensorUpdatingSchedules(schedules, sensorID) {
     const prefix = `/sensors/${sensorID}/`;
     return schedules.filter(schedule => {
@@ -2817,6 +2821,7 @@ export function summarizeLights(group, data) {
 
     let anyOn = false;
     let allOn = true;
+    let countOn = 0;
     let anyUnreachable = false;
     let allUnreachable = true;
     let maximumBrightness = -1;
@@ -2830,6 +2835,7 @@ export function summarizeLights(group, data) {
         const on = (light.state.on && light.state.reachable);
 
         if (on) {
+            ++countOn;
             anyOn = true;
             if (light.state.bri > maximumBrightness) {
                 maximumBrightness = light.state.bri;
@@ -2868,7 +2874,7 @@ export function summarizeLights(group, data) {
         maximumBrightness = 254;
     }
 
-    return { anyOn, allOn, anyUnreachable, allUnreachable, anyDimmable, maximumBrightness, maximumColorTemperature };
+    return { anyOn, allOn, countOn, anyUnreachable, allUnreachable, anyDimmable, maximumBrightness, maximumColorTemperature };
 }
 
 function eq(a, b) {
