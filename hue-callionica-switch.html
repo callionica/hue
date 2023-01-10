@@ -198,6 +198,10 @@
             margin-left: 4rem;
         }
 
+        .condition-provider-add {
+            margin-left: 0;
+        }
+
         .label {
             font-weight: bold;
             line-height: 2.5rem;
@@ -233,7 +237,7 @@
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, getSensorTriggeredRules, createRule, deleteRule } from "./hue-callionica.js";
-        import { optionsTemp, optionsGroup, optionsScene, snapToGrid } from "./hue-callionica-ui.js";
+        import { optionsTemp, optionsGroup, optionsScene, snapToGrid, ConditionControl } from "./hue-callionica-ui.js";
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
@@ -316,9 +320,15 @@
                 "4": "?",
             };
 
-            const name = `${actionIcon[buttonAction]}${button/1000} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
+            const name = `${button/1000}${actionIcon[buttonAction]} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
 
             const conditions = buttonTrigger(sensor, button + buttonAction);
+
+            const extraConditions = [...scope.querySelectorAll(".condition")].flatMap(s => {
+                return s.callionica.control.conditions;
+            });
+
+            conditions.push(...extraConditions);
 
             const action = {
                 address: `/groups/${group}/action`,
@@ -369,6 +379,7 @@
                         }
                     })();
                 };
+                e.title = JSON.stringify(sensorRule.conditions.map(c => ({ address: c.address, value: c.value })), null, 2);
                 c.append(e);
             }
         }
@@ -417,6 +428,33 @@
 
             selectOption(groupsSelect, sensor.name);
 
+            // const addConditionSelect = document.querySelector(".condition-providers");
+            // for (const conditionProvider of conditionProviders) {
+            //     const providerElement = document.createElement("option");
+            //     providerElement.callionica = { conditionProvider: conditionProvider };
+            //     providerElement.innerText = conditionProvider.name;
+            //     addConditionSelect.append(providerElement);
+            // }
+
+            const addConditionButton = document.querySelector(".condition-provider-add");
+            addConditionButton.onclick = (evt) => {
+                evt.preventDefault();
+
+                console.log("add condition");
+
+                const e = document.createElement("div");
+                new ConditionControl(e, data);
+
+                const parent = document.querySelector("#additional-conditions");
+                parent.append(e);
+
+                // const conditionProvider = addConditionSelect.selectedOptions[0].callionica.conditionProvider;
+                // console.log(conditionProvider);
+                // const e = conditionProvider.createElement();
+                // const parent = document.querySelector("#additional-conditions");
+                // parent.append(e);
+            };
+
             // document.querySelector(".temperatures").append(...optionsTemp(scale, sensor.state.temperature));
 
             // document.querySelector(".temperatures + *[data-scale]").dataset.scale = scale;
@@ -459,29 +497,36 @@
 
         <form action="#">
             <div>
-            <h3>New Rule</h3>
-            <p class="label">Conditions:</p>
-            <p class="snap-grid">
-            <select class="button-id snap-grid-item">
-            <option value="1000">One</option>
-            <option value="2000">Two</option>
-            <option value="3000">Three</option>
-            <option value="4000">Four</option>
-            </select>
-            <select class="button-action snap-grid-item">
-            <option value="0">Down</option>
-            <option value="1">Repeat</option>
-            <option value="2" selected>Up (short)</option>
-            <option value="3">Up (long)</option>
-            </select>
-            </p>
-            <p class="label">Actions:</p>
-            <p class="snap-grid">
-                <select class="groups snap-grid-item">
-                </select>
-                <select class="scenes snap-grid-item">
-                </select>
-            </p>
+                <h3>New Rule</h3>
+                <p class="label">Conditions:</p>
+        
+                <p class="snap-grid">
+                    <span class="snap-grid-item">
+                        Button:
+                        <select class="button-id">
+                            <option value="1000">One</option>
+                            <option value="2000">Two</option>
+                            <option value="3000">Three</option>
+                            <option value="4000">Four</option>
+                        </select>
+                    </span>
+                    <select class="button-action snap-grid-item">
+                        <option value="0">Down</option>
+                        <option value="1">Repeat</option>
+                        <option value="2" selected>Up (short)</option>
+                        <option value="3">Up (long)</option>
+                    </select>
+                </p>
+                <p class="label">Additional Conditions:</p>
+                <div id="additional-conditions"></div>
+                <p><!--<select class="condition-providers"></select> --><button class="condition-provider-add">+</button></p>
+                <p class="label">Actions:</p>
+                <p class="snap-grid">
+                    <select class="groups snap-grid-item">
+                    </select>
+                    <select class="scenes snap-grid-item">
+                    </select>
+                </p>
             </div>
 
             <p class="buttons">

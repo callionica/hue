@@ -540,12 +540,22 @@ export function optionsTemp(unit, selectedT, start, end, interval) {
     return result;
 }
 
-function optionsIDName(items) {
+function optionsIDName(items, kind = undefined) {
     const result = [];
-    for (const group of items) {
+    for (const item of items) {
         const e = document.createElement("option");
-        e.value = group.id;
-        e.innerText = group.name;
+        
+        if (e.callionica === undefined) {
+            e.callionica = {};
+        }
+        e.callionica.item = item;
+
+        if (kind !== undefined) {
+            e.dataset.kind = kind;
+        }
+
+        e.value = item.id;
+        e.innerText = item.name;
 
         result.push(e);
     }
@@ -557,7 +567,7 @@ export function optionsGroup(data) {
     const groups = Object.values(data.groups);
     groups.sort((a,b) => a.name.localeCompare(b.name));
 
-    return optionsIDName(groups);
+    return optionsIDName(groups, "group");
 }
 
 export function optionsScene(data, group) {
@@ -567,7 +577,7 @@ export function optionsScene(data, group) {
 
     const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !isRecoveryScene(scene)).sort((a,b) => a.name.localeCompare(b.name));
 
-    return optionsIDName(scenes);
+    return optionsIDName(scenes, "scene");
 }
 
 /*
@@ -892,5 +902,103 @@ export class CallionicaHuePage {
         items = this.sortAndFilter(items);
 
         return items;
+    }
+}
+
+function selectOption(select, name) {
+    const options = [...select.options];
+    const found = options.find(o => o.text === name);
+    if (found !== undefined) {
+        found.selected = true;
+    }
+    return found;
+}
+
+export class ConditionControl {
+    constructor(element, data) {
+        this.element = element;
+
+        element.callionica = { control: this };
+
+        element.classList.add("condition");
+
+        element.innerHTML = "";
+
+        const itemControl = document.createElement("select");
+        itemControl.classList.add("condition-item");
+
+        const propertyControl = document.createElement("select");
+        propertyControl.classList.add("condition-property");
+
+        itemControl.onchange = (_evt) => {
+            const selected = itemControl.selectedOptions[0];
+            const kind = selected.dataset.kind;
+            const item = selected.callionica.item;
+            this.updatePropertyControl(kind, item);
+        };
+
+        propertyControl.onchange = (_evt) => {
+            this.updateCondition();
+        };
+        
+        element.append(itemControl, propertyControl);
+
+        this.update(data);
+    }
+
+    update(data) {
+        this.data = data;
+
+        const itemControl = this.element.querySelector(".condition-item");
+        
+        const oldText = itemControl.selectedOptions[0]?.text;
+
+        itemControl.append(...optionsGroup(data));
+
+        selectOption(itemControl, oldText);
+
+        if (itemControl.selectedOptions.length === 0) {
+            itemControl.selectedIndex = 0;
+        }
+
+        itemControl.onchange();
+    }
+
+    updatePropertyControl(kind, item) {
+        const propertyControl = this.element.querySelector(".condition-property");
+        const oldText = propertyControl.selectedOptions[0]?.text;
+
+        propertyControl.innerHTML = "";
+
+        if (kind === "group") {
+            propertyControl.append(...optionsIDName([
+                { id: "true", name: "Any light on" },
+                { id: "false", name: "All lights off" }
+            ], "any_on"));
+        }
+
+        selectOption(propertyControl, oldText);
+
+        this.updateCondition();
+    }
+
+    updateCondition() {
+        this.element.title = JSON.stringify(this.conditions, null, 2);
+    }
+
+    get conditions() {
+        const itemControl = this.element.querySelector(".condition-item");
+        const item = itemControl.selectedOptions[0];
+        const id = item.value;
+
+        const propertyControl = this.element.querySelector(".condition-property");
+        const property = propertyControl.selectedOptions[0];
+        const kind = property.dataset.kind;
+
+        return [{
+            address: `/groups/${id}/state/${kind}`,
+            operator: "eq",
+            value: property.value
+        }];
     }
 }
