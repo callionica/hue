@@ -448,6 +448,9 @@
                 const parent = document.querySelector("#additional-conditions");
                 parent.append(e);
 
+                const itemSelect = e.querySelector(".condition-item");
+                selectOption(itemSelect, sensor.name);
+
                 // const conditionProvider = addConditionSelect.selectedOptions[0].callionica.conditionProvider;
                 // console.log(conditionProvider);
                 // const e = conditionProvider.createElement();
