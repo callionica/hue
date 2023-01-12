@@ -956,6 +956,11 @@ export class ConditionControl {
                 const sensor = this.property.sensor;
                 const scale = "C"; // TODO
                 valueControl.append(...optionsTemp(scale, sensor.state.temperature));
+                operatorControl.hidden = false;
+                valueControl.hidden = false;
+            } else {
+                operatorControl.hidden = true;
+                valueControl.hidden = true;
             }
 
             operatorControl.onchange();
