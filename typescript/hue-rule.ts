@@ -1,8 +1,8 @@
 // deno-lint-ignore-file no-unused-vars
 import { Entity, Method, ID, EntityID, SensorID } from "./hue-core.ts";
 
-type TimeDuration = string;
-type TimeInterval = string;
+type TimeDuration = string & { kind_: "TimeDuration" };
+type TimeInterval = string & { kind_: "TimeInterval" };
 
 type Rule = {
     name: string,
