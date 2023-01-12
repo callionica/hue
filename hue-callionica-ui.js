@@ -567,6 +567,13 @@ export function optionsGroup(data) {
     return optionsIDName(groups, "group");
 }
 
+export function optionsComponent(data) {
+    const groups = Object.values(data.components);
+    groups.sort((a, b) => a.name.localeCompare(b.name));
+
+    return optionsIDName(groups, "component");
+}
+
 export function optionsScene(data, group) {
     function isRecoveryScene(scene) {
         return scene.name.replaceAll(" ", "").toLowerCase().includes("recoveryscene");
@@ -930,11 +937,6 @@ export class ConditionControl {
         const operatorControl = document.createElement("select");
         operatorControl.classList.add("condition-operator");
 
-        operatorControl.append(...optionsIDName([
-            { id: "lt", name: "Below" },
-            { id: "gt", name: "Above" }
-        ], "operator"));
-
         const valueControl = document.createElement("select");
         valueControl.classList.add("condition-value");
 
@@ -954,8 +956,32 @@ export class ConditionControl {
 
             if (this.propertyKind === "temperature") {
                 const sensor = this.property.sensor;
+
+                operatorControl.innerHTML = "";
+                operatorControl.append(...optionsIDName([
+                    { id: "lt", name: "Below" },
+                    { id: "gt", name: "Above" }
+                ], "operator"));
+
                 const scale = "C"; // TODO
                 valueControl.append(...optionsTemp(scale, sensor.state.temperature));
+
+                operatorControl.hidden = false;
+                valueControl.hidden = false;
+            } else if (this.propertyKind === "state") {
+                const sensor = this.property.sensor;
+                
+                operatorControl.innerHTML = "";
+                operatorControl.append(...optionsIDName([
+                    { id: "eq", name: "Is" },
+                ], "operator"));
+
+                valueControl.append(
+                    ...optionsIDName(sensor.values.map(s => {
+                        return { id: s.value, name: s.name.replaceAll(">", "›") };
+                    }))
+                );
+
                 operatorControl.hidden = false;
                 valueControl.hidden = false;
             } else {
@@ -996,6 +1022,7 @@ export class ConditionControl {
         const oldText = itemControl.selectedOptions[0]?.text;
 
         itemControl.append(...optionsGroup(data));
+        itemControl.append(...optionsComponent(data));
 
         selectOption(itemControl, oldText);
 
@@ -1024,12 +1051,27 @@ export class ConditionControl {
             ], "any_on"));
 
 
-            for (const tempSensor of group.temperatures) {
+            for (const sensor of group.temperatures) {
                 propertyControl.append(...optionsIDName([
-                    { id: tempSensor.id, name: "Temperature", sensor: tempSensor },
+                    {
+                        id: sensor.id,
+                        name: "Temperature",
+                        sensor
+                    },
                 ], "temperature"));
             }
 
+        } else if (kind === "component") {
+            // Skip action sensors when populating conditions
+            for (const sensor of item.sensors.filter(s => !s.modelid.endsWith(".Action"))) {
+                propertyControl.append(...optionsIDName([
+                    {
+                        id: sensor.id,
+                        name: `${sensor.metadata.property.replaceAll(">", "›")}`,
+                        sensor
+                    },
+                ], "state"));
+            }
         }
 
         selectOption(propertyControl, oldText);
@@ -1046,7 +1088,7 @@ export class ConditionControl {
         try {
             const kind = this.propertyKind;
 
-            if (kind === "temperature") {
+            if (["temperature", "state"].includes(kind)) {
                 return [{
                     address: `/sensors/${this.property.id}/state/${kind}`,
                     operator: `${this.operator}`,
