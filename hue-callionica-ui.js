@@ -44,16 +44,16 @@ export function getDaylight(data) {
     return daylight;
 }
 
-export const FourPartDay = (()=>{
+export const FourPartDay = (() => {
     const parts = ["morning", "day", "evening", "night"];
-    
+
     const daylight = {
         morning: "light",
         day: "light",
         evening: "dark",
         night: "dark"
     };
-    
+
     const forward = {
         morning: false,
         day: true,
@@ -82,7 +82,7 @@ export const FourPartDay = (()=>{
         "day": "T08:30:00",
         "evening": "T19:30:00",
         "night": "T23:00:00",
-    
+
         // Daylight adjustments
         "morning-dark": "morning",
         "day-dark": "day",
@@ -104,7 +104,7 @@ export const FourPartDay = (()=>{
         }
         return rules;
     }
-    
+
     function setRules(rules) {
         localStorage.setItem(keyRules, JSON.stringify(rules, null, 2));
     }
@@ -152,9 +152,9 @@ export const FourPartDay = (()=>{
 
         function getTimeSeconds(date) {
             return (date.getHours() * 60 * 60) +
-            (date.getMinutes() * 60) +
-            (date.getSeconds())
-            ;
+                (date.getMinutes() * 60) +
+                (date.getSeconds())
+                ;
         }
 
         function timeToSeconds(time) {
@@ -171,7 +171,7 @@ export const FourPartDay = (()=>{
 
         // Assume that morning starts on or after 0 
         // and night starts before 24
-    
+
         const now = getTimeSeconds(date);
 
         if (now < fourPartDaySeconds.morning) {
@@ -301,7 +301,7 @@ export const FourPartDay = (()=>{
                 break;
             }
         }
-    
+
         return matchingScene;
     }
 
@@ -360,8 +360,8 @@ export const FourPartDay = (()=>{
     };
 })();
 
-const dateFormatWithYear = Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric"});
-const dateFormatWithoutYear = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric"});
+const dateFormatWithYear = Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
+const dateFormatWithoutYear = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 
 export function formatHumanDate(date) {
     try {
@@ -375,9 +375,9 @@ export function formatHumanDate(date) {
     }
 }
 
-const timeFormatYMDT = Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "numeric"});
-const timeFormatMDT = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "numeric"});
-const timeFormatT = Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "numeric"});
+const timeFormatYMDT = Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "numeric" });
+const timeFormatMDT = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "numeric" });
+const timeFormatT = Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "numeric" });
 
 export function formatHumanDateTime(date) {
     try {
@@ -401,9 +401,9 @@ export function localizeDateTime(dt) {
     }
 
     const d = new Date(dt);
-    const o = {weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"};
-    const oDate = {weekday: "short", day: "numeric", month: "long", year: "numeric"};
-    const oTime = {hour: "numeric", minute: "numeric", timeZoneName: "short"};
+    const o = { weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short" };
+    const oDate = { weekday: "short", day: "numeric", month: "long", year: "numeric" };
+    const oTime = { hour: "numeric", minute: "numeric", timeZoneName: "short" };
     const displayDate = d.toLocaleDateString(undefined, oDate);
     const displayTime = d.toLocaleTimeString(undefined, oTime).replace(/(:00)?:00( [AP]M)/i, "$2");
     const display = d.toLocaleString(undefined, o).replace(/(:00)?:00( [AP]M)/i, "$2");
@@ -468,7 +468,7 @@ export function paramsSort(params, items) {
  * @returns { number }
  */
 function FFromC(c) {
-    return (c * 9/5) + 32;
+    return (c * 9 / 5) + 32;
 }
 
 /**
@@ -477,7 +477,7 @@ function FFromC(c) {
  * @returns { number }
  */
 function CFromF(f) {
-    return (f - 32) * 5/9;
+    return (f - 32) * 5 / 9;
 }
 
 /**
@@ -509,16 +509,13 @@ function TFromF(f) {
  */
 export function optionsTemp(unit, selectedT, start, end, interval) {
     const fn = unit === "C" ? TFromC : TFromF;
-    
-    if (unit === "C") {
-        start = (start !== undefined) ? start : 0;
-        end = (end !== undefined) ? end : 40;
-        interval = interval || 0.5;
-    } else {
-        start = (start !== undefined) ? start : 30;
-        end = (end !== undefined) ? end : 110;
-        interval = interval || 1;
-    }
+
+    const defaults = unit === "C" ? { start: 0, end: 40, interval: 0.5 } : { start: 30, end: 110, interval: 1 }
+
+    start = (start !== undefined) ? start : defaults.start;
+    end = (end !== undefined) ? end : defaults.end;
+    interval = interval || defaults.interval;
+
 
     selectedT = (selectedT !== undefined) ? selectedT : fn(start);
     let selected = false;
@@ -544,7 +541,7 @@ function optionsIDName(items, kind = undefined) {
     const result = [];
     for (const item of items) {
         const e = document.createElement("option");
-        
+
         if (e.callionica === undefined) {
             e.callionica = {};
         }
@@ -565,7 +562,7 @@ function optionsIDName(items, kind = undefined) {
 
 export function optionsGroup(data) {
     const groups = Object.values(data.groups);
-    groups.sort((a,b) => a.name.localeCompare(b.name));
+    groups.sort((a, b) => a.name.localeCompare(b.name));
 
     return optionsIDName(groups, "group");
 }
@@ -575,7 +572,7 @@ export function optionsScene(data, group) {
         return scene.name.replaceAll(" ", "").toLowerCase().includes("recoveryscene");
     }
 
-    const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !isRecoveryScene(scene)).sort((a,b) => a.name.localeCompare(b.name));
+    const scenes = Object.values(data.scenes).filter(scene => (scene.group === group.id) && !isRecoveryScene(scene)).sort((a, b) => a.name.localeCompare(b.name));
 
     return optionsIDName(scenes, "scene");
 }
@@ -666,7 +663,7 @@ export class CallionicaHuePage {
         /** @type number */
         this.delay = 2 * 1000;
         /** @type number */
-        this.cacheMS = this.delay/2;
+        this.cacheMS = this.delay / 2;
         /** @type AbortController */
         this.delayController = new AbortController();
         this.hubs = [];
@@ -752,7 +749,7 @@ export class CallionicaHuePage {
         const missing = (dataResults.length === 0) || dataResults.some(result => result.connection === undefined);
 
         const failures = dataResults.filter(r => (r.connection !== undefined) && (r.status !== "fulfilled")).map(r => r.connection);
-        
+
         if (!missing && (failures.length === 0)) {
             delete document.body.dataset.showConnection;
             return;
@@ -776,7 +773,7 @@ export class CallionicaHuePage {
                 const link = `https://${connection.bridge.ip}/api/unauthenticated/config`;
                 const cert = e.querySelector(`a[href='${link}']`);
 
-                if (diagnosis === "certificate-error") {    
+                if (diagnosis === "certificate-error") {
                     if (!cert) {
                         const p = document.createElement("p");
                         p.innerHTML = `<a href="${link}" rel="noopener">Refresh connection '${connection.bridge.name}'</a>`;
@@ -853,7 +850,7 @@ export class CallionicaHuePage {
             try {
 
                 const hubs = await this.requestData_(this.cacheMS);
-                this.cacheMS = Math.min(this.delay/2, 1 * 1000);
+                this.cacheMS = Math.min(this.delay / 2, 1 * 1000);
                 if (hubs !== undefined) {
                     this.hubs = hubs;
                 }
@@ -891,7 +888,7 @@ export class CallionicaHuePage {
                     const sensor = component.sensors.find(sensor => sensor.modelid == "PM.Zone.PowerLevel");
                     return sensor;
                 }).find(x => x);
-                return {...item, components, powerSensor, bridge};
+                return { ...item, components, powerSensor, bridge };
             });
         });
 
@@ -930,18 +927,58 @@ export class ConditionControl {
         const propertyControl = document.createElement("select");
         propertyControl.classList.add("condition-property");
 
+        const operatorControl = document.createElement("select");
+        operatorControl.classList.add("condition-operator");
+
+        operatorControl.append(...optionsIDName([
+            { id: "lt", name: "Below" },
+            { id: "gt", name: "Above" }
+        ], "operator"));
+
+        const valueControl = document.createElement("select");
+        valueControl.classList.add("condition-value");
+
         itemControl.onchange = (_evt) => {
             const selected = itemControl.selectedOptions[0];
-            const kind = selected.dataset.kind;
-            const item = selected.callionica.item;
-            this.updatePropertyControl(kind, item);
+            this.kind = selected.dataset.kind;
+            this.item = selected.callionica.item;
+            this.updatePropertyControl();
         };
 
         propertyControl.onchange = (_evt) => {
+            const selected = propertyControl.selectedOptions[0];
+            this.propertyKind = selected.dataset.kind;
+            this.property = selected.callionica.item;
+
+            valueControl.innerHTML = "";
+
+            if (this.propertyKind === "temperature") {
+                const sensor = this.property.sensor;
+                const scale = "C"; // TODO
+                valueControl.append(...optionsTemp(scale, sensor.state.temperature));
+            }
+
+            operatorControl.onchange();
+            valueControl.onchange();
+
             this.updateCondition();
         };
-        
-        element.append(itemControl, propertyControl);
+
+        operatorControl.onchange = (_evt) => {
+            const selected = operatorControl.selectedOptions[0];
+            this.operator = selected?.value;
+
+            this.updateCondition();
+        }
+
+        valueControl.onchange = (_evt) => {
+            const selected = valueControl.selectedOptions[0];
+            this.value = selected?.value;
+
+            this.updateCondition();
+        }
+
+        element.append(itemControl, propertyControl, operatorControl, valueControl);
 
         this.update(data);
     }
@@ -950,7 +987,7 @@ export class ConditionControl {
         this.data = data;
 
         const itemControl = this.element.querySelector(".condition-item");
-        
+
         const oldText = itemControl.selectedOptions[0]?.text;
 
         itemControl.append(...optionsGroup(data));
@@ -964,22 +1001,35 @@ export class ConditionControl {
         itemControl.onchange();
     }
 
-    updatePropertyControl(kind, item) {
+    updatePropertyControl() {
+        const kind = this.kind;
+        const item = this.item;
+
         const propertyControl = this.element.querySelector(".condition-property");
         const oldText = propertyControl.selectedOptions[0]?.text;
 
         propertyControl.innerHTML = "";
 
         if (kind === "group") {
+            const group = item;
+
             propertyControl.append(...optionsIDName([
                 { id: "true", name: "Any light on" },
                 { id: "false", name: "All lights off" }
             ], "any_on"));
+
+
+            for (const tempSensor of group.temperatures) {
+                propertyControl.append(...optionsIDName([
+                    { id: tempSensor.id, name: "Temperature", sensor: tempSensor },
+                ], "temperature"));
+            }
+
         }
 
         selectOption(propertyControl, oldText);
 
-        this.updateCondition();
+        propertyControl.onchange();
     }
 
     updateCondition() {
@@ -987,18 +1037,25 @@ export class ConditionControl {
     }
 
     get conditions() {
-        const itemControl = this.element.querySelector(".condition-item");
-        const item = itemControl.selectedOptions[0];
-        const id = item.value;
 
-        const propertyControl = this.element.querySelector(".condition-property");
-        const property = propertyControl.selectedOptions[0];
-        const kind = property.dataset.kind;
+        try {
+            const kind = this.propertyKind;
 
-        return [{
-            address: `/groups/${id}/state/${kind}`,
-            operator: "eq",
-            value: property.value
-        }];
+            if (kind === "temperature") {
+                return [{
+                    address: `/sensors/${this.property.id}/state/${kind}`,
+                    operator: `${this.operator}`,
+                    value: `${this.value}`
+                }];
+            }
+
+            return [{
+                address: `/groups/${this.item.id}/state/${kind}`,
+                operator: "eq",
+                value: this.property.id
+            }];
+        } catch (_e) {
+            return [];
+        }
     }
 }
