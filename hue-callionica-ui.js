@@ -940,17 +940,42 @@ export class ConditionControl {
         const valueControl = document.createElement("select");
         valueControl.classList.add("condition-value");
 
+        const startControl = document.createElement("input");
+        startControl.type = "time";
+        startControl.value = "08:00";
+        startControl.classList.add("condition-start-time");
+        this.startTime = toHMS(startControl.value);
+
+        const endControl = document.createElement("input");
+        endControl.type = "time";
+        endControl.value = "17:00";
+        endControl.classList.add("condition-end-time");
+        this.endTime = toHMS(endControl.value);
+
         itemControl.onchange = (_evt) => {
             const selected = itemControl.selectedOptions[0];
             this.kind = selected.dataset.kind;
             this.item = selected.callionica.item;
+
+            if (this.kind === "time") {
+                propertyControl.hidden = true;
+                startControl.hidden = false;
+                endControl.hidden = false;
+                valueControl.hidden = true;
+            } else {
+                propertyControl.hidden = false;
+                startControl.hidden = true;
+                endControl.hidden = true;
+                valueControl.hidden = false;
+            }
+
             this.updatePropertyControl();
         };
 
         propertyControl.onchange = (_evt) => {
             const selected = propertyControl.selectedOptions[0];
-            this.propertyKind = selected.dataset.kind;
-            this.property = selected.callionica.item;
+            this.propertyKind = selected?.dataset.kind;
+            this.property = selected?.callionica.item;
 
             valueControl.innerHTML = "";
 
@@ -959,8 +984,8 @@ export class ConditionControl {
 
                 operatorControl.innerHTML = "";
                 operatorControl.append(...optionsIDName([
-                    { id: "lt", name: "Below" },
-                    { id: "gt", name: "Above" }
+                    { id: "lt", name: "below" },
+                    { id: "gt", name: "above" }
                 ], "operator"));
 
                 const scale = "C"; // TODO
@@ -973,7 +998,7 @@ export class ConditionControl {
                 
                 operatorControl.innerHTML = "";
                 operatorControl.append(...optionsIDName([
-                    { id: "eq", name: "Is" },
+                    { id: "eq", name: "is" },
                 ], "operator"));
 
                 valueControl.append(
@@ -1009,7 +1034,28 @@ export class ConditionControl {
             this.updateCondition();
         }
 
-        element.append(itemControl, propertyControl, operatorControl, valueControl);
+        function toHMS(value) {
+            const pieces = value.split(":");
+            while (pieces.length < 3) {
+                pieces.push("00");
+            }
+
+            return pieces.map(p => (p == "") ? "00" : p).join(":");
+        }
+
+        startControl.onchange = (_evt) => {
+            const hms = toHMS(startControl.value);
+            this.startTime = hms;
+            this.updateCondition();
+        }
+
+        endControl.onchange = (_evt) => {
+            const hms = toHMS(endControl.value);
+            this.endTime = hms;
+            this.updateCondition();
+        }
+
+        element.append(itemControl, propertyControl, operatorControl, valueControl, startControl, endControl);
 
         this.update(data);
     }
@@ -1021,6 +1067,9 @@ export class ConditionControl {
 
         const oldText = itemControl.selectedOptions[0]?.text;
 
+        itemControl.innerHTML = "";
+        itemControl.append(...optionsIDName([{ id: "localtime", name: "Time" }], "time"));
+        itemControl.append(...optionsIDName([{ id: "1", name: "Daylight" }], "daylight"));
         itemControl.append(...optionsGroup(data));
         itemControl.append(...optionsComponent(data));
 
@@ -1050,7 +1099,6 @@ export class ConditionControl {
                 { id: "false", name: "All lights off" }
             ], "any_on"));
 
-
             for (const sensor of group.temperatures) {
                 propertyControl.append(...optionsIDName([
                     {
@@ -1072,6 +1120,11 @@ export class ConditionControl {
                     },
                 ], "state"));
             }
+        } else if (kind === "daylight") {
+            propertyControl.append(...optionsIDName([
+                { id: "true", name: "After sunrise" },
+                { id: "false", name: "After sundown" }
+            ], "daylight"));
         }
 
         selectOption(propertyControl, oldText);
@@ -1086,13 +1139,30 @@ export class ConditionControl {
     get conditions() {
 
         try {
+
+            if (this.kind === "time") {
+                return [{
+                    address: `/config/localtime`,
+                    operator: `in`,
+                    value: `T${this.startTime}/T${this.endTime}`
+                }];
+            }
+
             const kind = this.propertyKind;
 
-            if (["temperature", "state"].includes(kind)) {
+            if (["state", "temperature"].includes(kind)) {
                 return [{
                     address: `/sensors/${this.property.id}/state/${kind}`,
                     operator: `${this.operator}`,
                     value: `${this.value}`
+                }];
+            }
+
+            if (["daylight"].includes(kind)) {
+                return [{
+                    address: `/sensors/${this.item.id}/state/${kind}`,
+                    operator: `eq`,
+                    value: this.property.id
                 }];
             }
 

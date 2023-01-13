@@ -443,13 +443,14 @@
                 console.log("add condition");
 
                 const e = document.createElement("div");
-                new ConditionControl(e, data);
+                const control = new ConditionControl(e, data);
 
                 const parent = document.querySelector("#additional-conditions");
                 parent.append(e);
 
                 const itemSelect = e.querySelector(".condition-item");
                 selectOption(itemSelect, sensor.name);
+                control.update(data);
 
                 // const conditionProvider = addConditionSelect.selectedOptions[0].callionica.conditionProvider;
                 // console.log(conditionProvider);
