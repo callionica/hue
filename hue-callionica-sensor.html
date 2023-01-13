@@ -445,23 +445,22 @@
                 const e = document.createElement("div");
                 const control = new ConditionControl(e, data);
 
+                const remove = document.createElement("button");
+                remove.classList.add(".condition-provider-remove");
+                remove.innerText = "-";
+                remove.onclick = (_evt) => {
+                    e.remove();
+                };
+
+                e.append(remove);
+
                 const parent = document.querySelector("#additional-conditions");
                 parent.append(e);
 
                 const itemSelect = e.querySelector(".condition-item");
                 selectOption(itemSelect, sensor.name);
                 control.update(data);
-
-                // const conditionProvider = addConditionSelect.selectedOptions[0].callionica.conditionProvider;
-                // console.log(conditionProvider);
-                // const e = conditionProvider.createElement();
-                // const parent = document.querySelector("#additional-conditions");
-                // parent.append(e);
             };
-
-            // document.querySelector(".temperatures").append(...optionsTemp(scale, sensor.state.temperature));
-
-            // document.querySelector(".temperatures + *[data-scale]").dataset.scale = scale;
 
             snapToGrid();
 
