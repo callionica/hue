@@ -955,6 +955,7 @@ export class ConditionControl {
         itemControl.onchange = (_evt) => {
             const selected = itemControl.selectedOptions[0];
             this.kind = selected.dataset.kind;
+            this.element.dataset.kind = this.kind;
             this.item = selected.callionica.item;
 
             if (this.kind === "time") {

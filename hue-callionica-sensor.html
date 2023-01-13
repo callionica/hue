@@ -233,6 +233,23 @@
             max-width: var(--max-width);
         }
 
+        .condition[data-kind='daylight']:before {
+            content: '☀️ ';
+        }
+
+        .condition[data-kind='time']:before {
+            content: '🕰 ';
+        }
+
+        .condition[data-kind='group']:before {
+            content: '🛋 ';
+        }
+
+        .condition[data-kind='component']:before {
+            content: '🎚 ';
+        }
+
+
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
@@ -428,14 +445,6 @@
 
             selectOption(groupsSelect, sensor.name);
 
-            // const addConditionSelect = document.querySelector(".condition-providers");
-            // for (const conditionProvider of conditionProviders) {
-            //     const providerElement = document.createElement("option");
-            //     providerElement.callionica = { conditionProvider: conditionProvider };
-            //     providerElement.innerText = conditionProvider.name;
-            //     addConditionSelect.append(providerElement);
-            // }
-
             const addConditionButton = document.querySelector(".condition-provider-add");
             addConditionButton.onclick = (evt) => {
                 evt.preventDefault();
@@ -501,7 +510,7 @@
         <form action="#">
             <div>
                 <h3>New Rule</h3>
-                <p class="label">Conditions:</p>
+                <p class="label">Triggers:</p>
         
                 <p class="snap-grid">
                     <span class="snap-grid-item">
@@ -520,7 +529,7 @@
                         <option value="3">Up (long)</option>
                     </select>
                 </p>
-                <p class="label">Additional Conditions:</p>
+                <p class="label">Conditions:</p>
                 <div id="additional-conditions"></div>
                 <p><!--<select class="condition-providers"></select> --><button class="condition-provider-add">+</button></p>
                 <p class="label">Actions:</p>
