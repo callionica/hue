@@ -254,7 +254,7 @@
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
         import { getAllPlus, getSensorTriggeredRules, createRule, deleteRule } from "./hue-callionica.js";
-        import { optionsTemp, optionsGroup, optionsScene, snapToGrid, ConditionControl } from "./hue-callionica-ui.js";
+        import { optionsTemp, optionsGroup, optionsScene, snapToGrid, TriggerControl, ConditionControl } from "./hue-callionica-ui.js";
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
@@ -317,35 +317,37 @@
         function getRule(sensor, scope) {
             scope = scope || document;
 
-            const buttonSelect = scope.querySelector(".button-id");
-            const buttonActionSelect = scope.querySelector(".button-action");
+            // const buttonSelect = scope.querySelector(".button-id");
+            // const buttonActionSelect = scope.querySelector(".button-action");
 
             const groupsSelect = scope.querySelector(".groups");
             const scenesSelect = scope.querySelector(".scenes");
 
-            const button = parseInt(buttonSelect.value, 10); 
-            const buttonAction = parseInt(buttonActionSelect.value);
+            // const button = parseInt(buttonSelect.value, 10); 
+            // const buttonAction = parseInt(buttonActionSelect.value);
 
             const group = groupsSelect.value;
             const scene = scenesSelect.value;
 
-            const actionIcon = {
-                "0": "↓",
-                "1": "↓↓",
-                "2": "↑",
-                "3": ".↑",
-                "4": "?",
-            };
+            // const actionIcon = {
+            //     "0": "↓",
+            //     "1": "↓↓",
+            //     "2": "↑",
+            //     "3": ".↑",
+            //     "4": "?",
+            // };
 
-            const name = `${button/1000}${actionIcon[buttonAction]} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
+            const triggerControl = scope.querySelector(".trigger-control").callionica.control;
 
-            const conditions = buttonTrigger(sensor, button + buttonAction);
+            const name = `${triggerControl.summary} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
+
+            const triggerConditions = triggerControl.conditions;
 
             const extraConditions = [...scope.querySelectorAll(".condition")].flatMap(s => {
                 return s.callionica.control.conditions;
             });
 
-            conditions.push(...extraConditions);
+            const conditions = [...triggerConditions, ...extraConditions];
 
             const action = {
                 address: `/groups/${group}/action`,
@@ -409,19 +411,29 @@
 
             updateRules();
 
+            const triggerControl = new TriggerControl(sensor);
+            console.log(triggerControl.element);
+            console.log(triggerControl.conditions);
+
             const nam = document.querySelector(".name");
             nam.innerHTML = "";
             const a = document.createElement("a");
             a.href = `hue-callionica-sensor-rename.html?bridge=${data.id}&sensor=${sensor.id}`;
             a.innerText = sensor.name;
             nam.append(a);
-            // const t = document.querySelector(".T");
-            // t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
-            // t.dataset.scale = scale;
+
+            if (sensor.state.temperature !== undefined) {
+                const t = document.querySelector(".T");
+                t.innerText = sensor[scale === "C" ? "celsius" : "fahrenheit"] ?? "";
+                t.dataset.scale = scale;
+            }
 
             document.querySelector(".description").innerText = sensorKind(sensor);
             document.querySelector(".bridge-name").innerText = bridgeName;
             document.querySelector(".id").innerText = sensor.id;
+
+            const triggerContainer = document.querySelector(".trigger");
+            triggerContainer.append(triggerControl.element);
 
             const groupsSelect = document.querySelector(".groups");
             const scenesSelect = document.querySelector(".scenes");
@@ -511,8 +523,9 @@
             <div>
                 <h3>New Rule</h3>
                 <p class="label">Triggers:</p>
+                <div class="trigger"></div>
         
-                <p class="snap-grid">
+                <!--<p class="snap-grid">
                     <span class="snap-grid-item">
                         Button:
                         <select class="button-id">
@@ -528,7 +541,7 @@
                         <option value="2" selected>Up (short)</option>
                         <option value="3">Up (long)</option>
                     </select>
-                </p>
+                </p>-->
                 <p class="label">Conditions:</p>
                 <div id="additional-conditions"></div>
                 <p><!--<select class="condition-providers"></select> --><button class="condition-provider-add">+</button></p>

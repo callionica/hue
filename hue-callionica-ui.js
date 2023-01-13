@@ -463,7 +463,7 @@ export function paramsSort(params, items) {
 }
 
 /**
- * 
+ * Fahrenheit from Celsius
  * @param { number } c 
  * @returns { number }
  */
@@ -472,7 +472,7 @@ function FFromC(c) {
 }
 
 /**
- * 
+ * Celsius from Fahrenheit
  * @param { number } f 
  * @returns { number }
  */
@@ -481,7 +481,7 @@ function CFromF(f) {
 }
 
 /**
- * 
+ * Hue temperature value from Celsius
  * @param { number } c 
  * @returns { number }
  */
@@ -490,7 +490,7 @@ function TFromC(c) {
 }
 
 /**
- * 
+ * Hue temperature value from Fahrenheit
  * @param { number } f 
  * @returns { number }
  */
@@ -499,12 +499,12 @@ function TFromF(f) {
 }
 
 /**
- * 
- * @param {"C" | "F" } unit 
- * @param {number} selectedT 
- * @param {number} start 
- * @param {number} end 
- * @param {number} interval 
+ * Creates an array of option elements for commonly used temperatures
+ * @param {"C" | "F" } unit The temperature unit C or F
+ * @param {number} selectedT The current temperature
+ * @param {number} start The lowest temperature
+ * @param {number} end The highest temperature
+ * @param {number} interval The temperature difference between each option
  * @returns 
  */
 export function optionsTemp(unit, selectedT, start, end, interval) {
@@ -996,7 +996,7 @@ export class ConditionControl {
                 valueControl.hidden = false;
             } else if (this.propertyKind === "state") {
                 const sensor = this.property.sensor;
-                
+
                 operatorControl.innerHTML = "";
                 operatorControl.append(...optionsIDName([
                     { id: "eq", name: "is" },
@@ -1175,5 +1175,224 @@ export class ConditionControl {
         } catch (_e) {
             return [];
         }
+    }
+}
+
+export class TriggerControl {
+    constructor(sensor, scale) {
+        this.scale = scale ?? "C";
+        this.sensor = sensor;
+    }
+
+    get element() {
+        if (this.element_ === undefined) {
+            this.allowDelay = true;
+
+            const element = document.createElement("div");
+            element.classList.add("trigger-control");
+            element.callionica = { control: this };
+
+            if (this.sensor.state.daylight !== undefined) {
+                // Daylight updates slowly and is a bool, so it makes sense to only use a changed trigger
+                this.triggers = ["change"];
+                this.operators = [
+                    { id: "eq", name: "Is" }
+                ];
+                this.property = "daylight";
+                this.values = [
+                    { id: "true", name: "After sunrise", symbol: "☀️" },
+                    { id: "false", name: "After sunset", symbol: "🌙" },
+                ];
+            } else if (this.sensor.state.temperature !== undefined) {
+                // Temperature updates fairly often and can fluctuate
+                // It's also not a precise value.
+                // As a result, we must use only use gt and lt for comparisons
+                // which is not compatible with change detection.
+                // If you need it, update another sensor from a temperature-triggered rule
+                // and use change detection on that sensor instead.
+                // We also don't allow delay because the automatic update makes it weird
+                this.allowDelay = false;
+                this.triggers = ["update"];
+                this.operators = [
+                    { id: "gt", name: "Is above" },
+                    { id: "lt", name: "Is below" }
+                ];
+                this.property = "temperature";
+                
+                if (this.valueElement === undefined) {
+                    const valueElement = document.createElement("select");
+                    valueElement.classList.add("trigger-value");
+    
+                    valueElement.append(...optionsTemp(this.scale, this.sensor.state.temperature));
+
+                    this.valueElement = valueElement;
+                }
+
+                this.valueAccessoryElement = document.createElement("span");
+                this.valueAccessoryElement.dataset.scale = this.scale;
+                this.valueAccessoryElement.innerText = " ";
+
+                this.symbolAccessory = this.scale;
+
+            } else if (this.sensor.state.status !== undefined) {
+                // Sensor updates should usually be change-detecting,
+                // but sometimes we want to use update-detecting triggers
+                // (for example for action sensors)
+                this.triggers = ["change", "update"];
+                this.operators = [
+                    { id: "eq", name: "Is" },
+                    { id: "gt", name: "Is above" },
+                    { id: "lt", name: "Is below" },
+                ];
+                this.property = "status";
+                this.values = [
+                    { id: "0", name: "0" },
+                    { id: "1", name: "1" },
+                ];
+            } else if (this.sensor.state.buttonevent !== undefined) {
+                // A button press must be detected after a previous button press of the same kind
+                // so we must only use an update-detecting trigger.
+                this.allowDelay = false;
+                this.triggers = ["update"];
+                this.operators = [
+                    { id: "eq", name: "Is" },
+                ];
+                this.property = "buttonevent";
+
+                const buttons = [
+                    { id: 1, name: "One" },
+                    { id: 2, name: "Two" },
+                    { id: 3, name: "Three" },
+                    { id: 4, name: "Four" },
+                ];
+
+                const buttonGestures = [
+                    { id: 0, name: "Down", symbol: "↓" },
+                    { id: 1, name: "Hold", symbol: "↓↓" },
+                    { id: 2, name: "Up (short)", symbol: "↑" },
+                    { id: 3, name: "Up (long)", symbol: ".↑" },
+                    // { id: 4, name: "Long press", symbol: "??" },
+                ];
+
+                this.values = buttons.flatMap(btn => {
+                    return buttonGestures.map(g => {
+                        return {
+                            id: 1000 * btn.id + g.id,
+                            name: `${btn.name} - ${g.name}`,
+                            symbol: `${btn.id}${g.symbol}`
+                        };
+                    });
+                });
+            }
+
+            if (this.operatorElement === undefined) {
+                const operatorElement = document.createElement("select");
+                operatorElement.classList.add("trigger-operator");
+
+                operatorElement.append(...optionsIDName(this.operators));
+
+                this.operatorElement = operatorElement;
+
+                if (this.operators.length === 1 && this.operators[0].id === "eq") {
+                    this.operatorElement.hidden = true;
+                }
+            }
+
+            if (this.valueElement === undefined) {
+                const valueElement = document.createElement("select");
+                valueElement.classList.add("trigger-value");
+
+                valueElement.append(...optionsIDName(this.values));
+
+                this.valueElement = valueElement;
+            }
+
+            const standardDelays = [
+                { id: "none", name: "None" },
+                { id: "00:00:15", name: "15 seconds" },
+                { id: "00:00:30", name: "30 seconds" },
+                { id: "00:01:00", name: "1 min" },
+                { id: "00:05:00", name: "5 mins" },
+                { id: "00:15:00", name: "15 mins" },
+                { id: "00:30:00", name: "30 mins" },
+                { id: "00:45:00", name: "45 mins" },
+                { id: "01:00:00", name: "1 hour" },
+                { id: "02:00:00", name: "2 hours" },
+                { id: "04:00:00", name: "4 hours" },
+                { id: "08:00:00", name: "8 hours" },
+                { id: "16:00:00", name: "16 hours" },
+            ];
+
+            const noDelays = [
+                { id: "none", name: "None" },
+            ];
+
+            const delays = this.allowDelay ? standardDelays : noDelays;
+
+            const delay = document.createElement("select");
+            delay.classList.add("trigger-delay");
+            delay.append(...optionsIDName(delays));
+
+            if (delays.length === 1 && delays[0].id == "none") {
+                delay.hidden = true;
+            }
+
+            this.delayElement = delay;
+
+            const kindNames = { "change" : "Change", "update" : "Update" };
+            const kindElement = document.createElement("select");
+            kindElement.classList.add("trigger-kind");
+            kindElement.append(...optionsIDName(this.triggers.map(t => ({ id: t, name: kindNames[t]}))));
+
+            if (this.triggers.length < 2) {
+                kindElement.hidden = true;
+            }
+
+            this.kindElement = kindElement;
+
+            element.append(this.operatorElement, this.valueElement, this.valueAccessoryElement ?? "", this.delayElement, this.kindElement);
+
+            this.element_ = element;
+        }
+        return this.element_;
+    }
+
+    get summary() {
+        const selected = this.valueElement.selectedOptions[0];
+        const value = selected?.callionica?.item;
+        const symbol = value?.symbol ?? value?.name ?? selected?.innerText ?? "";
+
+        const operator = this.operatorElement.value;
+        const op = { "eq": "", "lt": "↓", "gt": "↑" }[operator];
+        return `${op}${symbol}${this.symbolAccessory ?? ""}`;
+    }
+
+    get conditions() {
+
+        const operator = this.operatorElement.value;
+        const value = this.valueElement.value;
+
+        const triggerDelay = this.delayElement.value;
+        const triggerOperator = (triggerDelay === "none") ? "dx" : "ddx";
+
+        const triggerKind = this.kindElement.value;
+        const triggerProperty = (triggerKind === "updated") ? "lastUpdated" : this.property;
+
+        const criterion = {
+            address: `/sensors/${this.sensor.id}/state/${this.property}`,
+            operator,
+            value
+        };
+
+        const trigger = {
+            address: `/sensors/${this.sensor.id}/state/${triggerProperty}`,
+            operator: triggerOperator
+        };
+
+        if (triggerDelay !== "none") {
+            trigger.value = `PT${triggerDelay}`;
+        }
+
+        return [criterion, trigger];
     }
 }
