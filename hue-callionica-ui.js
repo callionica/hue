@@ -1264,25 +1264,35 @@ export class TriggerControl {
                     { id: 2, name: "Two" },
                     { id: 3, name: "Three" },
                     { id: 4, name: "Four" },
+                    { id: 5, name: "Five" },
+                    { id: 6, name: "Six" },
                 ];
 
                 const buttonGestures = [
-                    { id: 0, name: "Down", symbol: "↓" },
-                    { id: 1, name: "Hold", symbol: "↓↓" },
-                    { id: 2, name: "Up (short)", symbol: "↑" },
-                    { id: 3, name: "Up (long)", symbol: ".↑" },
-                    // { id: 4, name: "Long press", symbol: "??" },
+                    { id: 0, name: "Down", symbol: "↓", eventtype: "initial_press" },
+                    { id: 1, name: "Hold", symbol: "↓↓", eventtype: "repeat" },
+                    { id: 2, name: "Up (short)", symbol: "↑", eventtype: "short_release" },
+                    { id: 3, name: "Up (long)", symbol: ".↑", eventtype: "long_release" },
+                    // { id: 4, name: "Long press", symbol: "??", eventtype: "long_press" },
                 ];
 
-                this.values = buttons.flatMap(btn => {
-                    return buttonGestures.map(g => {
+                this.values = this.sensor.capabilities.inputs.flatMap((input, index) => {
+                    return input.events.map(event => {
+                        const button = buttons[index];
+                        const gesture = buttonGestures.find(g => g.eventtype === event.eventtype);
+                        
+                        if (button === undefined || gesture === undefined) {
+                            // Expect this for eventtype === long_press
+                            return undefined;
+                        }
+
                         return {
-                            id: 1000 * btn.id + g.id,
-                            name: `${btn.name} - ${g.name}`,
-                            symbol: `${btn.id}${g.symbol}`
+                            id: event.buttonevent,
+                            name: `${button.name} - ${gesture.name}`,
+                            symbol: `${button.id}${gesture.symbol}`
                         };
                     });
-                });
+                }).filter(x => x);
             }
 
             if (this.operatorElement === undefined) {
@@ -1321,6 +1331,7 @@ export class TriggerControl {
                 { id: "04:00:00", name: "4 hours" },
                 { id: "08:00:00", name: "8 hours" },
                 { id: "16:00:00", name: "16 hours" },
+                { id: "24:00:00", name: "24 hours" },
             ];
 
             const noDelays = [
