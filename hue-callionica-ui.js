@@ -1192,7 +1192,19 @@ export class TriggerControl {
             element.classList.add("trigger-control");
             element.callionica = { control: this };
 
-            if (this.sensor.state.daylight !== undefined) {
+            if (this.sensor.type === "ZLLLightLevel") {
+                this.triggers = ["change", "update"];
+                this.operators = [
+                    { id: "eq", name: "Is" }
+                ];
+                // this.property = "dark";
+                this.values = [
+                    { id: "true", name: "Is dark", symbol: "☀️", property: "dark" },
+                    { id: "false", name: "Is not dark", symbol: "🌙", property: "dark" },
+                    { id: "true", name: "Is daylight", symbol: "☀️", property: "daylight" },
+                    { id: "false", name: "Is not daylight", symbol: "🌙", property: "daylight" },
+                ];
+            } else if (this.sensor.state.daylight !== undefined) {
                 // Daylight updates slowly and is a bool, so it makes sense to only use a changed trigger
                 this.triggers = ["change"];
                 this.operators = [
@@ -1203,6 +1215,16 @@ export class TriggerControl {
                     { id: "true", name: "After sunrise", symbol: "☀️" },
                     { id: "false", name: "After sunset", symbol: "🌙" },
                 ];
+            } else if (this.sensor.state.presence !== undefined) {
+                    this.triggers = ["change", "update"];
+                    this.operators = [
+                        { id: "eq", name: "Is" }
+                    ];
+                    this.property = "presence";
+                    this.values = [
+                        { id: "true", name: "Presence detected", symbol: "👤" },
+                        { id: "false", name: "No presence detected", symbol: "👤🚫" },
+                    ];
             } else if (this.sensor.state.temperature !== undefined) {
                 // Temperature updates fairly often and can fluctuate
                 // It's also not a precise value.
@@ -1370,8 +1392,8 @@ export class TriggerControl {
 
     get summary() {
         const selected = this.valueElement.selectedOptions[0];
-        const value = selected?.callionica?.item;
-        const symbol = value?.symbol ?? value?.name ?? selected?.innerText ?? "";
+        const selectedItem = selected?.callionica?.item;
+        const symbol = selectedItem?.symbol ?? selectedItem?.name ?? selected?.innerText ?? "";
 
         const operator = this.operatorElement.value;
         const op = { "eq": "", "lt": "↓", "gt": "↑" }[operator];
@@ -1379,18 +1401,22 @@ export class TriggerControl {
     }
 
     get conditions() {
+        const selected = this.valueElement.selectedOptions[0];
+        const selectedItem = selected?.callionica?.item;
 
         const operator = this.operatorElement.value;
         const value = this.valueElement.value;
+
+        const property = this.property ?? selectedItem.property;
 
         const triggerDelay = this.delayElement.value;
         const triggerOperator = (triggerDelay === "none") ? "dx" : "ddx";
 
         const triggerKind = this.kindElement.value;
-        const triggerProperty = (triggerKind === "updated") ? "lastUpdated" : this.property;
+        const triggerProperty = (triggerKind === "updated") ? "lastUpdated" : property;
 
         const criterion = {
-            address: `/sensors/${this.sensor.id}/state/${this.property}`,
+            address: `/sensors/${this.sensor.id}/state/${property}`,
             operator,
             value
         };
