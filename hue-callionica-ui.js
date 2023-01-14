@@ -1199,10 +1199,10 @@ export class TriggerControl {
                 ];
                 // this.property = "dark";
                 this.values = [
-                    { id: "true", name: "Is dark", symbol: "☀️", property: "dark" },
-                    { id: "false", name: "Is not dark", symbol: "🌙", property: "dark" },
-                    { id: "true", name: "Is daylight", symbol: "☀️", property: "daylight" },
-                    { id: "false", name: "Is not daylight", symbol: "🌙", property: "daylight" },
+                    { id: "true", name: "Is dark", symbol: "☁︎", property: "dark" },
+                    { id: "false", name: "Is not dark", symbol: "☁︎🚫", property: "dark" },
+                    { id: "true", name: "Is bright", symbol: "☀️", property: "daylight" },
+                    { id: "false", name: "Is not bright", symbol: "☀️🚫", property: "daylight" },
                 ];
             } else if (this.sensor.state.daylight !== undefined) {
                 // Daylight updates slowly and is a bool, so it makes sense to only use a changed trigger
@@ -1267,10 +1267,27 @@ export class TriggerControl {
                     { id: "lt", name: "Is below" },
                 ];
                 this.property = "status";
-                this.values = [
-                    { id: "0", name: "0" },
-                    { id: "1", name: "1" },
-                ];
+                
+                if (this.sensor.values !== undefined) {
+                    this.values = this.sensor.values.map(s => {
+                        return { id: s.value, name: s.name.replaceAll(">", "›") };
+                    });
+                } else {
+                    this.values = [
+                        { id: "0", name: "0" },
+                        { id: "1", name: "1" },
+                        { id: "2", name: "2" },
+                        { id: "3", name: "3" },
+                        { id: "4", name: "4" },
+                        { id: "5", name: "5" },
+                        { id: "6", name: "6" },
+                        { id: "7", name: "7" },
+                        { id: "8", name: "8" },
+                        { id: "9", name: "9" },
+                        { id: "10", name: "10" },
+                    ];
+                }
+
             } else if (this.sensor.state.buttonevent !== undefined) {
                 // A button press must be detected after a previous button press of the same kind
                 // so we must only use an update-detecting trigger.
@@ -1298,7 +1315,8 @@ export class TriggerControl {
                     // { id: 4, name: "Long press", symbol: "??", eventtype: "long_press" },
                 ];
 
-                this.values = this.sensor.capabilities.inputs.flatMap((input, index) => {
+                const inputs = this.sensor.capabilities.inputs; 
+                this.values = inputs.flatMap((input, index) => {
                     return input.events.map(event => {
                         const button = buttons[index];
                         const gesture = buttonGestures.find(g => g.eventtype === event.eventtype);
@@ -1310,7 +1328,7 @@ export class TriggerControl {
 
                         return {
                             id: event.buttonevent,
-                            name: `${button.name} - ${gesture.name}`,
+                            name: inputs.length === 1 ? gesture.name : `${button.name} - ${gesture.name}`,
                             symbol: `${button.id}${gesture.symbol}`
                         };
                     });

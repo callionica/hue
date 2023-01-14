@@ -15,6 +15,8 @@
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
         import { sortBy, getAll, getCapabilities, getSensorTriggeredRules, getSensorConditionRules, getSensorUpdatingRules, getSensorUpdatingSchedules } from "./hue-callionica.js";
 
+        let bridge;
+
         function sensorCategory(sensor) {
             if (sensor.metadata) {
                 return "components";
@@ -82,14 +84,14 @@
             (sensor.updatingSchedules.length === 0);
 
             return `
-            <tr data-external="${external}" title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${mf(sensor.manufacturername)}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a></tr>
+            <tr data-external="${external}" title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${sensor.name}</td><td>${sensor.kind}</td><td>${mf(sensor.manufacturername)}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-data.html#sensors-${sensor.id}">➲</a><a href="hue-callionica-sensor.html?bridge=${bridge.id}&sensor=${sensor.id}">➲</a></tr>
             `;
         }
 
         function componentSensorHTML(data, sensor) {
             const name = sensor.component?.name || sensor.name;
             return `
-            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${name}</td><td>${sensor.kind}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-components.html#components-${sensor.component.id}">➲</a></td></tr>
+            <tr title="ID: ${sensor.id}; Conditions: ${sensor.conditionRules.length} rules; Updates: ${sensor.updatingRules.length} rules, ${sensor.updatingSchedules.length} schedules;"><td>${name}</td><td>${sensor.kind}</td><td style="text-align: right;">${sensor.rules.length}</td><td><a href="hue-callionica-components.html#components-${sensor.component.id}">➲</a><a href="hue-callionica-sensor.html?bridge=${bridge.id}&sensor=${sensor.id}">➲</a></td></tr>
             `;
         }
 
@@ -108,7 +110,7 @@
         }
 
         async function main() {
-            const bridge = loadCurrentBridge();
+            bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAll(connection);
 
