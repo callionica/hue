@@ -1401,7 +1401,12 @@ export class TriggerControl {
 
             this.kindElement = kindElement;
 
-            element.append(this.operatorElement, this.valueElement, this.valueAccessoryElement ?? "", this.delayElement, this.kindElement);
+            const extrasElement = document.createElement("div");
+            extrasElement.classList.add("trigger-extras");
+
+            extrasElement.append(this.delayElement, this.kindElement);
+
+            element.append(this.operatorElement, this.valueElement, this.valueAccessoryElement ?? "", extrasElement);
 
             this.element_ = element;
         }
