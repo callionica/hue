@@ -2061,9 +2061,40 @@ const componentSensors = [
             { value: PMM_ACTIVATE, name: "Activate", description: "Activate according to the motion sensor's Activation setting" }
         ]
     },
+    {
+        modelid: "4PD.Period",
+        manufacturername: "Callionica",
+        component: "Four-part Day",
+        property: "Period",
+        status: [
+            { value: 1, name: "Morning", description: "A period for waking" },
+            { value: 2, name: "Day", description: "A period for working" },
+            { value: 3, name: "Evening", description: "A period for relaxing" },
+            { value: 4, name: "Night", description: "A period for sleeping" },
+        ]
+    },
+    {
+        modelid: "4PD.Mode",
+        manufacturername: "Callionica",
+        component: "Four-part Day",
+        property: "Mode",
+        status: [
+            { value: 1, name: "Automatic", description: "The current period can be changed automatically" },
+            { value: 2, name: "Manual", description: "The current period can be changed manually" },
+            { value: 3, name: "Locked", description: "The current period cannot be changed" },
+        ]
+    },
 ];
 
 const components = [
+    {
+        manufacturer: "Callionica",
+        name: "Four-part Day",
+        creatable: true,
+        comment: "Divide the day into four parts",
+        description: "Create rules based on four parts of the day: Morning, Day, Evening, and Night",
+        url: "https://github.com/callionica/hue/blob/master/4PD.md",
+    },
     {
         manufacturer: "Callionica",
         name: "Power Managed Zone",
