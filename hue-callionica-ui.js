@@ -1456,3 +1456,125 @@ export class TriggerControl {
         return [criterion, trigger];
     }
 }
+
+export class ActionControl {
+    constructor(data) {
+        const element = this.element;
+        this.update(data);
+    }
+
+    get element() {
+        if (this.element_ === undefined) {
+            const element = document.createElement("div");
+            element.classList.add("action-control");
+            element.callionica = { control: this };
+            this.element_ = element;
+
+            const itemControl = document.createElement("select");
+            itemControl.classList.add("action-item");
+            this.itemControl = itemControl;
+
+            const propertyControl = document.createElement("select");
+            propertyControl.classList.add("action-property");
+            this.propertyControl = propertyControl;
+
+            const valueControl = document.createElement("select");
+            valueControl.classList.add("action-value");
+            this.valueControl = valueControl;
+
+            element.append(itemControl, propertyControl, valueControl);
+
+            itemControl.onchange = (_evt) => this.itemChange(itemControl);
+            propertyControl.onchange = (_evt) => this.propertyChange(propertyControl);
+            valueControl.onchange = (_evt) => this.valueChange(valueControl);
+        }
+        return this.element_;
+    }
+
+    update(data) {
+        this.data = data;
+
+        const itemControl = this.itemControl;
+
+        itemControl.innerHTML = "";
+
+        itemControl.append(...optionsGroup(data));
+        itemControl.append(...optionsComponent(data));
+        itemControl.append(...optionsIDName([
+            { id: "sensors", name: "(Sensors)" }
+        ], "sensors"));
+
+        itemControl.onchange();
+    }
+
+    itemChange(control) {
+        const selected = control.selectedOptions[0];
+        this.kind = selected.dataset.kind;
+        this.element.dataset.kind = this.kind;
+        this.item = selected.callionica.item;
+
+        const kind = this.kind;
+        const item = this.item;
+
+        const propertyControl = this.propertyControl;
+
+        const oldText = propertyControl.selectedOptions[0]?.text;
+
+        propertyControl.innerHTML = "";
+
+        if (kind === "group") {
+            const group = item;
+
+            // propertyControl.append(...optionsIDName([
+            //     { id: "true", name: "Any light on" },
+            //     { id: "false", name: "All lights off" }
+            // ], "any_on"));
+
+            for (const sensor of group.temperatures) {
+                propertyControl.append(...optionsIDName([
+                    {
+                        id: sensor.id,
+                        name: "Temperature",
+                        sensor
+                    },
+                ], "temperature"));
+            }
+
+        } else if (kind === "component") {
+            for (const sensor of item.sensors) {
+                propertyControl.append(...optionsIDName([
+                    {
+                        id: sensor.id,
+                        name: `${sensor.metadata.property.replaceAll(">", "›")}`,
+                        sensor
+                    },
+                ], "state"));
+            }
+        } else if (kind === "sensors") {
+            for (const sensor of Object.values(this.data.sensors).sort((a, b) => a.name.localeCompare(b.name))) {
+                // TODO - filter non-actionable sensors
+                // TODO - multiply multi-state sensors
+                // TODO - get correct state name
+                propertyControl.append(...optionsIDName([
+                    {
+                        id: sensor.id,
+                        name: sensor.name.replaceAll(">", "›"),
+                        sensor
+                    },
+                ], "state"));
+            }
+        }
+
+        selectOption(propertyControl, oldText);
+
+        propertyControl.onchange();
+    }
+
+    propertyChange(control) {
+
+    }
+
+    valueChange(control) {
+
+    }
+}
