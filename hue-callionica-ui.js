@@ -1624,17 +1624,36 @@ export class ActionControl {
         } else if (kind === "custom") {
             const text = this.textControl.value;
             
-            let o = JSON.parse(text);
+            let actions = JSON.parse(text);
+
+            // Allow 1 or more actions
+            actions = Array.isArray(actions) ? actions : [actions];
             
-            o = Array.isArray(o) ? o : [o];
-            
-            for (const action of o) {
+            // Allow action method to be omitted
+            for (const action of actions) {
                 if (action.address !== undefined && action.method === undefined) {
                     action.method = "PUT";
                 }
             }
 
-            return o;
+            // Allow lightstates to be set directly on "/lights" or "/scenes/${sceneID}"
+            actions = actions.flatMap(action => {
+                if (action.lightstates !== undefined) {
+                    const prepath = action.address.startsWith("/scenes/") ? "lightstates/" : "";
+                    const postpath = action.address.startsWith("/scenes/") ? "" : "/state";
+                    return Object.entries(action.lightstates).map(([lightID, state]) => {
+                        const newAction = {
+                            address: `${action.address}/${prepath}${lightID}${postpath}`,
+                            method: "PUT",
+                            body: state
+                        };
+                        return newAction;
+                    });
+                }
+                return [action];
+            });
+
+            return actions;
         }
 
         return [];
