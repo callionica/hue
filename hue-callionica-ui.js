@@ -1623,11 +1623,18 @@ export class ActionControl {
             return [action];
         } else if (kind === "custom") {
             const text = this.textControl.value;
-            const o = JSON.parse(text);
-            if (Array.isArray(o)) {
-                return o;
+            
+            let o = JSON.parse(text);
+            
+            o = Array.isArray(o) ? o : [o];
+            
+            for (const action of o) {
+                if (action.address !== undefined && action.method === undefined) {
+                    action.method = "PUT";
+                }
             }
-            return [o];
+
+            return o;
         }
 
         return [];
