@@ -98,6 +98,11 @@ A single action can change the settings for a single light in a scene, but perha
    }
 ```
 
+
+If you set a light state directly from an action in a rule, the light state is only updated if the light is on.
+
+If you apply a light state using a scene which doesn't have an "on" value, the light state is updated whether the light is on or not.
+
 ## Can you use a rule action to update a rule action?
 Haven't been able to get it to work.
 
