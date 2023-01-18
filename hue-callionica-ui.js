@@ -1482,11 +1482,20 @@ export class ActionControl {
             valueControl.classList.add("action-value");
             this.valueControl = valueControl;
 
-            element.append(itemControl, propertyControl, valueControl);
+            const textControl = document.createElement("textarea");
+            textControl.rows = 5;
+            textControl.columns = 38;
+            textControl.classList.add("action-text");
+            this.textControl = textControl;
+
+            element.append(itemControl, propertyControl, valueControl, textControl);
 
             itemControl.onchange = (_evt) => this.itemChange(itemControl);
             propertyControl.onchange = (_evt) => this.propertyChange(propertyControl);
             valueControl.onchange = (_evt) => this.valueChange(valueControl);
+
+            valueControl.hidden = true;
+            textControl.hidden = true;
         }
         return this.element_;
     }
@@ -1503,6 +1512,9 @@ export class ActionControl {
         itemControl.append(...optionsIDName([
             { id: "sensors", name: "(Sensors)" }
         ], "sensors"));
+        itemControl.append(...optionsIDName([
+            { id: "custom", name: "(Custom)" }
+        ], "custom"));
 
         itemControl.onchange();
     }
@@ -1524,7 +1536,14 @@ export class ActionControl {
 
         propertyControl.innerHTML = "";
 
-        if (kind === "group") {
+        this.propertyControl.hidden = false;
+        this.valueControl.hidden = true;
+        this.textControl.hidden = true;
+
+        if (kind === "custom") {
+            this.propertyControl.hidden = true;
+            this.textControl.hidden = false;
+        } else if (kind === "group") {
             this.valueControl.hidden = true;
 
             const group = item;
@@ -1602,6 +1621,13 @@ export class ActionControl {
             };
 
             return [action];
+        } else if (kind === "custom") {
+            const text = this.textControl.value;
+            const o = JSON.parse(text);
+            if (Array.isArray(o)) {
+                return o;
+            }
+            return [o];
         }
 
         return [];
