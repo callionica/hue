@@ -2074,6 +2074,18 @@ const componentSensors = [
         ]
     },
     {
+        modelid: "4PD.TimedPeriod",
+        manufacturername: "Callionica",
+        component: "Four-part Day",
+        property: "TimedPeriod",
+        status: [
+            { value: 1, name: "Morning", description: "A period for waking" },
+            { value: 2, name: "Day", description: "A period for working" },
+            { value: 3, name: "Evening", description: "A period for relaxing" },
+            { value: 4, name: "Night", description: "A period for sleeping" },
+        ]
+    },
+    {
         modelid: "4PD.Mode",
         manufacturername: "Callionica",
         component: "Four-part Day",

@@ -317,29 +317,10 @@
         function getRule(sensor, scope) {
             scope = scope || document;
 
-            // const buttonSelect = scope.querySelector(".button-id");
-            // const buttonActionSelect = scope.querySelector(".button-action");
-
-            const groupsSelect = scope.querySelector(".groups");
-            const scenesSelect = scope.querySelector(".scenes");
-
-            // const button = parseInt(buttonSelect.value, 10); 
-            // const buttonAction = parseInt(buttonActionSelect.value);
-
-            const group = groupsSelect.value;
-            const scene = scenesSelect.value;
-
-            // const actionIcon = {
-            //     "0": "↓",
-            //     "1": "↓↓",
-            //     "2": "↑",
-            //     "3": ".↑",
-            //     "4": "?",
-            // };
-
             const triggerControl = scope.querySelector(".trigger-control").callionica.control;
 
-            const name = `${triggerControl.summary} ${groupsSelect.selectedOptions[0]?.text} ${scenesSelect.selectedOptions[0]?.text}`.substring(0, 30).trim();
+            // TODO - better name
+            const name = `${triggerControl.summary}`.substring(0, 30).trim();
 
             const triggerConditions = triggerControl.conditions;
 
@@ -349,22 +330,14 @@
 
             const conditions = [...triggerConditions, ...extraConditions];
 
-            const action = {
-                address: `/groups/${group}/action`,
-                body: {},
-                method: "PUT"
-            };
-
-            if (["on", "off"].includes(scene)) {
-                action.body.on = (scene === "on") ? true : false;
-            } else {
-                action.body.scene = scene;
-            }
+            const actions = [...scope.querySelectorAll(".action")].flatMap(s => {
+                return s.callionica.control.actions;
+            });
 
             const rule = {
                 name,
                 conditions,
-                actions: [ action ]
+                actions: actions
             };
 
             return rule;
@@ -435,28 +408,28 @@
             const triggerContainer = document.querySelector(".trigger");
             triggerContainer.append(triggerControl.element);
 
-            const groupsSelect = document.querySelector(".groups");
-            const scenesSelect = document.querySelector(".scenes");
+            // const groupsSelect = document.querySelector(".groups");
+            // const scenesSelect = document.querySelector(".scenes");
 
-            groupsSelect.onchange = () => {
-                const oldScene = scenesSelect.selectedOptions[0]?.text;
-                console.log(oldScene);
+            // groupsSelect.onchange = () => {
+            //     const oldScene = scenesSelect.selectedOptions[0]?.text;
+            //     console.log(oldScene);
 
-                const group = data.groups[groupsSelect.value];
-                scenesSelect.innerHTML = "";
-                scenesSelect.append(option("● On", "on"), option("○ Off", "off"));
-                scenesSelect.append(...optionsScene(data, group));
+            //     const group = data.groups[groupsSelect.value];
+            //     scenesSelect.innerHTML = "";
+            //     scenesSelect.append(option("● On", "on"), option("○ Off", "off"));
+            //     scenesSelect.append(...optionsScene(data, group));
 
-                if (oldScene !== undefined) {
-                    selectOption(scenesSelect, oldScene);
-                }
-            };
+            //     if (oldScene !== undefined) {
+            //         selectOption(scenesSelect, oldScene);
+            //     }
+            // };
 
-            groupsSelect.append(...optionsGroup(data));
-            groupsSelect.append(...optionsComponent(data));
-            groupsSelect.onchange();
+            // groupsSelect.append(...optionsGroup(data));
+            // groupsSelect.append(...optionsComponent(data));
+            // groupsSelect.onchange();
 
-            selectOption(groupsSelect, sensor.name);
+            // selectOption(groupsSelect, sensor.name);
 
             const addConditionButton = document.querySelector(".condition-provider-add");
             addConditionButton.onclick = (evt) => {
@@ -487,7 +460,6 @@
             const addActionButton = document.querySelector(".action-provider-add");
             addActionButton.onclick = (evt) => {
                 evt.preventDefault();
-                return;
 
                 console.log("add action");
 
@@ -576,12 +548,12 @@
                 <p class="label">Actions:</p>
                 <div id="actions"></div>
                 <p><button class="action-provider-add">+</button></p>
-                <p class="snap-grid">
+                <!-- <p class="snap-grid">
                     <select class="groups snap-grid-item">
                     </select>
                     <select class="scenes snap-grid-item">
                     </select>
-                </p>
+                </p> -->
             </div>
 
             <p class="buttons">

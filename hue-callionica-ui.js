@@ -1466,7 +1466,7 @@ export class ActionControl {
     get element() {
         if (this.element_ === undefined) {
             const element = document.createElement("div");
-            element.classList.add("action-control");
+            element.classList.add("action");
             element.callionica = { control: this };
             this.element_ = element;
 
@@ -1508,6 +1508,8 @@ export class ActionControl {
     }
 
     itemChange(control) {
+        const data = this.data;
+
         const selected = control.selectedOptions[0];
         this.kind = selected.dataset.kind;
         this.element.dataset.kind = this.kind;
@@ -1523,12 +1525,16 @@ export class ActionControl {
         propertyControl.innerHTML = "";
 
         if (kind === "group") {
+            this.valueControl.hidden = true;
+
             const group = item;
 
-            // propertyControl.append(...optionsIDName([
-            //     { id: "true", name: "Any light on" },
-            //     { id: "false", name: "All lights off" }
-            // ], "any_on"));
+            propertyControl.append(...optionsIDName([
+                { name: "● On", id: "true", value: true },
+                { name: "○ Off", id: "false", value: false },
+            ], "on"));
+
+            propertyControl.append(...optionsScene(data, group));
 
             for (const sensor of group.temperatures) {
                 propertyControl.append(...optionsIDName([
@@ -1571,10 +1577,33 @@ export class ActionControl {
     }
 
     propertyChange(control) {
-
+        const selected = this.propertyControl.selectedOptions[0];
+        this.propertyKind = selected?.dataset.kind;
+        this.property = selected?.callionica.item;
     }
 
     valueChange(control) {
 
+    }
+
+    get actions() {
+        const kind = this.kind;
+
+        if (kind === "group") {
+            const body = {};
+            body[this.propertyKind] = this.property.id;
+            if (this.propertyKind == "on") {
+                body[this.propertyKind] = this.property.value;
+            }
+            const action = {
+                address: `/groups/${this.item.id}/action`,
+                method: "PUT",
+                body
+            };
+
+            return [action];
+        }
+
+        return [];
     }
 }
