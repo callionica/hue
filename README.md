@@ -83,6 +83,21 @@ Mood and LightLevel determine what the brightness/color of light should be.
 ## Can you update the conditions in a rule using a schedule?
 Someone said: "especially since the API does not allow to change single values, you always have to PUT the entire {conditions} element…:"
 
+## Can you update the light settings in a scene using a rule?
+A single action can change the settings for a single light in a scene, but perhaps not more than one light at a time because the payload is too large.
+
+```
+{
+      "address": "/scenes/${sceneID}/lightstates/${lightID}",
+      "body": {
+         "bri": 254,
+         "ct": 156,
+         "on": true
+      },
+      "method": "PUT"
+   }
+```
+
 ## Time-based lights
 There's a Hue Labs formula that updates lighting at different times of the day. It seems to work like this:
 1. There's a status sensor called "daypart" that corresponds to the time segments
