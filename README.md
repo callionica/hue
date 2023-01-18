@@ -98,6 +98,10 @@ A single action can change the settings for a single light in a scene, but perha
    }
 ```
 
+## Can you use a rule action to update a rule action?
+Haven't been able to get it to work.
+
+
 ## Time-based lights
 There's a Hue Labs formula that updates lighting at different times of the day. It seems to work like this:
 1. There's a status sensor called "daypart" that corresponds to the time segments
@@ -108,6 +112,9 @@ There's a Hue Labs formula that updates lighting at different times of the day. 
 6. The scenes  are created by the formula during setup and there are different scenes for "Play and stop" rules (no explicit transitiontime) and the all_on rules (transitiontime: 600)
 
 The implication seems to be that you need multiple instances of this Hue labs formula for different logical groups of lights otherwise the all_on part of the rule will confound expectations. The UI allows you to select multiple rooms, but only one zone so this is a little confusing if you've picked multiple rooms.
+
+## Time-based lights - One Approach
+If you don't want to change lights that are already on, do time based update of a scene and use that scene when you want to turn on the lights. If the triggering mechanism uses names, you can have a few different scenes and just change their names to get the current one to be active. For Hue hardware, hook the button up to a sensor and in the rules for the sensor update, hold the scene to be activated. Need an action sensor with rules for each state pointing to different scenes. Alternatively, define a scene and have rules that update the light state in the scene. (Light states hidden in rules would be harder to manage without additional UI though)
 
 ## Jason Bourne music and Still of the Night by Whitesnake
 Does the music from the Bourne movies sound like the strings from Whitesnake's "Still of the Night"?

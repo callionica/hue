@@ -487,7 +487,9 @@
 
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
-                e.onsubmit = () => {
+                e.onsubmit = (_evt) => {
+                    _evt.preventDefault();
+                    
                     (async ()=>{
                         try {
                             const rule = getRule(sensor);
