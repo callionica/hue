@@ -116,16 +116,25 @@
     </style>
     <script type="module">
         import { loadConnection, loadConnections } from "./hue-callionica-connect.js";
-        import { getAllPlus, setSensorName } from "./hue-callionica.js";
+        import { getAllPlus, setSensorName, setItemName } from "./hue-callionica.js";
 
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
-        const sensor_ = params.get("sensor")?.toLowerCase().trim() || undefined;
+        const kind = params.get("kind")?.toLowerCase().trim() ?? "sensors";
+        const id = params.get("id")?.toLowerCase().trim() ?? params.get("sensor")?.toLowerCase().trim() ?? undefined;
         const connection = (() => {
             const bridge = params.get("bridge")?.toLowerCase().trim() || undefined;
             return (bridge !== undefined) ? loadConnection(app, { id: bridge }) : loadConnections()[0];
         })();
         
+        const displayKind = {
+            "groups": "Room or Zone",
+            "sensors": "Sensor",
+            "rules" : "Rule",
+            "lights" : "Light",
+            "schedules" : "Schedule",
+        }[kind] ?? "UNKNOWN";
+
         let data;
 
         function message(text) {
@@ -133,7 +142,7 @@
         }
 
         function sensorKind(sensor) {
-            if (sensor.metadata) {
+            if (sensor.metadata !== undefined) {
                 return `${sensor.metadata.component} > ${sensor.metadata.property}`.replaceAll(">", "›");
             }
             return sensor.productname || sensor.modelid;
@@ -142,7 +151,7 @@
         async function main() {
             data = await getAllPlus(connection);
             const bridgeName = data.config.name;
-            const sensor = data.sensors[sensor_];
+            const item = data[kind][id];
             const groups = Array.from(new Set(Object.values(data.groups).map(group => group.name))).sort((a, b) => a.localeCompare(b));
 
             const list = document.querySelector("#names");
@@ -154,18 +163,20 @@
                 list.append(o);
             }
 
-            document.querySelector(".name").innerText = sensor.name;
-            document.querySelector(".description").innerText = sensorKind(sensor);
+            document.querySelector(".name").innerText = item.name;
+            document.querySelector(".description").innerText = sensorKind(item) ?? item.type ?? displayKind;
             document.querySelector(".bridge-name").innerText = bridgeName;
-            document.querySelector(".id").innerText = sensor.id;
+            document.querySelector(".id").innerText = item.id;
 
             const box = document.querySelector("#name");
-            box.placeholder = sensor.name;
-            box.value = sensor.name;
+            box.placeholder = item.name;
+            box.value = item.name;
 
             const e = document.querySelector("form");
             if (e.onsubmit == undefined) {
-                e.onsubmit = () => {
+                e.onsubmit = (evt) => {
+                    evt.preventDefault();
+
                     (async function(){
                         try {
                             const name = box.value.trim();
@@ -174,14 +185,14 @@
                                 return;
                             }
 
-                            await setSensorName(connection, sensor.id, name);
+                            await setItemName(connection, kind, item.id, name);
                             document.querySelector(".name").innerText = name;
 
-                            if (sensor.device !== undefined) {
-                                const result = confirm(`Also rename ${sensor.device.length - 1} related sensors?`);
+                            if (item.device !== undefined) {
+                                const result = confirm(`Also rename ${item.device.length - 1} related sensors?`);
                                 if (result) {
-                                    for (const relatedSensor of sensor.device) {
-                                        if (relatedSensor.id !== sensor.id) {
+                                    for (const relatedSensor of item.device) {
+                                        if (relatedSensor.id !== item.id) {
                                             await setSensorName(connection, relatedSensor.id, name);
                                         }
                                     }

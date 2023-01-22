@@ -303,6 +303,12 @@ export async function setSensorName(connection, id, value) {
     return put(address, body);
 }
 
+export async function setItemName(connection, kind, id, value) {
+    const address = Address(connection, `${kind}/${id}`);
+    const body = JSON.stringify({ "name": value });
+    return put(address, body);
+}
+
 // buttonevent is not modifiable
 // export async function setSensorButtonEvent(connection, id, value) {
 //     const store = "buttonevent";
