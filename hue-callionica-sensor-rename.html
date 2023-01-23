@@ -121,7 +121,7 @@
         const app = "Callionica";
         const params = new URLSearchParams(document.location.search);
         const kind = params.get("kind")?.toLowerCase().trim() ?? "sensors";
-        const id = params.get("id")?.toLowerCase().trim() ?? params.get("sensor")?.toLowerCase().trim() ?? undefined;
+        const id = params.get("id")?.trim() ?? params.get("sensor")?.trim() ?? undefined;
         const connection = (() => {
             const bridge = params.get("bridge")?.toLowerCase().trim() || undefined;
             return (bridge !== undefined) ? loadConnection(app, { id: bridge }) : loadConnections()[0];
