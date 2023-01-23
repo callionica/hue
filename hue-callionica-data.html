@@ -12,15 +12,16 @@
 
         async function main() {
             const params = new URLSearchParams(document.location.search);
-            const scenes = params.get("scenes");
+            const scenes = params.get("scenes")?.toLocaleLowerCase().trim();
 
             const bridge = loadCurrentBridge();
             const connection = await loadConnection("Callionica", bridge);
             const data = await getAllCategories(connection);
             data.capabilities = await getCapabilities(connection);
 
-            if (scenes != undefined) {
-                document.title = "Hue Data - Scenes";
+            const showScenes = scenes !== "false";
+            if (showScenes) {
+                document.title = "Hue Data + Scenes";
                 for (const [id, scene] of Object.entries(data.scenes)) {
                     const completeScene = await getSceneComplete(connection, id, scene.lastupdated);
                     scene.lightstates = completeScene.lightstates;
