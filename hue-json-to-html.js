@@ -33,7 +33,7 @@ export function hueToHtml(data) {
         return Object.entries(item);
     }
 
-    for (const [key, rule] of entries(data.rules)) {
+    for (const [_key, rule] of entries(data.rules)) {
         sortConditions(rule.conditions);
     }
 
@@ -52,12 +52,24 @@ export function hueToHtml(data) {
         const type = typeof value;
         switch (type) {
             case "boolean":
+                if (stack[stack.length - 5] === "scenes" && stack[stack.length - 3] === "lightstates" && stack[stack.length - 1] === "on") {
+                    const address  = `scenes/${stack[stack.length - 4]}/lightstates/${stack[stack.length - 2]}`;
+                    return `<select data-address="${address}" data-property="${stack[stack.length - 1]}" data-value="${value}">
+                    <option value="undefined">undefined</option>
+                    <option value="false"${value == false ? "selected" : ""}>false</option>
+                    <option value="true"${value == true ? "selected" : ""}>true</option>
+                    </select>`;
+                }
                 return JSON.stringify(value);
-                break;
             case "number":
                 return JSON.stringify(value);
-                break;
-            case "string":
+            case "string": {
+                if (stack.length === 3 && stack[2] === "name") {
+                    const id = stack[1];
+                    const kind = stack[0];
+                    return `<a class="action rename" href="hue-callionica-sensor-rename.html?bridge=${data.config.bridgeid}&kind=${kind}&id=${id}" title="Rename this item">${JSON.stringify(value)}</a>`;
+                }
+
                 if (stack[stack.length - 1] === "scene") {
                     const o = data.scenes?.[value];
                     const n = (o && o.name) || "";
@@ -102,14 +114,14 @@ export function hueToHtml(data) {
                     suffix = `</a>`;
                 }
                 return `${prefix}${JSON.stringify(value)}${suffix}`;
-                break;
+            }
         }
 
         if (value instanceof Date) {
             return JSON.stringify(value);
         }
 
-        let dent = "   ".repeat(indent);
+        const dent = "   ".repeat(indent);
         let dent1 = dent;
         if (indent > 0) {
             dent1 = "   ".repeat(indent - 1);
@@ -135,7 +147,7 @@ export function hueToHtml(data) {
             return result;
         }
 
-        let result = ["{"];
+        const result = ["{"];
         const entries = Object.entries(value).sort((lhs, rhs) => {
             const l = getOrder(lhs[0]);
             const r = getOrder(rhs[0]);
@@ -155,16 +167,24 @@ export function hueToHtml(data) {
             const isLast = (index === entries.length - 1);
             const isCategory = (stack.length === 0);
             if (isCategory) {
-                result.push(`<span id="${name}">`);
+                const group = ["capabilities", "config", "whitelist"].includes(name) ? "" : ` data-group="${name}"`
+                result.push(`<span id="${name}"${group}>`);
             }
             const isResource = ((stack.length === 1) && (stack[stack.length - 1] !== "config")) || (stack[stack.length - 1] === "whitelist");
             if (isResource) {
-                result.push(`<span id="${stack[stack.length - 1]}-${name}">`);
+                const parent = stack[stack.length - 1];
+                const id = ["capabilities", "config", "whitelist"].includes(parent) ? "" : ` data-id="${name}"`;
+                result.push(`<span id="${parent}-${name}"${id}>`);
             }
+            const isSceneLight = (stack[stack.length - 1] === "lightstates");
+            if (isSceneLight) {
+                result.push(`<span data-light-id="${name}" data-light-value="${JSON.stringify(value).replaceAll("\"", "&quot;")}">`);
+            }
+
             stack.push(name);
             result.push(JSON.stringify(name) + ": " + hueJsonToHtml(value, stack, indent + 1) + (isLast ? "" : ","));
             stack.pop();
-            if (isResource || isCategory) {
+            if (isResource || isCategory || isSceneLight) {
                 result.push(`</span>`);
             }
         }

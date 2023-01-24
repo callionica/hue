@@ -281,7 +281,7 @@ export async function create(address, body) {
     return bridgeResult[0].success.id;
 }
 
-function Address(connection, suffix) {
+export function Address(connection, suffix) {
     return `https://${connection.bridge.ip}/api/${connection.token}/` + suffix;
 }
 

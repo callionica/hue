@@ -8,7 +8,19 @@
     <script type="module">
         import { hueToHtml } from "./hue-json-to-html.js";
         import { loadCurrentBridge, loadConnection } from "./hue-callionica-connect.js";
-        import { getAllCategories, getCapabilities, getSceneComplete } from "./hue-callionica.js";
+        import { getAllCategories, getCapabilities, getSceneComplete, Address, put } from "./hue-callionica.js";
+
+        function ancestorData(e, name) {
+            const attr = "data-" + name;
+            let container = e.parentNode;
+            while (container) {
+                if (container.hasAttribute(attr)) {
+                    break;
+                }
+                container = container.parentElement;
+            }
+            return container?.getAttribute(attr) || undefined;
+        }
 
         async function main() {
             const params = new URLSearchParams(document.location.search);
@@ -30,6 +42,33 @@
 
             const html = hueToHtml(data);
             document.getElementById("data").innerHTML = html;
+
+            const controls = [...document.querySelectorAll("select[data-address][data-property]")];
+            // console.log(controls);
+
+            controls.map(control => {
+                control.onchange = (evt) => {
+                    const address = Address(connection, control.dataset.address);
+                    let value = control.value;
+                    
+                    if (value === "true") {
+                        value = true;
+                    } else if (value === "false") {
+                        value = false;
+                    } else if (value === "undefined") {
+                        value = undefined;
+                    }
+
+                    const body = JSON.parse(ancestorData(control, "light-value"));
+                    if (value !== undefined) {
+                        body[control.dataset.property] = value;
+                    } else {
+                        delete body[control.dataset.property];
+                    }
+
+                    put(address, body);
+                };
+            });
         }
 
         main().then(x => {
@@ -38,6 +77,11 @@
             }
         });
     </script>
+    <style>
+        a.action {
+            color: red;
+        }
+    </style>
 </head>
 <body>
     <pre id="data"></pre>
